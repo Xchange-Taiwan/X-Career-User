@@ -98,3 +98,27 @@ async def delete_mentor_schedule(
 ):
     # TODO: implement
     return res_success(data=None)
+
+# TODO: read from professional service
+
+
+@router.get('/{user_id}',
+            responses=idempotent_response('get_mentor', mentor.MentorProfileVO))
+async def get_mentor(
+    user_id: int = Path(...),
+):
+    # TODO: implement
+    return res_success(data=None)
+
+
+# TODO: read from professional service
+@router.get('/{user_id}/schedule',
+            responses=idempotent_response('get_mentor_schedule', mentor.MentorScheduleVO))
+async def get_mentor_schedule(
+    user_id: int = Path(...),
+    year: int = Query(SCHEDULE_YEAR),
+    batch: int = Query(BATCH),
+    next_id: int = Query(0),
+):
+    # TODO: implement
+    return res_success(data=None)
