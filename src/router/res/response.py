@@ -2,8 +2,9 @@ from fastapi.responses import JSONResponse
 from typing import Optional, Any, Dict
 from pydantic import create_model, BaseModel
 
+
 # ref: https://github.com/tiangolo/fastapi/issues/3737
-def idempotent_response(route: str, model: Any) -> (Dict):
+def idempotent_response(route: str, model: Any) -> Dict:
     responses: Dict = {
         200: {
             'model': create_model(route, code=(str, ...), msg=(str, ...), data=(model, ...))
@@ -12,7 +13,7 @@ def idempotent_response(route: str, model: Any) -> (Dict):
     return responses
 
 
-def post_response(route: str, model: Any) -> (Dict):
+def post_response(route: str, model: Any) -> Dict:
     responses: Dict = {
         201: {
             'model': create_model(route, code=(str, ...), msg=(str, ...), data=(model, ...))

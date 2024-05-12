@@ -1,18 +1,16 @@
 import os
-from mangum import Mangum
-from fastapi import FastAPI, Request, \
-    Header, Path, Query, Body, Form, \
-    File, UploadFile, status, \
-    HTTPException, \
-    Depends, \
+
+from fastapi import FastAPI, HTTPException, \
     APIRouter
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from mangum import Mangum
+
+from src.config import exception
 from src.router.v1 import (
     user,
     mentor,
 )
-from src.config import exception
 
 STAGE = os.environ.get('STAGE')
 root_path = '/' if not STAGE else f'/{STAGE}'

@@ -33,7 +33,7 @@ def get_profession_dao() -> ProfessionRepository:
     return ProfessionRepository()
 
 
-def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao))-> InterestService:
+def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao)) -> InterestService:
     return InterestService(interest_repo)
 
 

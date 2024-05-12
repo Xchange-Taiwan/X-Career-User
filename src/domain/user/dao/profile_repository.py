@@ -4,10 +4,9 @@ from sqlalchemy import func, Integer, select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.exception import NotFoundException
-from src.domain.mentor.model.mentor_model import MentorProfileDTO
 from src.domain.user.model.user_model import ProfileDTO
 from src.infra.db.orm.init.user_init import Profile
-from src.infra.util.convert_util import convert_model_to_dto, convert_dto_to_model, get_all_template, get_first_template
+from src.infra.util.convert_util import convert_dto_to_model, get_all_template, get_first_template
 
 
 class ProfileRepository:

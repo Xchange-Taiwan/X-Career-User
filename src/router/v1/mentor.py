@@ -54,9 +54,9 @@ async def get_mentor_profile(
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor: MentorProfileVO = await mentor_service.get_mentor_profile_by_id(db, user_id)
+    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id(db, user_id)
 
-    return res_success(data=mentor.json())
+    return res_success(data=mentor_profile.json())
 
 
 @router.put('/{user_id}/experiences/{experience_type}',

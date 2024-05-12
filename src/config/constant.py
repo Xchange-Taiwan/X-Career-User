@@ -6,6 +6,7 @@ class AccountType(Enum):
     GOOGLE = "google"
     LINKEDIN = "linkedin"
 
+
 class InterestCategory(Enum):
     INTERESTED_POSITION = 'interested_position'
     SKILL = 'skill'
@@ -44,13 +45,16 @@ class ReservationListState(Enum):
     PENDING = 'pending'
     HISTORY = 'history'
 
+
 class SortingBy(Enum):
     UPDATED_TIME = 'updated_time'
     # VIEW = 'view'
 
+
 class Sorting(Enum):
     ASC = 1
     DESC = -1
+
 
 class SchedulesType(Enum):
     ALLOW = "allow"

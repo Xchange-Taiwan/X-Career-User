@@ -1,8 +1,9 @@
-import json
-from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel
-from ....config.constant import *
 import logging as log
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel
+
+from ....config.constant import *
 
 log.basicConfig(filemode='w', level=log.INFO)
 

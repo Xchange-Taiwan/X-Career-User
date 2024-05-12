@@ -35,8 +35,8 @@ class ProfileService:
         if dto is None:
             raise NotFoundException(msg="no data found")
         industry: Optional[ProfessionVO] = await self.__profession_service.get_profession_by_id(db, dto.industry)
-        interested_positions: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db,
-                                                                                                           dto.interested_positions)
+        interested_positions: Optional[InterestListVO] = \
+            await self.__interest_service.get_interest_by_ids(db, dto.interested_positions)
         skills: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.skills)
         topics: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.topics)
 

@@ -17,16 +17,16 @@ class MentorService:
 
     async def upsert_mentor_profile(self, db: AsyncSession, profile_dto: MentorProfileDTO) -> MentorProfileVO:
         res_dto: MentorProfileDTO = await self.__mentor_repository.upsert_mentor(db, profile_dto)
-        res_vo: MentorProfileVO = await self.convert_to_mentor_profile_VO(db, res_dto)
+        res_vo: MentorProfileVO = await self.convert_to_mentor_profile_vo(db, res_dto)
         await db.commit()
         return res_vo
 
     async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int) -> MentorProfileVO:
         mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id(db, user_id)
 
-        return await self.convert_to_mentor_profile_VO(db, mentor_dto)
+        return await self.convert_to_mentor_profile_vo(db, mentor_dto)
 
-    async def convert_to_mentor_profile_VO(self, db: AsyncSession, dto: MentorProfileDTO) -> MentorProfileVO:
+    async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO) -> MentorProfileVO:
         user_id = dto.user_id
         name = dto.name
         avatar = dto.avatar

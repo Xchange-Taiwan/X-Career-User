@@ -1,19 +1,15 @@
+import logging as log
 
 from sqlalchemy import Column, Integer, BigInteger, Text
+from sqlalchemy import types
 from sqlalchemy.ext.declarative import declarative_base
 
 from .user_model import *
-from ...mentor.enum.mentor_enums import ScheduleType
-from ....config.conf import *
 from ....config.constant import *
-import logging as log
-from sqlalchemy import types
+
 log.basicConfig(filemode='w', level=log.INFO)
 
 Base = declarative_base()
-
-
-
 
 
 class MentorSchedules(Base):
@@ -43,6 +39,7 @@ class Reservations(Base):
     status = Column(types.Enum(BookingStatus), nullable=False, default=BookingStatus.PENDING)
     role = Column(types.Enum(RoleType))
     message_from_others = Column(Text, default='')
+
 
 class UserDTO(BaseModel):
     user_id: int
@@ -80,7 +77,6 @@ class ReservationVO(BaseModel):
 class ReservationListVO(BaseModel):
     reservations: List[ReservationVO]
     next_id: Optional[int]
-
 
 # class MentorSchedulesDTO(BaseModel):
 #     mentor_schedules_id: int

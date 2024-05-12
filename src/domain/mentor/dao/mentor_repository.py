@@ -12,6 +12,7 @@ class MentorRepository:
 
     def __init__(self):
         self.stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
+
     async def get_all_mentor_profile(self, db: AsyncSession) -> List[MentorProfileDTO]:
         stmt: Select = self.stmt
         mentors: List[Profile] = await get_all_template(db, stmt)
@@ -27,7 +28,8 @@ class MentorRepository:
     async def get_mentor_profiles_by_conditions(self, db: AsyncSession, dto: MentorProfileDTO) -> List[
         MentorProfileDTO]:
         dto_dict = dict(dto.__dict__)
-        query = db.query(Profile)
+
+        query: Select = select(Profile)
         if dto_dict.get('name'):
             query = query.filter(Profile.name == dto.name)
         if dto_dict.get('location'):
@@ -59,7 +61,7 @@ class MentorRepository:
             query = query.filter(
                 func.cast(func.jsonb_array_elements_text(Profile.expertises), Integer).any_(dto.expertises)
             )
-        profiles = await query.all()
+        profiles = await get_all_template(db, query)
         return [convert_model_to_dto(profile, MentorProfileDTO) for profile in profiles]
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
@@ -79,7 +81,7 @@ class MentorRepository:
 
     def convert_mentor_profile_to_dto(self, model: Profile) -> MentorProfileDTO:
         profile_dto: MentorProfileDTO = MentorProfileDTO()
-        if (model is None):
+        if model is None:
             return profile_dto
         profile_dto.user_id = model.user_id
         profile_dto.name = model.name

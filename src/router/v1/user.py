@@ -5,7 +5,7 @@ from fastapi import (
     Depends,
     Path, Query, Body
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..res.response import *
 from ...config.constant import *
@@ -32,7 +32,7 @@ router = APIRouter(
 @router.put('/{user_id}/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
-        db: Session = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
         body: user.ProfileDTO = Body(...),
         profile_service: ProfileService = Depends(get_profile_service)
 ):
@@ -44,7 +44,7 @@ async def upsert_profile(
 @router.get('/{user_id}/profile',
             responses=idempotent_response('get_profile', user.ProfileVO))
 async def get_profile(
-        db: Session = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
         profile_service: ProfileService = Depends(get_profile_service)
 ):
@@ -55,7 +55,7 @@ async def get_profile(
 @router.get('/interests',
             responses=idempotent_response('get_interests', common.InterestListVO))
 async def get_interests(
-        db: Session = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
         interest_service: InterestService = Depends(get_interest_service)
         # ,interest: InterestCategory = Query(...)
 ):
@@ -67,7 +67,7 @@ async def get_interests(
 @router.get('/industries',
             responses=idempotent_response('get_industries', common.ProfessionListVO))
 async def get_industries(
-        db: Session = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
         profession_service: ProfessionService = Depends(get_profession_service)
         # category = ProfessionCategory.INDUSTRY = Query(...),
 ):

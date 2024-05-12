@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory, AccountType
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
-from sqlalchemy.dialects.postgresql import ENUM as PgEnum
+import sqlalchemy.dialects.postgresql
 
 Base = declarative_base()
 
@@ -36,7 +36,7 @@ class Profile(Base):
     personal_statement = Column(String, default='')
     about = Column(String, default='')
     company = Column(String, default='')
-    seniority_level = Column(PgEnum(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
+    seniority_level = Column(sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
     timezone = Column(Integer, default=0)
     experience = Column(Integer, default=0)
     industry = Column(Integer)
@@ -50,7 +50,7 @@ class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
-    category = Column(PgEnum(ExperienceCategory, name='experience_category', create_type=False), nullable=False)
+    category = Column(sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False), nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
     # profile = relationship("Profile", backref="mentor_experiences")

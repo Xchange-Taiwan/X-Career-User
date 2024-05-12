@@ -1,10 +1,6 @@
 from typing import Dict
 
-from sqlalchemy import Column, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import types
-from ..enum.mentor_enums import SeniorityLevel, ScheduleType
+from ..enum.mentor_enums import SeniorityLevel
 from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
 from ....config.conf import *
