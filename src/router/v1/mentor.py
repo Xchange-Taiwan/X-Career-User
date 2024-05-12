@@ -92,7 +92,7 @@ async def get_expertises(
         db: AsyncSession = Depends(get_db),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
-    res: ProfessionListVO = await profession_service.get_all_profession(db= db)
+    res: ProfessionListVO = await profession_service.get_all_profession(db=db)
     return res_success(data=res.json())
 
 

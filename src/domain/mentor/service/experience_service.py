@@ -3,6 +3,7 @@ from typing import Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.constant import ExperienceCategory
+from src.config.exception import NotFoundException
 from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
@@ -26,10 +27,14 @@ class ExperienceService:
                                                                                          mentor_exp_dto=experience_dto,
                                                                                          user_id=user_id,
                                                                                          exp_cate=exp_cate)
-        return self.convert_model_to_vo(mentor_exp)
+        res: ExperienceVO = self.convert_model_to_vo(mentor_exp)
+
+        return res
 
     async def delete_experience_by_id(self, db: AsyncSession, exp_id: int) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, exp_id)
+        if mentor_exp is None:
+            raise NotFoundException(msg=f"No experience with id {exp_id}")
         return self.convert_model_to_vo(mentor_exp)
 
     def convert_model_to_vo(self, model: MentorExperience) -> ExperienceVO:

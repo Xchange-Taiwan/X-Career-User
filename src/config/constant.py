@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class AccountType(Enum):
+    XC = "xc"
+    GOOGLE = "google"
+    LINKEDIN = "linkedin"
+
 class InterestCategory(Enum):
     INTERESTED_POSITION = 'interested_position'
     SKILL = 'skill'
@@ -46,3 +51,7 @@ class SortingBy(Enum):
 class Sorting(Enum):
     ASC = 1
     DESC = -1
+
+class SchedulesType(Enum):
+    ALLOW = "allow"
+    FORBIDDEN = "forbidden"

@@ -3,8 +3,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
-    ExperienceCategory
-from src.domain.account.enum.account_enum import AccountType
+    ExperienceCategory, AccountType
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 

@@ -1,24 +1,22 @@
-import os
-import time
-import json
-from typing import List, Dict, Any
+import logging as log
+
 from fastapi import (
     APIRouter,
-    Request, Depends,
-    Header, Path, Query, Body, Form
+    Depends,
+    Path, Query, Body
 )
 from sqlalchemy.orm import Session
 
+from ..res.response import *
+from ...config.constant import *
 from ...domain.user.model import (
     common_model as common,
     user_model as user,
     reservation_model as reservation,
 )
-from ..res.response import *
-from ...config.constant import *
-from ...config.exception import *
-import logging as log
-
+from ...domain.user.service.interest_service import InterestService
+from ...domain.user.service.profession_service import ProfessionService
+from ...domain.user.service.profile_service import ProfileService
 from ...infra.databse import get_db
 from ...infra.util.injection_util import get_interest_service, get_profession_service, get_profile_service
 

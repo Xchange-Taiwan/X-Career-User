@@ -1,12 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
-from src.config.exception import NotFoundException
-from src.domain.mentor.dao.profession_repository import ProfessionRepository
-from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
-from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
+from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 
