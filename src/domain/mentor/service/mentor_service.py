@@ -1,5 +1,10 @@
+import asyncio
+from typing import List, Coroutine, Tuple, Any
+
+from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config.exception import NotFoundException
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
 from src.domain.user.dao.profile_repository import ProfileRepository
@@ -27,23 +32,36 @@ class MentorService:
         return await self.convert_to_mentor_profile_vo(db, mentor_dto)
 
     async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO) -> MentorProfileVO:
-        user_id = dto.user_id
-        name = dto.name
-        avatar = dto.avatar
-        timezone = dto.timezone
-        industry = await self.__profession_service.get_profession_by_id(db, dto.industry)
+        try:
+        #coroutines neeed to be awaited
+            industry_task = asyncio.create_task(self.__profession_service.get_profession_by_id(db, dto.industry))
+            interested_positions_task = asyncio.create_task(
+                self.__interest_service.get_interest_by_ids(db, dto.interested_positions))
+            skills_task = asyncio.create_task(self.__interest_service.get_interest_by_ids(db, dto.skills))
+            topics_task = asyncio.create_task(self.__interest_service.get_interest_by_ids(db, dto.topics))
+            expertises_task = asyncio.create_task(self.__profession_service.get_profession_by_ids(db, dto.expertises))
+
+        # Await all tasks concurrently
+            industry, interested_positions, skills, topics, expertises = await asyncio.gather(
+                industry_task, interested_positions_task, skills_task, topics_task, expertises_task
+            )
+            user_id = dto.user_id
+            name = dto.name
+            avatar = dto.avatar
+            timezone = dto.timezone
+        except ArgumentError:
+            raise NotFoundException(msg = "無該會員資料, 可能是會員id有誤")
         position = dto.position
         company = dto.company
         linkedin_profile = dto.linkedin_profile
-        interested_positions = await self.__interest_service.get_interest_by_ids(db, dto.interested_positions)
-        skills = await self.__interest_service.get_interest_by_ids(db, dto.skills)
-        topics = await self.__interest_service.get_interest_by_ids(db, dto.topics)
+
+
         location = dto.location
         personal_statement = dto.personal_statement
         about = dto.about
         seniority_level = dto.seniority_level
         experience = dto.experience
-        expertises = await self.__profession_service.get_profession_by_ids(db, dto.expertises)
+
 
         return MentorProfileVO(
             user_id=user_id,
