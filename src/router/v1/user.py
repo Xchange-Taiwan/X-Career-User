@@ -17,7 +17,7 @@ from ...domain.user.model import (
 from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
-from ...infra.databse import get_db
+from ...config.databse import get_db
 from ...infra.util.injection_util import get_interest_service, get_profession_service, get_profile_service
 
 log.basicConfig(filemode='w', level=log.INFO)

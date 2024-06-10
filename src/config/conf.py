@@ -2,6 +2,9 @@ import os
 
 BATCH = int(os.getenv('BATCH', '10'))
 
+
+DB_URL = os.getenv('DB_URL', 'postgresql+asyncpg://user_connection:pg_user_password@localhost:5432/Xchange_local')
+
 # schedule
 SCHEDULE_YEAR = int(os.getenv('SCHEDULE_YEAR', '-1'))
 SCHEDULE_MONTH = int(os.getenv('SCHEDULE_MONTH', '-1'))

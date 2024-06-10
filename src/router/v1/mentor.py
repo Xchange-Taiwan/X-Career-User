@@ -22,7 +22,7 @@ from ...domain.user.model import (
 )
 from ...domain.user.model.common_model import ProfessionListVO
 from ...domain.user.service.profession_service import ProfessionService
-from ...infra.databse import get_db
+from ...config.databse import get_db
 from ...infra.util.injection_util import get_mentor_service, get_experience_service, get_profession_service
 
 log.basicConfig(filemode='w', level=log.INFO)
