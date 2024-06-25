@@ -37,9 +37,10 @@ router = APIRouter(
 @router.put('/mentor_profile/create',
             responses=idempotent_response('upsert_mentor_profile', mentor.MentorProfileVO))
 async def upsert_mentor_profile(
+        db: AsyncSession = Depends(get_db),
         body: mentor.MentorProfileDTO = Body(...),
-        mentor_service: MentorService = Depends(get_mentor_service),
-        db: Session = Depends(get_db)
+        mentor_service: MentorService = Depends(get_mentor_service)
+
 ):
     # TODO: implement
     res: mentor.MentorProfileVO = await mentor_service.upsert_mentor_profile(db, body)
@@ -49,8 +50,8 @@ async def upsert_mentor_profile(
 @router.get('/{user_id}/profile',
             responses=idempotent_response('get_mentor_profile', MentorProfileVO))
 async def get_mentor_profile(
-        user_id: int = Path(...),
         db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
