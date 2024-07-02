@@ -3,26 +3,13 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
-    ExperienceCategory, AccountType
+    ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
 import sqlalchemy.dialects.postgresql
 
 Base = declarative_base()
 
 
-class Account(Base):
-    __tablename__ = 'accounts'
-    aid = Column(Integer, primary_key=True)
-    email1 = Column(String, nullable=False)
-    email2 = Column(String)
-    pass_hash = Column(String)
-    pass_salt = Column(String)
-    oauth_id = Column(String)
-    refresh_token = Column(String)
-    user_id = Column(Integer, unique=True)
-    type = Column(type_=types.Enum(AccountType))
-    is_active = Column(Boolean)
-    region = Column(String)
 
 
 class Profile(Base):
