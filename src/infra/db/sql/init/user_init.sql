@@ -46,7 +46,8 @@ CREATE TABLE profiles (
     skills JSONB,
     topics JSONB,
     expertises JSONB,
-    CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES accounts(user_id)
+    "language" varchar(10)
+    --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES accounts(user_id)
 );
 
 
@@ -55,14 +56,15 @@ CREATE TABLE mentor_experiences (
     user_id INTEGER NOT NULL,
     category EXPERIENCE_CATEGORY NOT NULL,
     "order" INT NOT NULL,
-    mentor_experiences_metadata JSONB,
-    CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+    mentor_experiences_metadata JSONB
+    --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
 
 
 CREATE TABLE professions (
     "id" SERIAL PRIMARY KEY,
     category PROFESSION_CATEGORY ,
+    "language" varchar(10),
     subject TEXT DEFAULT '',
     professions_metadata JSONB
 );
@@ -78,8 +80,8 @@ CREATE TABLE mentor_schedules (
     start_time INT NOT NULL,
     end_time INT NOT NULL,
     cycle_start_date BIGINT,
-    cycle_end_date BIGINT,
-    CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+    cycle_end_date BIGINT
+    --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
 
 CREATE INDEX mentor_schedule_index ON mentor_schedules("year", "month", day_of_month, day_of_week, start_time, end_time);
@@ -88,8 +90,8 @@ CREATE TABLE canned_message (
     "id" SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     "role" ROLE_TYPE NOT NULL,
-    MESSAGE TEXT,
-    CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+    MESSAGE TEXT
+    --,CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
 
 CREATE TABLE reservations (
@@ -101,25 +103,27 @@ CREATE TABLE reservations (
     my_status BOOKING_STATUS ,
     status BOOKING_STATUS,
     "role" ROLE_TYPE,
-    message_from_others TEXT DEFAULT '',
-    CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id),
-    CONSTRAINT fk_mentor_schedules_id FOREIGN KEY (mentor_schedules_id) REFERENCES mentor_schedules("id")
+    message_from_others TEXT DEFAULT ''
+    --,CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id),
+    --CONSTRAINT fk_mentor_schedules_id FOREIGN KEY (mentor_schedules_id) REFERENCES mentor_schedules("id")
 );
 
 CREATE INDEX reservations_index ON reservations(user_id, start_datetime, end_datetime);
 
 CREATE TABLE interests (
-    "id" SERIAL PRIMARY KEY,
+    id SERIAL,
+    language VARCHAR(10),
     category INTEREST_CATEGORY,
     subject TEXT,
-    "desc" JSONB
+    "desc" JSONB,
+    PRIMARY KEY (id, language)
 );
 
 
 --以下測試用插入資料
 INSERT INTO public.interests
-("id", category, subject, "desc")
-values(1, 'INTERESTED_POSITION', 'TEST', '{}');
+("id", "language", category, subject, "desc")
+values(1, 'ENG', 'INTERESTED_POSITION', 'TEST', '{}');
 
 INSERT INTO public.professions
 ("id", category, subject, "professions_metadata")
