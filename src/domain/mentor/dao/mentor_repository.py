@@ -10,54 +10,53 @@ from src.infra.util.convert_util import convert_model_to_dto, convert_dto_to_mod
 
 class MentorRepository:
 
-    def __init__(self):
-        self.stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
-
     async def get_all_mentor_profile(self, db: AsyncSession) -> List[MentorProfileDTO]:
-        stmt: Select = self.stmt
+        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
         mentors: List[Profile] = await get_all_template(db, stmt)
         return [convert_model_to_dto(mentor, MentorProfileDTO) for mentor in mentors]
 
-    async def get_mentor_profile_by_id(self, db: AsyncSession, mentor_id: int) -> MentorProfileDTO:
-
-        stmt: Select = self.stmt.filter(Profile.user_id == mentor_id)
+    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, mentor_id: int, language: str) -> MentorProfileDTO:
+        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
+        stmt: Select = stmt.filter(Profile.user_id == mentor_id and Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
         return self.convert_mentor_profile_to_dto(mentor)
 
-    async def get_mentor_profiles_by_conditions(self, db: AsyncSession, dto: MentorProfileDTO) -> List[
-        MentorProfileDTO]:
+    async def get_mentor_profiles_by_conditions(self, db: AsyncSession, dto: MentorProfileDTO) \
+            -> List[MentorProfileDTO]:
         dto_dict = dict(dto.__dict__)
 
         query: Select = select(Profile)
-        if dto_dict.get('name'):
+        if dto_dict.get('name') is not None:
             query = query.filter(Profile.name == dto.name)
-        if dto_dict.get('location'):
+        if dto_dict.get('language') is not None:
+            query = query.filter(Profile.language == dto.language)
+        if dto_dict.get('location') is not None:
             query = query.filter(Profile.location.like('%' + dto.location + '%'))
-        if dto_dict.get('about'):
+        if dto_dict.get('about') is not None:
             query = query.filter(Profile.about.like('%' + dto.about + '%'))
-        if dto_dict.get('personal_statement'):
+        if dto_dict.get('personal_statement') is not None:
             query = query.filter(Profile.about.like('%' + dto.personal_statement + '%'))
-        if dto_dict.get('seniority_level'):
+        if dto_dict.get('seniority_level') is not None:
             query = query.filter(Profile.seniority_level == dto.seniority_level)
-        if dto_dict.get('industry'):
+        if dto_dict.get('industry') is not None:
             query = query.filter(Profile.industry == dto.industry)
-        if dto_dict.get('position'):
+        if dto_dict.get('position') is not None:
             query = query.filter(Profile.position == dto.position)
-        if dto_dict.get('company'):
+        if dto_dict.get('company') is not None:
             query = query.filter(Profile.company == dto.company)
-        if dto_dict.get('experience'):
+        if dto_dict.get('experience') is not None:
             query = query.filter(Profile.experience >= dto.experience)
 
-        if dto_dict.get('skills'):
+        if dto_dict.get('skills') is not None:
             query = query.filter(
                 func.cast(func.jsonb_array_elements_text(Profile.skills), Integer).any_(dto.skills)
             )
-        if dto_dict.get('topics'):
+        if dto_dict.get('topics') is not None:
             query = query.filter(
                 func.cast(func.jsonb_array_elements_text(Profile.topics), Integer).any_(dto.topics)
             )
-        if dto_dict.get('expertises'):
+        if dto_dict.get('expertises') is not None:
             query = query.filter(
                 func.cast(func.jsonb_array_elements_text(Profile.expertises), Integer).any_(dto.expertises)
             )
@@ -71,8 +70,9 @@ class MentorRepository:
 
         return res
 
-    async def delete_mentor_profile_by_id(self, db: AsyncSession, user_id: int) -> None:
-        stmt: Select = self.stmt.filter(Profile.user_id == user_id)
+    async def delete_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language : str) -> None:
+        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
+        stmt: Select = stmt.filter(Profile.user_id == user_id and Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)
 
         if mentor:
@@ -84,6 +84,7 @@ class MentorRepository:
         if model is None:
             return profile_dto
         profile_dto.user_id = model.user_id
+        profile_dto.language = model.language
         profile_dto.name = model.name
         profile_dto.avatar = model.avatar
         profile_dto.timezone = model.timezone

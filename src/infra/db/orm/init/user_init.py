@@ -1,11 +1,11 @@
-from sqlalchemy import Integer, Column, String, types, ForeignKey, Boolean
+import sqlalchemy.dialects.postgresql
+from sqlalchemy import Integer, Column, String, types
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
-import sqlalchemy.dialects.postgresql
 
 Base = declarative_base()
 
@@ -14,7 +14,7 @@ Base = declarative_base()
 
 class Profile(Base):
     __tablename__ = 'profiles'
-    user_id = Column(Integer, ForeignKey('accounts.user_id'), primary_key=True)
+    user_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
     location = Column(String, default='')
@@ -35,8 +35,8 @@ class Profile(Base):
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
+    user_id = Column(Integer, primary_key=True)
+    language = Column(String, nullable=False)
     category = Column(sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False), nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
@@ -54,7 +54,7 @@ class Profession(Base):
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
     type = Column(type_=types.Enum(SchedulesType))
     year = Column(Integer, default=-1)
     month = Column(Integer, default=-1)
@@ -70,7 +70,7 @@ class MentorSchedule(Base):
 class CannedMessage(Base):
     __tablename__ = 'canned_message'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
     role = Column(type_=types.Enum(RoleType), nullable=False)
     message = Column(String)
     # profile = relationship("Profile", backref="canned_message")
@@ -79,8 +79,8 @@ class CannedMessage(Base):
 class Reservation(Base):
     __tablename__ = 'reservations'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
-    mentor_schedules_id = Column(Integer, ForeignKey('mentor_schedules.mentor_schedules_id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    mentor_schedules_id = Column(Integer, nullable=False)
     start_datetime = Column(Integer)
     end_datetime = Column(Integer)
     my_status = Column(name="my_status", type_=types.Enum(BookingStatus))

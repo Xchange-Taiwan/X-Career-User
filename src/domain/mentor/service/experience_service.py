@@ -13,11 +13,11 @@ class ExperienceService:
     def __init__(self, exp_dao: MentorExperienceRepository):
         self.__exp_dao = exp_dao
 
-    async def get_exp_by_exp_id(self, db: AsyncSession, exp_id: int) -> ExperienceVO:
+    async def get_exp_by_exp_id_and_language(self, db: AsyncSession, exp_id: int, language: str) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_id(db, exp_id)
         return self.convert_model_to_vo(mentor_exp)
 
-    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int) -> ExperienceVO:
+    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_user_id(db, user_id)
         return self.convert_model_to_vo(mentor_exp)
 
@@ -38,10 +38,10 @@ class ExperienceService:
         return self.convert_model_to_vo(mentor_exp)
 
     def convert_model_to_vo(self, model: MentorExperience) -> ExperienceVO:
-        exp_id: int = model.id
         user_id: int = model.user_id
+        language: str = model.language
         desc: Dict = model.desc
         order: int = model.order
         cate: ExperienceCategory = model.category
 
-        return ExperienceVO(id=exp_id, user_id=user_id, desc=desc, order=order, category=cate)
+        return ExperienceVO( user_id=user_id, language=language, desc=desc, order=order, category=cate)

@@ -1,5 +1,4 @@
 import asyncio
-from typing import List, Coroutine, Tuple, Any
 
 from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,14 +25,16 @@ class MentorService:
         await db.commit()
         return res_vo
 
-    async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int) -> MentorProfileVO:
-        mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id(db, user_id)
+    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) \
+            -> MentorProfileVO:
+        mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id_and_language(db, user_id,
+                                                                                                            language)
 
         return await self.convert_to_mentor_profile_vo(db, mentor_dto)
 
     async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO) -> MentorProfileVO:
         try:
-        #coroutines neeed to be awaited
+            # coroutines neeed to be awaited
             industry_task = asyncio.create_task(self.__profession_service.get_profession_by_id(db, dto.industry))
             interested_positions_task = asyncio.create_task(
                 self.__interest_service.get_interest_by_ids(db, dto.interested_positions))
@@ -41,7 +42,7 @@ class MentorService:
             topics_task = asyncio.create_task(self.__interest_service.get_interest_by_ids(db, dto.topics))
             expertises_task = asyncio.create_task(self.__profession_service.get_profession_by_ids(db, dto.expertises))
 
-        # Await all tasks concurrently
+            # Await all tasks concurrently
             industry, interested_positions, skills, topics, expertises = await asyncio.gather(
                 industry_task, interested_positions_task, skills_task, topics_task, expertises_task
             )
@@ -50,18 +51,16 @@ class MentorService:
             avatar = dto.avatar
             timezone = dto.timezone
         except ArgumentError:
-            raise NotFoundException(msg = "無該會員資料, 可能是會員id有誤")
+            raise NotFoundException(msg="無該會員資料, 可能是會員id有誤")
         position = dto.position
         company = dto.company
         linkedin_profile = dto.linkedin_profile
-
 
         location = dto.location
         personal_statement = dto.personal_statement
         about = dto.about
         seniority_level = dto.seniority_level
         experience = dto.experience
-
 
         return MentorProfileVO(
             user_id=user_id,

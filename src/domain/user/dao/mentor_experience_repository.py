@@ -48,7 +48,7 @@ class MentorExperienceRepository:
 
     def convert_exp_to_dto(self, model: MentorExperience):
         res: ExperienceDTO = ExperienceDTO()
-        res.id = model.id
+        res.user_id = model.id
         res.category = model.category
         res.order = model.order
         res.desc = model.desc

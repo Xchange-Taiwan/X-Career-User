@@ -47,15 +47,16 @@ async def upsert_mentor_profile(
     return res_success(data=res.json())
 
 
-@router.get('/{user_id}/profile',
+@router.get('/{user_id}/{language}/profile',
             responses=idempotent_response('get_mentor_profile', MentorProfileVO))
 async def get_mentor_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
+        language: str = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id(db, user_id)
+    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language=language)
 
     return res_success(data=mentor_profile.json())
 
@@ -74,11 +75,12 @@ async def upsert_experience(
     return res_success(data=res.json())
 
 
-@router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
+@router.delete('/{user_id}/experiences/{experience_type}/{experience_id}/{language}',
                responses=idempotent_response('delete_experience', experience.ExperienceVO))
 async def delete_experience(
         db: AsyncSession = Depends(get_db),
         experience_id: int = Path(...),
+        language: str = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
     res: experience.ExperienceVO = await exp_service.delete_experience_by_id(db, experience_id)

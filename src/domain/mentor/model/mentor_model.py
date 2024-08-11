@@ -23,7 +23,8 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class MentorProfileDTO(ProfileDTO):
-
+    user_id: Optional[int]
+    language: Optional[str]
     location: Optional[str]
     personal_statement: Optional[str]
     about: Optional[str]
@@ -47,6 +48,7 @@ class CannedMessageDTO(BaseModel):
 
 
 class MentorProfileVO(ProfileVO):
+    user_id: Optional[int]
     personal_statement: Optional[str]
     about: Optional[str]
     # TODO: enum

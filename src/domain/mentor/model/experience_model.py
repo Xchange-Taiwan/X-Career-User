@@ -9,15 +9,17 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class ExperienceDTO(BaseModel):
-    id: Optional[int]
+    user_id: Optional[int]
+    language: str
     desc: Dict
     order: int
 
 
 
 class ExperienceVO(BaseModel):
-    id: int
+    user_id: int
     category: ExperienceCategory
+    language: str
     desc: Dict
     order: int
 
