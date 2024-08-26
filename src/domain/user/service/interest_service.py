@@ -36,7 +36,7 @@ class InterestService:
         return interests
 
     def convert_to_interest_vo(self, dto: Optional[Type[Interest]]) -> InterestVO:
-        if not dto:
-            raise NotFoundException(msg="no data found")
+        if dto is None:
+            return None
         res = InterestVO(**dict(dto.__dict__))
         return res

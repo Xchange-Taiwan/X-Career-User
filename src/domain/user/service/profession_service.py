@@ -36,9 +36,9 @@ class ProfessionService:
 
         return self.convert_to_profession_vo(query)
 
-    def convert_to_profession_vo(self, dto: Optional[Type[Profession]]) -> ProfessionVO:
+    def convert_to_profession_vo(self, dto: Optional[Type[Profession]]) -> Optional[ProfessionVO]:
         if dto is None:
-            raise NotFoundException(msg="no profession data found")
+            return None  # return empty object
         profession_id: int = dto.id
         subject: str = dto.subject
         category: ProfessionCategory = ProfessionCategory(dto.category)

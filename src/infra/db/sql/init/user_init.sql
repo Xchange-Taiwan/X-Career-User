@@ -29,7 +29,7 @@ CREATE TABLE accounts (
     region TEXT
 );
 CREATE TABLE profiles (
-    user_id INTEGER PRIMARY KEY,
+    user_id SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     avatar TEXT DEFAULT '',
     "location" TEXT DEFAULT '',
@@ -66,7 +66,7 @@ CREATE TABLE professions (
     category PROFESSION_CATEGORY ,
     "language" varchar(10),
     subject TEXT DEFAULT '',
-    professions_metadata JSONB
+    profession_metadata JSONB
 );
 
 CREATE TABLE mentor_schedules (

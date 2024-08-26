@@ -43,10 +43,36 @@ class ProfileRepository:
         return [self.convert_profile_to_dto(profile) for profile in profiles]
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileDTO:
-        # model = self.convert_dto_to_profile(model)
         model = convert_dto_to_model(dto, Profile)
-        await db.merge(model)
-        await db.commit()
+
+        if model.user_id is None or model.user_id == '':
+            # New entity, do auto increment
+            # Refresh the model when it an insert
+            db.add(model)
+            await db.commit()
+            # Refresh the model when it an insert
+            await db.refresh(model)
+        else:
+            # Check if the record exists
+            query = select(Profile).filter_by(user_id=model.user_id)
+            result = await db.execute(query)
+
+            existing_model = result.scalars().first()
+
+            if existing_model is not None:
+                # Update the existing model
+                for key, value in model.__dict__.items():
+                    if key != "_sa_instance_state":
+                        setattr(existing_model, key, value)
+                await db.merge(existing_model)
+                await db.commit()
+            else:
+                # Insert the new model
+                db.add(model)
+                await db.commit()
+                # Refresh the model when it an insert
+                await db.refresh(model)
+
         return self.convert_profile_to_dto(model)
 
     async def delete_profile(self, db: AsyncSession, user_id: str) -> None:
