@@ -44,6 +44,6 @@ class ProfessionService:
         category: ProfessionCategory = ProfessionCategory(dto.category)
         profession_metadata: Dict = dto.profession_metadata
         res: ProfessionVO = ProfessionVO(id=profession_id, subject=subject, category=category,
-                                         profession_metadata=profession_metadata)
+                                         profession_metadata=profession_metadata, language=dto.language)
 
         return res

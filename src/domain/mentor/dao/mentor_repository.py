@@ -15,9 +15,9 @@ class MentorRepository:
         mentors: List[Profile] = await get_all_template(db, stmt)
         return [convert_model_to_dto(mentor, MentorProfileDTO) for mentor in mentors]
 
-    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, mentor_id: int, language: str) -> MentorProfileDTO:
-        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
-        stmt: Select = stmt.filter(Profile.user_id == mentor_id and Profile.language == language)
+    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, mentor_id: int,
+                                                    language: str) -> MentorProfileDTO:
+        stmt: Select = select(Profile).filter(Profile.user_id == mentor_id and Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
         return self.convert_mentor_profile_to_dto(mentor)
@@ -64,13 +64,39 @@ class MentorRepository:
         return [convert_model_to_dto(profile, MentorProfileDTO) for profile in profiles]
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
-        mentor = convert_dto_to_model(mentor_profile_dto, Profile)
-        await db.merge(mentor)
-        res = convert_model_to_dto(mentor, MentorProfileDTO)
+        model: Profile = convert_dto_to_model(mentor_profile_dto, Profile)
+        if model.user_id is None or model.user_id == '':
+            # New entity, do auto increment
+            # Refresh the model when it an insert
+            db.add(model)
+            await db.commit()
+            # Refresh the model when it an insert
+            await db.refresh(model)
+        else:
+            # Check if the record exists
+            query = select(Profile).filter_by(user_id=model.user_id)
+            result = await db.execute(query)
+
+            existing_model = result.scalars().first()
+
+            if existing_model is not None:
+                # Update the existing model
+                for key, value in model.__dict__.items():
+                    if key != "_sa_instance_state":
+                        setattr(existing_model, key, value)
+                await db.merge(existing_model)
+                await db.commit()
+            else:
+                # Insert the new model
+                db.add(model)
+                await db.commit()
+                # Refresh the model when it an insert
+                await db.refresh(model)
+        res: MentorProfileDTO = convert_model_to_dto(model, MentorProfileDTO)
 
         return res
 
-    async def delete_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language : str) -> None:
+    async def delete_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) -> None:
         stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
         stmt: Select = stmt.filter(Profile.user_id == user_id and Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)

@@ -27,6 +27,7 @@ class Profile(Base):
     timezone = Column(Integer, default=0)
     experience = Column(Integer, default=0)
     industry = Column(Integer)
+    language = Column(String, default='')
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
     topics = Column(JSONB)
@@ -49,6 +50,7 @@ class Profession(Base):
     category = Column(type_=types.Enum(ProfessionCategory))
     subject = Column(String)
     profession_metadata = Column(JSONB)
+    language = Column(String, nullable=False)
 
 
 class MentorSchedule(Base):
@@ -97,3 +99,4 @@ class Interest(Base):
     category = Column(type_=types.Enum(InterestCategory))
     subject = Column(String)
     desc = Column(JSONB)
+    language = Column(String, nullable=False)
