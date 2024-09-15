@@ -15,12 +15,19 @@ class MentorExperienceRepository:
 
         if mentor_exp is None:
             mentor_exp = MentorExperience()
+            mentor_exp.user_id = user_id
+            mentor_exp.order = mentor_exp_dto.order
+            mentor_exp.category = exp_cate
+            mentor_exp.language = mentor_exp_dto.language
+            mentor_exp.desc = mentor_exp_dto.desc
+            db.add(mentor_exp)
 
-        mentor_exp.user_id = user_id
-        mentor_exp.desc = mentor_exp_dto.desc
-        mentor_exp.order = mentor_exp_dto.order
-        mentor_exp.category = exp_cate
-        await db.merge(mentor_exp)
+        else:
+            mentor_exp.order = mentor_exp_dto.order
+            mentor_exp.category = exp_cate
+            mentor_exp.language = mentor_exp_dto.language
+            mentor_exp.desc = mentor_exp_dto.desc
+            await db.merge(mentor_exp)
         await db.commit()
         await db.refresh(mentor_exp)  # commit後要重讀一次db 不然會沒有值
 

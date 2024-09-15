@@ -34,3 +34,4 @@ class ProfileVO(BaseModel):
     interested_positions: Optional[InterestListVO] = []
     skills: Optional[InterestListVO] = []
     topics: Optional[InterestListVO] = []
+    language: Optional[str]

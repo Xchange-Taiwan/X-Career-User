@@ -17,7 +17,7 @@ class MentorRepository:
 
     async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, mentor_id: int,
                                                     language: str) -> MentorProfileDTO:
-        stmt: Select = select(Profile).filter(Profile.user_id == mentor_id and Profile.language == language)
+        stmt: Select = select(Profile).filter(Profile.user_id == mentor_id, Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
         return self.convert_mentor_profile_to_dto(mentor)
@@ -126,4 +126,5 @@ class MentorRepository:
         profile_dto.about = model.about
         profile_dto.experience = model.experience
         profile_dto.expertises = model.expertises
+        profile_dto.personal_statement = model.personal_statement
         return profile_dto

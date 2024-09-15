@@ -61,6 +61,7 @@ class MentorService:
         about = dto.about
         seniority_level = dto.seniority_level
         experience = dto.experience
+        language = dto.language
 
         return MentorProfileVO(
             user_id=user_id,
@@ -74,11 +75,11 @@ class MentorService:
             linkedin_profile=linkedin_profile,
             interested_positions=interested_positions,
             skills=skills,
-            location=location,
+            #location=location,
             personal_statement=personal_statement,
             about=about,
             seniority_level=seniority_level,
             expertises=expertises,
-            experience=experience
-
+            #experience=experience,
+            language=language
         )

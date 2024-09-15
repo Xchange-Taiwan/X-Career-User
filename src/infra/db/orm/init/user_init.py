@@ -41,6 +41,7 @@ class MentorExperience(Base):
     category = Column(sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False), nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
+    mentor_experiences_metadata = Column(JSONB)
     # profile = relationship("Profile", backref="mentor_experiences")
 
 
