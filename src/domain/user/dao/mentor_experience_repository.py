@@ -45,8 +45,9 @@ class MentorExperienceRepository:
 
         return mentor_exp
 
-    async def delete_mentor_exp_by_id(self, db: AsyncSession, exp_id: int) -> MentorExperience:
-        stmt: Select = select(MentorExperience).filter(MentorExperience.id == exp_id)
+    async def delete_mentor_exp_by_id(self, db: AsyncSession, user_id: int, language: str) -> MentorExperience:
+        stmt: Select = select(MentorExperience).filter(MentorExperience.user_id == user_id,
+                                                       MentorExperience.language == language)
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
         if mentor_exp is not None:
             await db.delete(mentor_exp)

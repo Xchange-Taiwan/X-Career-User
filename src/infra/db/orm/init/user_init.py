@@ -36,6 +36,7 @@ class Profile(Base):
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
+    id = Column(Integer, primary_key=True)
     user_id = Column(Integer, primary_key=True)
     language = Column(String, nullable=False)
     category = Column(sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False), nullable=False)

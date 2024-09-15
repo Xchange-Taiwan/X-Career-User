@@ -79,11 +79,11 @@ async def upsert_experience(
                responses=idempotent_response('delete_experience', experience.ExperienceVO))
 async def delete_experience(
         db: AsyncSession = Depends(get_db),
-        experience_id: int = Path(...),
+        user_id: int = Path(...),
         language: str = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.delete_experience_by_id(db, experience_id)
+    res: experience.ExperienceVO = await exp_service.delete_experience_by_id(db, user_id, language)
 
     return res_success(data=res.json())
 

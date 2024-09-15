@@ -31,10 +31,10 @@ class ExperienceService:
 
         return res
 
-    async def delete_experience_by_id(self, db: AsyncSession, exp_id: int) -> ExperienceVO:
-        mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, exp_id)
+    async def delete_experience_by_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
+        mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, language)
         if mentor_exp is None:
-            raise NotFoundException(msg=f"No experience with id {exp_id}")
+            raise NotFoundException(msg=f"No experience with user_id {user_id}")
         return self.convert_model_to_vo(mentor_exp)
 
     def convert_model_to_vo(self, model: MentorExperience) -> ExperienceVO:
