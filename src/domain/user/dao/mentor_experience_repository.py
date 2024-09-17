@@ -51,7 +51,6 @@ class MentorExperienceRepository:
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
         if mentor_exp is not None:
             await db.delete(mentor_exp)
-            await db.commit()
         return mentor_exp
 
     def convert_exp_to_dto(self, model: MentorExperience):
