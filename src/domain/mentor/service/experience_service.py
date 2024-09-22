@@ -7,7 +7,6 @@ from src.config.exception import NotFoundException
 from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
-from src.infra.util.transaction_util import async_transactional
 
 
 class ExperienceService:
@@ -32,7 +31,6 @@ class ExperienceService:
 
         return res
 
-    @async_transactional(AsyncSession)
     async def delete_experience_by_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, language)
         if mentor_exp is None:
