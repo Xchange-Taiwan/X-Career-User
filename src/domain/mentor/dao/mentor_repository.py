@@ -22,44 +22,41 @@ class MentorRepository:
         # join MentorExperience 有存在的才返回
         return self.convert_mentor_profile_to_dto(mentor)
 
-    async def get_mentor_profiles_by_conditions(self, db: AsyncSession, dto: MentorProfileDTO) \
-            -> List[MentorProfileDTO]:
-        dto_dict = dict(dto.__dict__)
+    async def get_mentor_profiles_by_conditions(self, db: AsyncSession, dto: MentorProfileDTO) -> List[
+        MentorProfileDTO]:
+        # Convert DTO to dictionary for dynamic filtering
+        dto_dict = {key: value for key, value in dto.__dict__.items() if value is not None}
 
-        query: Select = select(Profile)
-        if dto_dict.get('name') is not None:
-            query = query.filter(Profile.name == dto.name)
-        if dto_dict.get('language') is not None:
-            query = query.filter(Profile.language == dto.language)
-        if dto_dict.get('location') is not None:
-            query = query.filter(Profile.location.like('%' + dto.location + '%'))
-        if dto_dict.get('about') is not None:
-            query = query.filter(Profile.about.like('%' + dto.about + '%'))
-        if dto_dict.get('personal_statement') is not None:
-            query = query.filter(Profile.about.like('%' + dto.personal_statement + '%'))
-        if dto_dict.get('seniority_level') is not None:
-            query = query.filter(Profile.seniority_level == dto.seniority_level)
-        if dto_dict.get('industry') is not None:
-            query = query.filter(Profile.industry == dto.industry)
-        if dto_dict.get('position') is not None:
-            query = query.filter(Profile.position == dto.position)
-        if dto_dict.get('company') is not None:
-            query = query.filter(Profile.company == dto.company)
-        if dto_dict.get('experience') is not None:
-            query = query.filter(Profile.experience >= dto.experience)
+        # Base query
+        query = select(Profile)
 
-        if dto_dict.get('skills') is not None:
-            query = query.filter(
-                func.cast(func.jsonb_array_elements_text(Profile.skills), Integer).any_(dto.skills)
-            )
-        if dto_dict.get('topics') is not None:
-            query = query.filter(
-                func.cast(func.jsonb_array_elements_text(Profile.topics), Integer).any_(dto.topics)
-            )
-        if dto_dict.get('expertises') is not None:
-            query = query.filter(
-                func.cast(func.jsonb_array_elements_text(Profile.expertises), Integer).any_(dto.expertises)
-            )
+        # Simple equality filters
+        filters = {
+            'name': Profile.name,
+            'language': Profile.language,
+            'seniority_level': Profile.seniority_level,
+            'industry': Profile.industry,
+            'position': Profile.position,
+            'company': Profile.company,
+            'experience': Profile.experience
+        }
+        for field, column in filters.items():
+            if field in dto_dict:
+                query = query.filter(column == dto_dict[field])
+
+        # JSON array fields with 'any' filtering
+        jsonb_filters = {
+            'skills': Profile.skills,
+            'topics': Profile.topics,
+            'expertises': Profile.expertises
+        }
+        for field, column in jsonb_filters.items():
+            if field in dto_dict:
+                query = query.filter(
+                    func.cast(func.jsonb_array_elements_text(column), Integer).any_(dto_dict[field])
+                )
+
+        # Execute query and convert results to DTOs
         profiles = await get_all_template(db, query)
         return [convert_model_to_dto(profile, MentorProfileDTO) for profile in profiles]
 

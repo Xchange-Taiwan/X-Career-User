@@ -15,33 +15,24 @@ class ExperienceService:
 
     async def get_exp_by_exp_id_and_language(self, db: AsyncSession, exp_id: int, language: str) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_id(db, exp_id)
-        return self.convert_model_to_vo(mentor_exp)
+        return ExperienceVO.of(mentor_exp)
 
     async def get_exp_by_user_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_user_id(db, user_id)
-        return self.convert_model_to_vo(mentor_exp)
+        return ExperienceVO.of(mentor_exp)
 
-    async def upsert_experience(self, db: AsyncSession, experience_dto: ExperienceDTO, user_id: int,
-                                exp_cate: ExperienceCategory) -> ExperienceVO:
+    async def upsert_exp(self, db: AsyncSession, experience_dto: ExperienceDTO, user_id: int,
+                         exp_cate: ExperienceCategory) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.upsert_mentor_exp_by_user_id(db=db,
                                                                                          mentor_exp_dto=experience_dto,
                                                                                          user_id=user_id,
                                                                                          exp_cate=exp_cate)
-        res: ExperienceVO = self.convert_model_to_vo(mentor_exp)
+        res: ExperienceVO = ExperienceVO.of(mentor_exp)
 
         return res
 
-    async def delete_experience_by_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
+    async def delete_exp_by_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, language)
         if mentor_exp is None:
             raise NotFoundException(msg=f"No experience with user_id {user_id}")
-        return self.convert_model_to_vo(mentor_exp)
-
-    def convert_model_to_vo(self, model: MentorExperience) -> ExperienceVO:
-        user_id: int = model.user_id
-        language: str = model.language
-        desc: Dict = model.desc
-        order: int = model.order
-        cate: ExperienceCategory = model.category
-
-        return ExperienceVO(user_id=user_id, language=language, desc=desc, order=order, category=cate)
+        return ExperienceVO.of(mentor_exp)

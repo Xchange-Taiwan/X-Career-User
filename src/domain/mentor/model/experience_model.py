@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel
 
 from ....config.constant import *
+from ....infra.db.orm.init.user_init import MentorExperience
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -22,6 +23,20 @@ class ExperienceVO(BaseModel):
     language: str
     desc: Dict
     order: int
+
+
+    @staticmethod
+    def of(self, mentor_exp: MentorExperience):
+        vo = ExperienceVO()
+        vo.user_id = mentor_exp.user_id
+        vo.category = mentor_exp.category
+        vo.language = mentor_exp.language
+        vo.desc = mentor_exp.desc
+        vo.order = mentor_exp.order
+        return vo
+
+
+
 
 
 class ExperienceListVO(BaseModel):
