@@ -56,7 +56,6 @@ CREATE TABLE mentor_experiences (
     user_id INTEGER NOT NULL,
     category EXPERIENCE_CATEGORY NOT NULL,
     "order" INT NOT NULL,
-    "language" varchar(10),
     'desc' JSONB,
     mentor_experiences_metadata JSONB
     --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)

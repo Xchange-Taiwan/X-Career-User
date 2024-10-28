@@ -1,3 +1,5 @@
+from profile import Profile
+
 import sqlalchemy.dialects.postgresql
 from sqlalchemy import Integer, Column, String, types
 from sqlalchemy.dialects.postgresql import JSONB
@@ -6,10 +8,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
+from src.domain.user.model.user_model import ProfileDTO
 
 Base = declarative_base()
-
-
 
 
 class Profile(Base):
@@ -23,7 +24,8 @@ class Profile(Base):
     personal_statement = Column(String, default='')
     about = Column(String, default='')
     company = Column(String, default='')
-    seniority_level = Column(sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
+    seniority_level = Column(
+        sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
     timezone = Column(Integer, default=0)
     experience = Column(Integer, default=0)
     industry = Column(Integer)
@@ -33,13 +35,30 @@ class Profile(Base):
     topics = Column(JSONB)
     expertises = Column(JSONB)
 
+    # static of function for get user profile
+    @staticmethod
+    def of(dto: ProfileDTO):
+        profile: Profile = Profile()
+        profile.user_id = dto.user_id
+        profile.name = dto.name
+        profile.avatar = dto.avatar
+        profile.timezone = dto.timezone
+        profile.industry = dto.industry
+        profile.position = dto.position
+        profile.company = dto.company
+        profile.linkedin_profile = dto.linkedin_profile
+        profile.interested_positions = dto.interested_positions
+        profile.skills = dto.skills
+        profile.topics = dto.topics
+        return profile
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, primary_key=True)
-    language = Column(String, nullable=False)
-    category = Column(sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False), nullable=False)
+    user_id = Column(Integer)
+    category = Column(
+        sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False),
+        nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
     mentor_experiences_metadata = Column(JSONB)

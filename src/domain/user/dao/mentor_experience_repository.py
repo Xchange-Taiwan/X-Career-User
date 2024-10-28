@@ -18,14 +18,12 @@ class MentorExperienceRepository:
             mentor_exp.user_id = user_id
             mentor_exp.order = mentor_exp_dto.order
             mentor_exp.category = exp_cate
-            mentor_exp.language = mentor_exp_dto.language
             mentor_exp.desc = mentor_exp_dto.desc
             db.add(mentor_exp)
 
         else:
             mentor_exp.order = mentor_exp_dto.order
             mentor_exp.category = exp_cate
-            mentor_exp.language = mentor_exp_dto.language
             mentor_exp.desc = mentor_exp_dto.desc
             await db.merge(mentor_exp)
         await db.commit()
@@ -46,8 +44,7 @@ class MentorExperienceRepository:
         return mentor_exp
 
     async def delete_mentor_exp_by_id(self, db: AsyncSession, user_id: int, language: str) -> MentorExperience:
-        stmt: Select = select(MentorExperience).filter(MentorExperience.user_id == user_id,
-                                                       MentorExperience.language == language)
+        stmt: Select = select(MentorExperience).filter(MentorExperience.user_id == user_id)
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
         if mentor_exp is not None:
             await db.delete(mentor_exp)

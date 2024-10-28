@@ -62,7 +62,7 @@ async def get_mentor_profile(
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
-            responses=idempotent_response('upsert_experience', experience.ExperienceVO))
+            responses=idempotent_response('upsert_exp', experience.ExperienceVO))
 async def upsert_experience(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
@@ -70,8 +70,8 @@ async def upsert_experience(
         body: experience.ExperienceDTO = Body(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.upsert_experience(db=db, experience_dto=body, user_id=user_id,
-                                                                       exp_cate=experience_type)
+    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db, experience_dto=body, user_id=user_id,
+                                                                exp_cate=experience_type)
     return res_success(data=res.json())
 
 
@@ -83,7 +83,7 @@ async def delete_experience(
         language: str = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.delete_experience_by_id(db, user_id, language)
+    res: experience.ExperienceVO = await exp_service.delete_exp_by_id(db, user_id, language)
 
     return res_success(data=res.json())
 

@@ -11,7 +11,6 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 class ExperienceDTO(BaseModel):
     user_id: Optional[int]
-    language: str
     desc: Dict
     order: int
 
@@ -20,17 +19,15 @@ class ExperienceDTO(BaseModel):
 class ExperienceVO(BaseModel):
     user_id: int
     category: ExperienceCategory
-    language: str
     desc: Dict
     order: int
 
 
     @staticmethod
-    def of(self, mentor_exp: MentorExperience):
+    def of(mentor_exp: MentorExperience):
         vo = ExperienceVO()
         vo.user_id = mentor_exp.user_id
         vo.category = mentor_exp.category
-        vo.language = mentor_exp.language
         vo.desc = mentor_exp.desc
         vo.order = mentor_exp.order
         return vo
