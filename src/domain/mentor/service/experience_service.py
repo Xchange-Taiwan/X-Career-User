@@ -31,8 +31,8 @@ class ExperienceService:
 
         return res
 
-    async def delete_exp_by_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
-        mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, language)
+    async def delete_exp_by_id(self, db: AsyncSession, user_id: int) -> ExperienceVO:
+        mentor_exp: MentorExperience = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id)
         if mentor_exp is None:
             raise NotFoundException(msg=f"No experience with user_id {user_id}")
         return ExperienceVO.of(mentor_exp)

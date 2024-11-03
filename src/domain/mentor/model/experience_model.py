@@ -15,25 +15,16 @@ class ExperienceDTO(BaseModel):
     order: int
 
 
-
 class ExperienceVO(BaseModel):
     user_id: int
     category: ExperienceCategory
     desc: Dict
     order: int
 
-
     @staticmethod
     def of(mentor_exp: MentorExperience):
-        vo = ExperienceVO()
-        vo.user_id = mentor_exp.user_id
-        vo.category = mentor_exp.category
-        vo.desc = mentor_exp.desc
-        vo.order = mentor_exp.order
-        return vo
-
-
-
+        return ExperienceVO(user_id=mentor_exp.user_id, category=mentor_exp.category, desc=mentor_exp.desc,
+                            order=mentor_exp.order)
 
 
 class ExperienceListVO(BaseModel):

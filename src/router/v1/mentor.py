@@ -75,15 +75,14 @@ async def upsert_experience(
     return res_success(data=res.json())
 
 
-@router.delete('/{user_id}/experiences/{experience_type}/{experience_id}/{language}',
+@router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
                responses=idempotent_response('delete_experience', experience.ExperienceVO))
 async def delete_experience(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
-        language: str = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.delete_exp_by_id(db, user_id, language)
+    res: experience.ExperienceVO = await exp_service.delete_exp_by_id(db, user_id)
 
     return res_success(data=res.json())
 
