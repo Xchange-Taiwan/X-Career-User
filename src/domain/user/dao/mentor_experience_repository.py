@@ -15,12 +15,17 @@ class MentorExperienceRepository:
 
         if mentor_exp is None:
             mentor_exp = MentorExperience()
+            mentor_exp.user_id = user_id
+            mentor_exp.order = mentor_exp_dto.order
+            mentor_exp.category = exp_cate
+            mentor_exp.desc = mentor_exp_dto.desc
+            db.add(mentor_exp)
 
-        mentor_exp.user_id = user_id
-        mentor_exp.desc = mentor_exp_dto.desc
-        mentor_exp.order = mentor_exp_dto.order
-        mentor_exp.category = exp_cate
-        await db.merge(mentor_exp)
+        else:
+            mentor_exp.order = mentor_exp_dto.order
+            mentor_exp.category = exp_cate
+            mentor_exp.desc = mentor_exp_dto.desc
+            await db.merge(mentor_exp)
         await db.commit()
         await db.refresh(mentor_exp)  # commit後要重讀一次db 不然會沒有值
 
@@ -38,8 +43,8 @@ class MentorExperienceRepository:
 
         return mentor_exp
 
-    async def delete_mentor_exp_by_id(self, db: AsyncSession, exp_id: int) -> MentorExperience:
-        stmt: Select = select(MentorExperience).filter(MentorExperience.id == exp_id)
+    async def delete_mentor_exp_by_id(self, db: AsyncSession, user_id: int) -> MentorExperience:
+        stmt: Select = select(MentorExperience).filter(MentorExperience.user_id == user_id)
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
         if mentor_exp is not None:
             await db.delete(mentor_exp)
@@ -48,7 +53,7 @@ class MentorExperienceRepository:
 
     def convert_exp_to_dto(self, model: MentorExperience):
         res: ExperienceDTO = ExperienceDTO()
-        res.id = model.id
+        res.user_id = model.id
         res.category = model.category
         res.order = model.order
         res.desc = model.desc

@@ -23,7 +23,6 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class MentorProfileDTO(ProfileDTO):
-
     location: Optional[str]
     personal_statement: Optional[str]
     about: Optional[str]

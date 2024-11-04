@@ -1,33 +1,21 @@
-from sqlalchemy import Integer, Column, String, types, ForeignKey, Boolean
+from profile import Profile
+
+import sqlalchemy.dialects.postgresql
+from sqlalchemy import Integer, Column, String, types
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
-    ExperienceCategory, AccountType
+    ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
-import sqlalchemy.dialects.postgresql
+from src.domain.user.model.user_model import ProfileDTO
 
 Base = declarative_base()
 
 
-class Account(Base):
-    __tablename__ = 'accounts'
-    aid = Column(Integer, primary_key=True)
-    email1 = Column(String, nullable=False)
-    email2 = Column(String)
-    pass_hash = Column(String)
-    pass_salt = Column(String)
-    oauth_id = Column(String)
-    refresh_token = Column(String)
-    user_id = Column(Integer, unique=True)
-    type = Column(type_=types.Enum(AccountType))
-    is_active = Column(Boolean)
-    region = Column(String)
-
-
 class Profile(Base):
     __tablename__ = 'profiles'
-    user_id = Column(Integer, ForeignKey('accounts.user_id'), primary_key=True)
+    user_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
     location = Column(String, default='')
@@ -36,23 +24,44 @@ class Profile(Base):
     personal_statement = Column(String, default='')
     about = Column(String, default='')
     company = Column(String, default='')
-    seniority_level = Column(sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
+    seniority_level = Column(
+        sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
     timezone = Column(Integer, default=0)
     experience = Column(Integer, default=0)
     industry = Column(Integer)
+    language = Column(String, default='')
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
     topics = Column(JSONB)
     expertises = Column(JSONB)
 
+    # static of function for get user profile
+    @staticmethod
+    def of(dto: ProfileDTO):
+        profile: Profile = Profile()
+        profile.user_id = dto.user_id
+        profile.name = dto.name
+        profile.avatar = dto.avatar
+        profile.timezone = dto.timezone
+        profile.industry = dto.industry
+        profile.position = dto.position
+        profile.company = dto.company
+        profile.linkedin_profile = dto.linkedin_profile
+        profile.interested_positions = dto.interested_positions
+        profile.skills = dto.skills
+        profile.topics = dto.topics
+        return profile
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
-    category = Column(sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False), nullable=False)
+    user_id = Column(Integer)
+    category = Column(
+        sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False),
+        nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
+    mentor_experiences_metadata = Column(JSONB)
     # profile = relationship("Profile", backref="mentor_experiences")
 
 
@@ -62,12 +71,13 @@ class Profession(Base):
     category = Column(type_=types.Enum(ProfessionCategory))
     subject = Column(String)
     profession_metadata = Column(JSONB)
+    language = Column(String, nullable=False)
 
 
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
     type = Column(type_=types.Enum(SchedulesType))
     year = Column(Integer, default=-1)
     month = Column(Integer, default=-1)
@@ -83,7 +93,7 @@ class MentorSchedule(Base):
 class CannedMessage(Base):
     __tablename__ = 'canned_message'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
     role = Column(type_=types.Enum(RoleType), nullable=False)
     message = Column(String)
     # profile = relationship("Profile", backref="canned_message")
@@ -92,8 +102,8 @@ class CannedMessage(Base):
 class Reservation(Base):
     __tablename__ = 'reservations'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('profiles.user_id'), nullable=False)
-    mentor_schedules_id = Column(Integer, ForeignKey('mentor_schedules.mentor_schedules_id'), nullable=False)
+    user_id = Column(Integer, nullable=False)
+    mentor_schedules_id = Column(Integer, nullable=False)
     start_datetime = Column(Integer)
     end_datetime = Column(Integer)
     my_status = Column(name="my_status", type_=types.Enum(BookingStatus))
@@ -110,3 +120,4 @@ class Interest(Base):
     category = Column(type_=types.Enum(InterestCategory))
     subject = Column(String)
     desc = Column(JSONB)
+    language = Column(String, nullable=False)

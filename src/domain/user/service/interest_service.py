@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import Type
 
 from src.config.constant import InterestCategory
-from src.config.exception import NotFoundException
 from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.user.model.common_model import InterestListVO, InterestVO
 from src.infra.db.orm.init.user_init import Interest
@@ -36,7 +35,7 @@ class InterestService:
         return interests
 
     def convert_to_interest_vo(self, dto: Optional[Type[Interest]]) -> InterestVO:
-        if not dto:
-            raise NotFoundException(msg="no data found")
+        if dto is None:
+            return None
         res = InterestVO(**dict(dto.__dict__))
         return res

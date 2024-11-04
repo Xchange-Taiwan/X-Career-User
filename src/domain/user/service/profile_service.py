@@ -29,7 +29,8 @@ class ProfileService:
         return await self.__profile_repository.get_profiles_by_conditions(db, dto)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
-        return await self.convert_to_profile_vo(db, await self.__profile_repository.upsert_profile(db, dto))
+        res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(db, dto)
+        return await self.convert_to_profile_vo(db, res)
 
     async def convert_to_profile_vo(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         if dto is None:

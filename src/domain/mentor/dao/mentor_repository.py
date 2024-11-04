@@ -10,69 +10,92 @@ from src.infra.util.convert_util import convert_model_to_dto, convert_dto_to_mod
 
 class MentorRepository:
 
-    def __init__(self):
-        self.stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
-
     async def get_all_mentor_profile(self, db: AsyncSession) -> List[MentorProfileDTO]:
-        stmt: Select = self.stmt
+        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
         mentors: List[Profile] = await get_all_template(db, stmt)
         return [convert_model_to_dto(mentor, MentorProfileDTO) for mentor in mentors]
 
-    async def get_mentor_profile_by_id(self, db: AsyncSession, mentor_id: int) -> MentorProfileDTO:
-
-        stmt: Select = self.stmt.filter(Profile.user_id == mentor_id)
+    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, mentor_id: int,
+                                                    language: str) -> MentorProfileDTO:
+        stmt: Select = select(Profile).filter(Profile.user_id == mentor_id, Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
         return self.convert_mentor_profile_to_dto(mentor)
 
     async def get_mentor_profiles_by_conditions(self, db: AsyncSession, dto: MentorProfileDTO) -> List[
         MentorProfileDTO]:
-        dto_dict = dict(dto.__dict__)
+        # Convert DTO to dictionary for dynamic filtering
+        dto_dict = {key: value for key, value in dto.__dict__.items() if value is not None}
 
-        query: Select = select(Profile)
-        if dto_dict.get('name'):
-            query = query.filter(Profile.name == dto.name)
-        if dto_dict.get('location'):
-            query = query.filter(Profile.location.like('%' + dto.location + '%'))
-        if dto_dict.get('about'):
-            query = query.filter(Profile.about.like('%' + dto.about + '%'))
-        if dto_dict.get('personal_statement'):
-            query = query.filter(Profile.about.like('%' + dto.personal_statement + '%'))
-        if dto_dict.get('seniority_level'):
-            query = query.filter(Profile.seniority_level == dto.seniority_level)
-        if dto_dict.get('industry'):
-            query = query.filter(Profile.industry == dto.industry)
-        if dto_dict.get('position'):
-            query = query.filter(Profile.position == dto.position)
-        if dto_dict.get('company'):
-            query = query.filter(Profile.company == dto.company)
-        if dto_dict.get('experience'):
-            query = query.filter(Profile.experience >= dto.experience)
+        # Base query
+        query = select(Profile)
 
-        if dto_dict.get('skills'):
-            query = query.filter(
-                func.cast(func.jsonb_array_elements_text(Profile.skills), Integer).any_(dto.skills)
-            )
-        if dto_dict.get('topics'):
-            query = query.filter(
-                func.cast(func.jsonb_array_elements_text(Profile.topics), Integer).any_(dto.topics)
-            )
-        if dto_dict.get('expertises'):
-            query = query.filter(
-                func.cast(func.jsonb_array_elements_text(Profile.expertises), Integer).any_(dto.expertises)
-            )
+        # Simple equality filters
+        filters = {
+            'name': Profile.name,
+            'language': Profile.language,
+            'seniority_level': Profile.seniority_level,
+            'industry': Profile.industry,
+            'position': Profile.position,
+            'company': Profile.company,
+            'experience': Profile.experience
+        }
+        for field, column in filters.items():
+            if field in dto_dict:
+                query = query.filter(column == dto_dict[field])
+
+        # JSON array fields with 'any' filtering
+        jsonb_filters = {
+            'skills': Profile.skills,
+            'topics': Profile.topics,
+            'expertises': Profile.expertises
+        }
+        for field, column in jsonb_filters.items():
+            if field in dto_dict:
+                query = query.filter(
+                    func.cast(func.jsonb_array_elements_text(column), Integer).any_(dto_dict[field])
+                )
+
+        # Execute query and convert results to DTOs
         profiles = await get_all_template(db, query)
         return [convert_model_to_dto(profile, MentorProfileDTO) for profile in profiles]
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
-        mentor = convert_dto_to_model(mentor_profile_dto, Profile)
-        await db.merge(mentor)
-        res = convert_model_to_dto(mentor, MentorProfileDTO)
+        model: Profile = convert_dto_to_model(mentor_profile_dto, Profile)
+        if model.user_id is None or model.user_id == '':
+            # New entity, do auto increment
+            # Refresh the model when it an insert
+            db.add(model)
+            await db.commit()
+            # Refresh the model when it an insert
+            await db.refresh(model)
+        else:
+            # Check if the record exists
+            query = select(Profile).filter_by(user_id=model.user_id)
+            result = await db.execute(query)
+
+            existing_model = result.scalars().first()
+
+            if existing_model is not None:
+                # Update the existing model
+                for key, value in model.__dict__.items():
+                    if key != "_sa_instance_state":
+                        setattr(existing_model, key, value)
+                await db.merge(existing_model)
+                await db.commit()
+            else:
+                # Insert the new model
+                db.add(model)
+                await db.commit()
+                # Refresh the model when it an insert
+                await db.refresh(model)
+        res: MentorProfileDTO = convert_model_to_dto(model, MentorProfileDTO)
 
         return res
 
-    async def delete_mentor_profile_by_id(self, db: AsyncSession, user_id: int) -> None:
-        stmt: Select = self.stmt.filter(Profile.user_id == user_id)
+    async def delete_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) -> None:
+        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
+        stmt: Select = stmt.filter(Profile.user_id == user_id and Profile.language == language)
         mentor: Profile = await get_first_template(db, stmt)
 
         if mentor:
@@ -84,6 +107,7 @@ class MentorRepository:
         if model is None:
             return profile_dto
         profile_dto.user_id = model.user_id
+        profile_dto.language = model.language
         profile_dto.name = model.name
         profile_dto.avatar = model.avatar
         profile_dto.timezone = model.timezone
@@ -99,4 +123,5 @@ class MentorRepository:
         profile_dto.about = model.about
         profile_dto.experience = model.experience
         profile_dto.expertises = model.expertises
+        profile_dto.personal_statement = model.personal_statement
         return profile_dto

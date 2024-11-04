@@ -20,7 +20,7 @@ class ProfileDTO(BaseModel):
     interested_positions: Optional[List[int]]
     skills: Optional[List[int]]
     topics: Optional[List[int]]
-
+    language: Optional[str]
 
 class ProfileVO(BaseModel):
     user_id: int
@@ -34,3 +34,4 @@ class ProfileVO(BaseModel):
     interested_positions: Optional[InterestListVO] = []
     skills: Optional[InterestListVO] = []
     topics: Optional[InterestListVO] = []
+    language: Optional[str]

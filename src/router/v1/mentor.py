@@ -37,30 +37,32 @@ router = APIRouter(
 @router.put('/mentor_profile/create',
             responses=idempotent_response('upsert_mentor_profile', mentor.MentorProfileVO))
 async def upsert_mentor_profile(
+        db: AsyncSession = Depends(get_db),
         body: mentor.MentorProfileDTO = Body(...),
-        mentor_service: MentorService = Depends(get_mentor_service),
-        db: Session = Depends(get_db)
+        mentor_service: MentorService = Depends(get_mentor_service)
+
 ):
     # TODO: implement
     res: mentor.MentorProfileVO = await mentor_service.upsert_mentor_profile(db, body)
     return res_success(data=res.json())
 
 
-@router.get('/{user_id}/profile',
+@router.get('/{user_id}/{language}/profile',
             responses=idempotent_response('get_mentor_profile', MentorProfileVO))
 async def get_mentor_profile(
-        user_id: int = Path(...),
         db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
+        language: str = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id(db, user_id)
+    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language=language)
 
     return res_success(data=mentor_profile.json())
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
-            responses=idempotent_response('upsert_experience', experience.ExperienceVO))
+            responses=idempotent_response('upsert_exp', experience.ExperienceVO))
 async def upsert_experience(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
@@ -68,8 +70,8 @@ async def upsert_experience(
         body: experience.ExperienceDTO = Body(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.upsert_experience(db=db, experience_dto=body, user_id=user_id,
-                                                                       exp_cate=experience_type)
+    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db, experience_dto=body, user_id=user_id,
+                                                                exp_cate=experience_type)
     return res_success(data=res.json())
 
 
@@ -77,10 +79,10 @@ async def upsert_experience(
                responses=idempotent_response('delete_experience', experience.ExperienceVO))
 async def delete_experience(
         db: AsyncSession = Depends(get_db),
-        experience_id: int = Path(...),
+        user_id: int = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.delete_experience_by_id(db, experience_id)
+    res: experience.ExperienceVO = await exp_service.delete_exp_by_id(db, user_id)
 
     return res_success(data=res.json())
 

@@ -11,14 +11,14 @@
 #
 # Happy Coding!
 
-service: x-career-user
+service: X-Career-User
 # app and org for use with dashboard.serverless.com
-app: x-career-user
+app: X-Career-User
 #org: your-org-name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-#frameworkVersion: '3'
+frameworkVersion: '3'
 
 provider:
   name: aws
@@ -95,8 +95,7 @@ functions:
     - http:
         method: any
         path: /{proxy+}
-plugins:
-- serverless-python-requirements
+
 # hello:
 #   handler: handler.hello
 #    The following are a few example events you can configure
