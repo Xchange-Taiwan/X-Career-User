@@ -1,34 +1,54 @@
-CREATE TYPE SENIORITY_LEVEL AS ENUM('NO_REVEAL', 'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'STAFF', 'MANAGER');
-CREATE TYPE INTEREST_CATEGORY AS ENUM('INTERESTED_POSITION', 'SKILL', 'TOPIC');
-CREATE TYPE PROFESSION_CATEGORY AS ENUM('EXPERTISE', 'INDUSTRY');
-CREATE TYPE EXPERIENCE_CATEGORY AS ENUM('WORK', 'EDUCATION', 'LINK');
-CREATE TYPE SCHEDULE_TYPE AS ENUM('ALLOW', 'FORBIDDEN');
-CREATE TYPE BOOKING_STATUS AS ENUM('ACCEPT', 'PENDING', 'REJECT');
-CREATE TYPE ROLE_TYPE AS ENUM('MENTOR', 'MENTEE');
-CREATE TYPE industry_category AS ENUM (
-    'SOFTWARE',
-    'HARDWARE',
-    'SERVICE',
-    'FINANCE',
-    'OTHER'
-);
-CREATE TYPE account_type AS ENUM('XC', 'GOOGLE', 'LINKEDIN');
+DO $$ 
+BEGIN
+    -- 如果 'SENIORITY_LEVEL' 類型不存在，則創建它
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'seniority_level') THEN
+        CREATE TYPE SENIORITY_LEVEL AS ENUM('NO_REVEAL', 'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'STAFF', 'MANAGER');
+    END IF;
+    -- 重複此操作來處理其他類型
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'interest_category') THEN
+        CREATE TYPE INTEREST_CATEGORY AS ENUM('INTERESTED_POSITION', 'SKILL', 'TOPIC');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'profession_category') THEN
+        CREATE TYPE PROFESSION_CATEGORY AS ENUM('EXPERTISE', 'INDUSTRY');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'experience_category') THEN
+        CREATE TYPE EXPERIENCE_CATEGORY AS ENUM('WORK', 'EDUCATION', 'LINK');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'schedule_type') THEN
+        CREATE TYPE SCHEDULE_TYPE AS ENUM('ALLOW', 'FORBIDDEN');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'booking_status') THEN
+        CREATE TYPE BOOKING_STATUS AS ENUM('ACCEPT', 'PENDING', 'REJECT');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role_type') THEN
+        CREATE TYPE ROLE_TYPE AS ENUM('MENTOR', 'MENTEE');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'industry_category') THEN
+        CREATE TYPE INDUSTRY_CATEGORY AS ENUM('SOFTWARE', 'HARDWARE', 'SERVICE', 'FINANCE', 'OTHER');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_type') THEN
+        CREATE TYPE ACCOUNT_TYPE AS ENUM('XC', 'GOOGLE', 'LINKEDIN');
+    END IF;
+END $$;
 
 
-CREATE TABLE accounts (
-    aid SERIAL PRIMARY KEY,
-    email1 TEXT NOT NULL,
-    email2 TEXT,
-    pass_hash TEXT,
-    pass_salt TEXT,
-    oauth_id TEXT,
-    refresh_token TEXT,
-    user_id INTEGER UNIQUE,
-    type account_type,
-    is_active BOOL,
-    region TEXT
+CREATE TABLE IF NOT EXISTS accounts (
+    aid BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL, -- Email addresses are typically VARCHAR with a length constraint
+    email2 VARCHAR(255),                -- Same for the secondary email address
+    pass_hash VARCHAR(60),              -- Password hashes often have a fixed length (e.g., bcrypt is 60 characters)
+    pass_salt VARCHAR(60),              -- Assuming the salt is a fixed-length string (e.g., bcrypt salts are often 29 characters)
+    oauth_id VARCHAR(255),              -- OAuth IDs are usually strings but can have a variable length
+    refresh_token VARCHAR(255),         -- Refresh tokens are usually strings but can have a variable length
+    user_id BIGINT UNIQUE DEFAULT nextval('user_id_seq'),       -- Integer is fine for user IDs, keeping the UNIQUE constraint
+    account_type ACCOUNT_TYPE,          -- Assuming 'account_type' is an ENUM or a custom type
+    is_active BOOLEAN DEFAULT TRUE,     -- BOOLEAN is a more appropriate type for true/false values
+    region VARCHAR(50),                 -- Regions are typically short strings, so VARCHAR(50) should suffice
+    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
+    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
-CREATE TABLE profiles (
+
+CREATE TABLE IF NOT EXISTS profiles (
     user_id SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     avatar TEXT DEFAULT '',
@@ -46,31 +66,30 @@ CREATE TABLE profiles (
     skills JSONB,
     topics JSONB,
     expertises JSONB,
-    "language" varchar(10)
-    --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES accounts(user_id)
+    "language" VARCHAR(10)
 );
 
 
-CREATE TABLE mentor_experiences (
+CREATE TABLE IF NOT EXISTS mentor_experiences (
     "id" SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     category EXPERIENCE_CATEGORY NOT NULL,
     "order" INT NOT NULL,
-    'desc' JSONB,
+    "desc" JSONB,
     mentor_experiences_metadata JSONB
     --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
 
 
-CREATE TABLE professions (
+CREATE TABLE IF NOT EXISTS professions (
     "id" SERIAL PRIMARY KEY,
     category PROFESSION_CATEGORY ,
-    "language" varchar(10),
+    "language" VARCHAR(10),
     subject TEXT DEFAULT '',
     profession_metadata JSONB
 );
 
-CREATE TABLE mentor_schedules (
+CREATE TABLE IF NOT EXISTS mentor_schedules (
     "id" SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     "type" SCHEDULE_TYPE DEFAULT 'ALLOW',
@@ -87,7 +106,7 @@ CREATE TABLE mentor_schedules (
 
 CREATE INDEX mentor_schedule_index ON mentor_schedules("year", "month", day_of_month, day_of_week, start_time, end_time);
 
-CREATE TABLE canned_message (
+CREATE TABLE IF NOT EXISTS canned_message (
     "id" SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     "role" ROLE_TYPE NOT NULL,
@@ -95,7 +114,7 @@ CREATE TABLE canned_message (
     --,CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
 
-CREATE TABLE reservations (
+CREATE TABLE IF NOT EXISTS reservations (
     "id" SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     mentor_schedules_id INT NOT NULL,
@@ -111,13 +130,13 @@ CREATE TABLE reservations (
 
 CREATE INDEX reservations_index ON reservations(user_id, start_datetime, end_datetime);
 
-CREATE TABLE interests (
+CREATE TABLE IF NOT EXISTS interests (
     id SERIAL,
-    language VARCHAR(10),
+    "language" VARCHAR(10),
     category INTEREST_CATEGORY,
     subject TEXT,
     "desc" JSONB,
-    PRIMARY KEY (id, language)
+    PRIMARY KEY (id, "language")
 );
 
 
@@ -127,5 +146,5 @@ INSERT INTO public.interests
 values(1, 'ENG', 'INTERESTED_POSITION', 'TEST', '{}');
 
 INSERT INTO public.professions
-("id", category, subject, "professions_metadata")
+("id", category, subject, "profession_metadata")
 values(1, 'EXPERTISE', 'TEST', '{}');
