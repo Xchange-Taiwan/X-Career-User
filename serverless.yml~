@@ -11,14 +11,14 @@
 #
 # Happy Coding!
 
-service: X-Career-User
+service: x-career-user
 # app and org for use with dashboard.serverless.com
-app: X-Career-User
+app: x-career-user
 #org: your-org-name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: '3'
+#frameworkVersion: '3'
 
 provider:
   name: aws

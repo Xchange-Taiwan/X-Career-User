@@ -1,6 +1,9 @@
+#injection util
 # Dependency function to create DAO instance
 from fastapi import Depends
 
+from src.domain.file.dao.file_repository import FileRepository
+from src.domain.file.service.file_service import FileService
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
 from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
@@ -31,6 +34,10 @@ def get_profile_dao() -> ProfileRepository:
 
 def get_profession_dao() -> ProfessionRepository:
     return ProfessionRepository()
+
+
+def get_file_dao() -> FileRepository:
+    return FileRepository()
 
 
 def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao)) -> InterestService:
@@ -69,3 +76,7 @@ def get_interest_service(interest_dao: InterestRepository = Depends(get_interest
 
 def get_profession_service(profession_repository: ProfessionRepository = Depends(get_profession_dao)):
     return ProfessionService(profession_repository)
+
+
+def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
+    return FileService(file_repository)
