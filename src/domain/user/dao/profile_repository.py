@@ -49,9 +49,7 @@ class ProfileRepository:
             # New entity, do auto increment
             # Refresh the model when it an insert
             db.add(model)
-            await db.commit()
-            # Refresh the model when it an insert
-            await db.refresh(model)
+
         else:
             # Check if the record exists
             query = select(Profile).filter_by(user_id=model.user_id)
@@ -64,14 +62,10 @@ class ProfileRepository:
                 for key, value in model.__dict__.items():
                     if key != "_sa_instance_state":
                         setattr(existing_model, key, value)
-                await db.merge(existing_model)
-                await db.commit()
+
             else:
-                # Insert the new model
-                db.add(model)
-                await db.commit()
-                # Refresh the model when it an insert
-                await db.refresh(model)
+                raise NotFoundException(msg=f"No such user with id: {model.user_id}")
+
 
         return self.convert_profile_to_dto(model)
 
@@ -80,7 +74,6 @@ class ProfileRepository:
         mentor = get_first_template(db, stmt)
         if mentor:
             await db.delete(mentor)
-            await db.commit()
 
     def convert_dto_to_profile(self, dto: ProfileDTO) -> Profile:
         profile: Profile = Profile()
