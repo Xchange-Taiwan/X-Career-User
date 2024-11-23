@@ -9,10 +9,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, clas
 Base = declarative_base()
 
 
-async def get_db():
+async def get_db(auto_commit: bool = True):
     async with SessionLocal() as db:
         try:
             yield db
+            if auto_commit:
+                await db.commit()  # Automatically commit changes if `auto_commit` is True
         except Exception:
-            await db.rollback()
+            await db.rollback()  # Roll back on exception
             raise
+        finally:
+            await db.close()  # Ensure session is closed
