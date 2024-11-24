@@ -33,55 +33,49 @@ async def create_file_info(
     return res_success(data=res.json())
 
 
-@router.get('/all',
-            responses=idempotent_response('get_all_files_info', list[FileInfoVO]))
-async def get_all_files(
-        db: AsyncSession = Depends(get_db),
-        file_service: FileService = Depends(get_file_service)
-):
-    res: list[FileInfoVO] = await file_service.get_all_files(db)
-    return res_success(data=[r.json() for r in res])
-
-
-@router.get('/{file_id}',
+@router.get('/{user_id}/{file_id}',
             responses=idempotent_response('get_file_info_by_id', FileInfoVO))
-async def get_file_info(
+async def get_file_info_by_id(
         db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
         file_id: str = Path(...),
         file_service: FileService = Depends(get_file_service)
 ):
-    res: FileInfoVO = await file_service.get_file_info(db, file_id)
+    res: FileInfoVO = await file_service.get_file_info(db, user_id, file_id)
     return res_success(data=res.json())
 
 
-@router.delete('/{file_id}',
+@router.delete('/{user_id}/{file_id}',
                responses=idempotent_response('delete_file_info_by_id', bool))
-async def delete_file_info(
+async def delete_file_info_by_id(
         db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
         file_id: str = Path(...),
         file_service: FileService = Depends(get_file_service)
 ):
-    res: bool = await file_service.delete_file_info(db, file_id)
+    res: bool = await file_service.delete_file_info(db, user_id, file_id)
     return res_success(data=res)
 
 
-@router.get('/name/{filename}',
-            responses=idempotent_response('get_by_filename', FileInfoVO))
+@router.get('/{user_id}/name/{filename}',
+            responses=idempotent_response('get_file_info_by_filename', FileInfoVO))
 async def get_file_info_by_filename(
         db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
         filename: str = Path(...),
         file_service: FileService = Depends(get_file_service)
 ):
-    res: FileInfoVO = await file_service.get_file_info_by_filename(db, filename)
+    res: FileInfoVO = await file_service.get_file_info_by_filename(db, user_id, filename)
     return res_success(data=res.json())
 
 
-@router.put('/update',
-            responses=idempotent_response('update', FileInfoVO))
+@router.put('/{user_id}/update',
+            responses=idempotent_response('update_file_info', FileInfoVO))
 async def update_file_info(
         db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
         body: FileInfoDTO = Body(...),
         file_service: FileService = Depends(get_file_service)
 ):
-    res: FileInfoVO = await file_service.update_file_info(db, body)
+    res: FileInfoVO = await file_service.update_file_info(db, user_id, body)
     return res_success(data=res.json())

@@ -4,7 +4,7 @@ from datetime import timezone, datetime
 from typing import List
 
 from certifi import where
-from sqlalchemy import insert, Select
+from sqlalchemy import insert, Select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -21,30 +21,52 @@ class FileRepository:
         session.add(model)
         return model
 
-    async def get_file_info_by_id(self, session: AsyncSession, file_id: str)-> FileInfo:
-        stmt: Select = select(FileInfo).filter(FileInfo.file_id == file_id)
+    async def get_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfo:
+        stmt: Select = select(FileInfo).where(
+            and_(
+                FileInfo.create_user_id == user_id,
+                FileInfo.file_id == file_id,
+                ~FileInfo.is_deleted
+            )
+        )
         res: FileInfo = await get_first_template(session, stmt)
         return res
 
-    async def delete_file_info_by_id(self, session: AsyncSession, file_id: str) -> bool:
-        stmt: Select = select(FileInfo).filter(FileInfo.file_id == file_id)
+    async def delete_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> bool:
+        stmt: Select = select(FileInfo).where(
+            and_(
+                FileInfo.create_user_id == user_id,
+                FileInfo.file_id == file_id,
+                ~FileInfo.is_deleted
+            )
+        )
         res: FileInfo = await get_first_template(session, stmt)
         if res is None:
             return False
         res.is_deleted = True
         return True
 
-    async def get_all_files_info(self, session: AsyncSession) -> List[FileInfo]:
-        res = await get_all_template(session, select(FileInfo))
-        return res
-    async def get_by_filename(self, session: AsyncSession, file_name: str) -> FileInfo:
-        stmt: Select = select(FileInfo).filter(FileInfo.file_name == file_name)
+    async def get_by_filename(self, session: AsyncSession, user_id: int, file_name: str) -> FileInfo:
+        stmt: Select = select(FileInfo).where(
+            and_(
+                FileInfo.create_user_id == user_id,
+                FileInfo.file_name == file_name,
+                ~FileInfo.is_deleted
+            )
+        )
         res: FileInfo = await get_first_template(session, stmt)
         return res
 
     # update
-    async def update(self, session: AsyncSession, file_info_dto: FileInfoDTO) -> FileInfo:
-        stmt = select(FileInfo).where(FileInfo.file_id == file_info_dto.file_id)
+    async def update(self, session: AsyncSession, user_id: int, file_info_dto: FileInfoDTO) -> FileInfo:
+        stmt = select(FileInfo).where(
+            and_(
+                FileInfo.create_user_id == user_id,
+                FileInfo.file_id == file_info_dto.file_id,
+                FileInfo.create_user_id == user_id,
+                ~FileInfo.is_deleted
+            )
+        )
         result = await session.execute(stmt)
         model: FileInfo = result.scalar_one_or_none()
         if model is not None:
@@ -53,6 +75,7 @@ class FileRepository:
             model.update_time = datetime.now(timezone.utc)
             model.is_deleted = file_info_dto.is_deleted
             model.content_type = file_info_dto.content_type
+            model.url = file_info_dto.url
             return model
         else:
             raise NotFoundException(msg="File not found", code="40400", data=False)

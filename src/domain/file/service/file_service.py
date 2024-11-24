@@ -17,27 +17,27 @@ class FileService:
         res: FileInfoDTO = await self.file_repository.insert(session, file_info)
         return FileInfoVO.of(res)
 
-    async def get_file_info(self, session: AsyncSession, file_id: str) -> FileInfoVO:
-        file_info = await self.file_repository.get_file_info_by_id(session, file_id)
+    async def get_file_info(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfoVO:
+        file_info = await self.file_repository.get_file_info_by_id(session, user_id, file_id)
         if not file_info:
             raise NotFoundException(msg="File not found", code="40400", data=False)
         return FileInfoVO.of(file_info)
 
-    async def delete_file_info(self, session: AsyncSession, file_id: str) -> bool:
-        return await self.file_repository.delete_file_info_by_id(session, file_id)
+    async def delete_file_info(self, session: AsyncSession, user_id: int, file_id: str) -> bool:
+        return await self.file_repository.delete_file_info_by_id(session, user_id, file_id)
 
-    async def get_all_files(self, session: AsyncSession) -> List[FileInfoVO]:
-        res: List[FileInfoDTO] = await self.file_repository.get_all_files_info(session)
-        return [FileInfoVO.of(r) for r in res]
+    # async def get_all_files(self, session: AsyncSession) -> List[FileInfoVO]:
+    #     res: List[FileInfoDTO] = await self.file_repository.get_all_files_info(session)
+    #     return [FileInfoVO.of(r) for r in res]
 
-    async def get_file_info_by_filename(self, session: AsyncSession, file_name: str) -> FileInfoVO:
-        file_info = await self.file_repository.get_by_filename(session, file_name)
+    async def get_file_info_by_filename(self, session: AsyncSession, user_id: int, file_name: str) -> FileInfoVO:
+        file_info = await self.file_repository.get_by_filename(session, user_id, file_name)
         if not file_info:
             raise NotFoundException(msg="File not found", code="40400", data=False)
         return FileInfoVO.of(file_info)
 
-    async def update_file_info(self, session: AsyncSession, file_info: FileInfoDTO) -> FileInfoVO:
-        update_res = await self.file_repository.update(session, file_info)
+    async def update_file_info(self, session: AsyncSession, user_id: int, file_info: FileInfoDTO) -> FileInfoVO:
+        update_res = await self.file_repository.update(session, user_id, file_info)
         file_info = FileInfoDTO.of(update_res)
 
         return FileInfoVO.of(file_info)

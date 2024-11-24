@@ -16,6 +16,7 @@ class FileInfoDTO(BaseModel):
     url: Optional[HttpUrl] = "http://example.com"  # Validates URL if provided
     create_time: Optional[datetime] = datetime.now(timezone.utc)
     update_time: Optional[datetime] = datetime.now(timezone.utc)
+    create_user_id: int
     is_deleted: bool = False
 
     @staticmethod
@@ -26,6 +27,7 @@ class FileInfoDTO(BaseModel):
             file_size=model.file_size,
             content_type=model.content_type,
             url=model.url,
+            create_user_id=model.create_user_id,
             create_time=model.create_time,
             update_time=model.update_time,
             is_deleted=model.is_deleted
@@ -40,6 +42,7 @@ class FileInfoVO(BaseModel):
     url: Optional[HttpUrl] = None  # Validates URL if provided
     create_time: datetime
     update_time: datetime
+    create_user_id: int
     is_deleted: bool = False
     @staticmethod
     def of(model: FileInfoDTO):
@@ -49,6 +52,7 @@ class FileInfoVO(BaseModel):
             file_size=model.file_size,
             content_type=model.content_type,
             url=model.url,
+            create_user_id=model.create_user_id,
             create_time=model.create_time,
             update_time=model.update_time,
             is_deleted=model.is_deleted
