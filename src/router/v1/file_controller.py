@@ -1,3 +1,6 @@
+import json
+from typing import List
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,7 +11,7 @@ import logging as log
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..res.response import *
-from ...domain.file.model.file_model import FileInfoDTO, FileInfoVO
+from ...domain.file.model.file_model import FileInfoDTO, FileInfoVO, FileInfoListVO
 from ...domain.file.service.file_service import FileService
 from ...infra.databse import get_db
 from ...infra.util.injection_util import get_file_service
@@ -57,15 +60,15 @@ async def delete_file_info_by_id(
     return res_success(data=res)
 
 
-@router.get('/{user_id}/name/{filename}',
-            responses=idempotent_response('get_file_info_by_filename', FileInfoVO))
+@router.get('/{user_id}',
+            responses=idempotent_response('get_file_info_by_user_id', List[FileInfoVO]))
 async def get_file_info_by_filename(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
-        filename: str = Path(...),
         file_service: FileService = Depends(get_file_service)
 ):
-    res: FileInfoVO = await file_service.get_file_info_by_filename(db, user_id, filename)
+    res: FileInfoListVO = await file_service.get_file_info_by_user_id(db, user_id)
+
     return res_success(data=res.json())
 
 

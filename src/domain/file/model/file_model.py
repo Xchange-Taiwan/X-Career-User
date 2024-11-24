@@ -1,6 +1,6 @@
 #file_dto
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import HttpUrl, BaseModel, UUID4
 from sqlalchemy import String
@@ -9,7 +9,7 @@ from src.infra.db.orm.init.file_info_init import FileInfo
 
 
 class FileInfoDTO(BaseModel):
-    file_id: Optional[UUID4] # uuid
+    file_id: Optional[UUID4]  # uuid
     file_name: str
     file_size: int
     content_type: Optional[str] = None
@@ -44,6 +44,7 @@ class FileInfoVO(BaseModel):
     update_time: datetime
     create_user_id: int
     is_deleted: bool = False
+
     @staticmethod
     def of(model: FileInfoDTO):
         return FileInfoVO(
@@ -57,3 +58,11 @@ class FileInfoVO(BaseModel):
             update_time=model.update_time,
             is_deleted=model.is_deleted
         )
+
+
+class FileInfoListVO(BaseModel):
+    file_info_vo_list: List[FileInfoVO]
+
+    @staticmethod
+    def of(model_list: List[FileInfo]):
+        return FileInfoListVO(file_info_vo_list=[FileInfoVO.of(file_info_dto) for file_info_dto in model_list])

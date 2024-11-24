@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from src.config.exception import NotFoundException
 from src.domain.file.dao.file_repository import FileRepository
-from src.domain.file.model.file_model import FileInfoDTO, FileInfoVO
+from src.domain.file.model.file_model import FileInfoDTO, FileInfoVO, FileInfoListVO
 
 
 class FileService:
@@ -30,11 +30,11 @@ class FileService:
     #     res: List[FileInfoDTO] = await self.file_repository.get_all_files_info(session)
     #     return [FileInfoVO.of(r) for r in res]
 
-    async def get_file_info_by_filename(self, session: AsyncSession, user_id: int, file_name: str) -> FileInfoVO:
-        file_info = await self.file_repository.get_by_filename(session, user_id, file_name)
-        if not file_info:
+    async def get_file_info_by_user_id(self, session: AsyncSession, user_id: int) -> FileInfoListVO:
+        file_info_list = await self.file_repository.get_by_user_id(session, user_id)
+        if not file_info_list:
             raise NotFoundException(msg="File not found", code="40400", data=False)
-        return FileInfoVO.of(file_info)
+        return FileInfoListVO.of(file_info_list)
 
     async def update_file_info(self, session: AsyncSession, user_id: int, file_info: FileInfoDTO) -> FileInfoVO:
         update_res = await self.file_repository.update(session, user_id, file_info)
