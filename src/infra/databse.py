@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from src.config.conf import DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, DB_HOST, DB_SCHEMA
+from src.config.conf import DB_USER, DB_PASSWORD, DB_PORT, DB_NAME, DB_HOST, DB_SCHEMA
 
 #DB_URL: str = 'postgresql+asyncpg://user_connection:pg_user_password@localhost:5432/Xchange_local'
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"

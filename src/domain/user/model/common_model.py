@@ -18,7 +18,7 @@ class InterestVO(BaseModel):
 
 class InterestListVO(BaseModel):
     interests: List[InterestVO] = []
-    language: Optional[str]
+    language: Optional[str] = None
 
 
 class ProfessionDTO(BaseModel):
