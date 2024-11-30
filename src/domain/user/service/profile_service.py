@@ -40,18 +40,9 @@ class ProfileService:
             await self.__interest_service.get_interest_by_ids(db, dto.interested_positions)
         skills: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.skills)
         topics: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.topics)
-
-        return ProfileVO(
-            user_id=dto.user_id,
-            name=dto.name,
-            avatar=dto.avatar,
-            timezone=dto.timezone,
-            industry=industry,
-            job_title=dto.job_title,
-            company=dto.company,
-            linkedin_profile=dto.linkedin_profile,
-            interested_positions=interested_positions,
-            skills=skills,
-            topics=topics,
-            language=dto.language
-        )
+        res: ProfileVO = ProfileVO.of(dto)
+        res.industry = industry
+        res.interested_positions = interested_positions
+        res.skills = skills
+        res.topics = topics
+        return res
