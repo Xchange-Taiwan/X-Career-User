@@ -36,7 +36,6 @@ async def upsert_profile(
         body: user.ProfileDTO = Body(...),
         profile_service: ProfileService = Depends(get_profile_service)
 ):
-    # TODO: implement
     res: user.ProfileVO = await profile_service.upsert_profile(db, body)
     return res_success(data=res.json())
 

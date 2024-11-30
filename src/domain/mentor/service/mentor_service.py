@@ -22,7 +22,6 @@ class MentorService:
     async def upsert_mentor_profile(self, db: AsyncSession, profile_dto: MentorProfileDTO) -> MentorProfileVO:
         res_dto: MentorProfileDTO = await self.__mentor_repository.upsert_mentor(db, profile_dto)
         res_vo: MentorProfileVO = await self.convert_to_mentor_profile_vo(db, res_dto)
-        await db.commit()
         return res_vo
 
     async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) \

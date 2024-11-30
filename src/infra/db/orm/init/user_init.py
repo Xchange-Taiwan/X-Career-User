@@ -52,6 +52,11 @@ class Profile(Base):
         profile.topics = dto.topics
         return profile
 
+    @staticmethod
+    def to_dto(model: Profile) -> ProfileDTO:
+        return ProfileDTO(**model.__dict__)
+
+
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)

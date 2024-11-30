@@ -52,5 +52,6 @@ class ProfileService:
             linkedin_profile=dto.linkedin_profile,
             interested_positions=interested_positions,
             skills=skills,
-            topics=topics
+            topics=topics,
+            language=dto.language
         )

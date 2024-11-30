@@ -62,7 +62,7 @@ async def delete_file_info_by_id(
 
 @router.get('/{user_id}',
             responses=idempotent_response('get_file_info_by_user_id', List[FileInfoVO]))
-async def get_file_info_by_filename(
+async def get_file_info_by_by_user_id(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
         file_service: FileService = Depends(get_file_service)

@@ -22,6 +22,7 @@ class ProfileDTO(BaseModel):
     topics: Optional[List[int]]
     language: Optional[str]
 
+
 class ProfileVO(BaseModel):
     user_id: int
     name: Optional[str]
@@ -35,3 +36,7 @@ class ProfileVO(BaseModel):
     skills: Optional[InterestListVO] = []
     topics: Optional[InterestListVO] = []
     language: Optional[str]
+
+    @staticmethod
+    def of(model: ProfileDTO) -> 'ProfileVO':
+        return ProfileVO(**model.model_dump())

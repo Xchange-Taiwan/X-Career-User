@@ -66,9 +66,6 @@ class MentorRepository:
             # New entity, do auto increment
             # Refresh the model when it an insert
             db.add(model)
-            await db.commit()
-            # Refresh the model when it an insert
-            await db.refresh(model)
         else:
             # Check if the record exists
             query = select(Profile).filter_by(user_id=model.user_id)
@@ -81,14 +78,10 @@ class MentorRepository:
                 for key, value in model.__dict__.items():
                     if key != "_sa_instance_state":
                         setattr(existing_model, key, value)
-                await db.merge(existing_model)
-                await db.commit()
+
             else:
                 # Insert the new model
                 db.add(model)
-                await db.commit()
-                # Refresh the model when it an insert
-                await db.refresh(model)
         res: MentorProfileDTO = convert_model_to_dto(model, MentorProfileDTO)
 
         return res
