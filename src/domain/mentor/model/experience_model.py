@@ -11,15 +11,15 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 class ExperienceDTO(BaseModel):
     user_id: Optional[int]
-    desc: Dict
-    order: int
+    desc: Dict = {}
+    order: int = 0
 
 
 class ExperienceVO(BaseModel):
     user_id: int
-    category: ExperienceCategory
-    desc: Dict
-    order: int
+    category: ExperienceCategory = None
+    desc: Dict = {}
+    order: int = 0
 
     @staticmethod
     def of(mentor_exp: MentorExperience):

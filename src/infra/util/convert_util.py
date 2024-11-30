@@ -7,8 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # model 跟 model 互轉的方法們，如果有特別需求請override
-def convert_model_to_dto(model_class: Any, dto_class: Type[BaseModel]):
-    return dto_class.parse_obj(dict(model_class.__dict__))
 
 
 def convert_dto_to_model(dto: BaseModel, model_class: Any, exclude: set = {}):

@@ -6,7 +6,6 @@ from fastapi import (
     Path, Body, Depends
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from src.domain.mentor.service.mentor_service import MentorService
 from ..res.response import *
@@ -56,7 +55,8 @@ async def get_mentor_profile(
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language=language)
+    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id,
+                                                                                                 language=language)
 
     return res_success(data=mentor_profile.json())
 
@@ -76,15 +76,15 @@ async def upsert_experience(
 
 
 @router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
-               responses=idempotent_response('delete_experience', experience.ExperienceVO))
+               responses=idempotent_response('delete_experience', bool))
 async def delete_experience(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.delete_exp_by_id(db, user_id)
+    res: bool = await exp_service.delete_exp_by_id(db, user_id)
 
-    return res_success(data=res.json())
+    return res_success(data=res)
 
 
 @router.get('/expertises',

@@ -8,6 +8,7 @@ from ....config.constant import *
 
 log.basicConfig(filemode='w', level=log.INFO)
 
+
 # class MentorProfileDTO(BaseModel):
 #     mentor_profile_id: Optional[int]
 #     avatar: Optional[str]
@@ -46,11 +47,35 @@ class CannedMessageDTO(BaseModel):
 
 
 class MentorProfileVO(ProfileVO):
-    personal_statement: Optional[str]
-    about: Optional[str]
+    personal_statement: Optional[str] = ""
+    about: Optional[str] = ""
     # TODO: enum
     seniority_level: Optional[SeniorityLevel] = ""
-    expertises: Optional[ProfessionListVO]
+    expertises: Optional[ProfessionListVO] = None
+
+    @staticmethod
+    def of(model: MentorProfileDTO) -> 'MentorProfileVO':
+        res = MentorProfileVO(
+            user_id=model.user_id,
+            name=model.name,
+            avatar=model.avatar,
+            location=model.location,
+            timezone=model.timezone,
+            industry=model.industry,
+            job_title=model.job_title,
+            company=model.company,
+            experience=model.experience,
+            linkedin_profile=model.linkedin_profile,
+            interested_positions=model.interested_positions,
+            skills=model.skills,
+            topics=model.topics,
+            language=model.language,
+            personal_statement=model.personal_statement,
+            about=model.about,
+            seniority_level=model.seniority_level,
+            expertises=None
+        )
+        return res
 
 
 class TimeSlotDTO(BaseModel):

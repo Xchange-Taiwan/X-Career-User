@@ -9,9 +9,9 @@ from src.infra.util.convert_util import get_all_template, get_first_template
 
 
 class ProfessionRepository:
-    async def get_profession_by_ids(self, db: AsyncSession, ids: List[int]) -> List[Type[Profession]]:
+    async def get_profession_by_ids(self, db: AsyncSession, ids: List[int]) -> List[Optional[Profession]]:
         stmt: Select = select(Profession).filter(Profession.id.in_(ids))
-        res: List[Type[Profession]] = await get_all_template(db, stmt)
+        res: List[Optional[Profession]] = await get_all_template(db, stmt)
         return res
 
     async def get_profession_by_id(self, db: AsyncSession, profession_id: int):

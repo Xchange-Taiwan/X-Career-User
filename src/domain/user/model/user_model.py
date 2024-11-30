@@ -12,11 +12,13 @@ class ProfileDTO(BaseModel):
     user_id: Optional[int]
     name: Optional[str] = ""
     avatar: Optional[str] = ""
-    timezone: Optional[int] = 0
-    industry: Optional[int] = 0
+    location: Optional[str] = ""
+    timezone: Optional[int] = None
+    industry: Optional[int] = None
     job_title: Optional[str] = ""
     company: Optional[str] = ""
-    linkedin_profile: Optional[str]
+    experience: Optional[int] = None
+    linkedin_profile: Optional[str] = ""
     interested_positions: Optional[List[int]] = []
     skills: Optional[List[int]] = []
     topics: Optional[List[int]] = []
@@ -24,17 +26,19 @@ class ProfileDTO(BaseModel):
 
 
 class ProfileVO(BaseModel):
-    user_id: int
+    user_id: Optional[int]
     name: Optional[str] = ""
     avatar: Optional[str] = ""
-    timezone: Optional[int] = 0
-    industry: Optional[ProfessionVO] = None
+    location: Optional[str] = ""
+    timezone: Optional[int] = None
+    industry: Optional[int] = None
     job_title: Optional[str] = ""
     company: Optional[str] = ""
+    experience: Optional[int] = None
     linkedin_profile: Optional[str] = ""
-    interested_positions: Optional[InterestListVO] = None
-    skills: Optional[InterestListVO] = None
-    topics: Optional[InterestListVO] = None
+    interested_positions: Optional[List[int]] = []
+    skills: Optional[List[int]] = []
+    topics: Optional[List[int]] = []
     language: Optional[str] = 'CHT'
 
     @staticmethod

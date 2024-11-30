@@ -8,6 +8,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
+from src.domain.mentor.model.mentor_model import MentorProfileDTO
+from src.domain.user.model.common_model import ProfessionVO
 from src.domain.user.model.user_model import ProfileDTO
 
 Base = declarative_base()
@@ -38,23 +40,21 @@ class Profile(Base):
     # static of function for get user profile
     @staticmethod
     def of(dto: ProfileDTO):
-        profile: Profile = Profile()
-        profile.user_id = dto.user_id
-        profile.name = dto.name
-        profile.avatar = dto.avatar
-        profile.timezone = dto.timezone
-        profile.industry = dto.industry
-        profile.job_title = dto.job_title
-        profile.company = dto.company
-        profile.linkedin_profile = dto.linkedin_profile
-        profile.interested_positions = dto.interested_positions
-        profile.skills = dto.skills
-        profile.topics = dto.topics
-        return profile
+        return Profile(**dto.__dict__)
+
+    @staticmethod
+    def of_mentor_profile(dto: MentorProfileDTO):
+        return Profile(**dto.__dict__)
 
     @staticmethod
     def to_dto(model: Profile) -> ProfileDTO:
         return ProfileDTO(**model.__dict__)
+
+    @staticmethod
+    def to_mentor_profile_dto(model: Profile) -> MentorProfileDTO:
+        if (model is None):
+            return None
+        return MentorProfileDTO(**model.__dict__)
 
 
 class MentorExperience(Base):
@@ -67,6 +67,8 @@ class MentorExperience(Base):
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
     mentor_experiences_metadata = Column(JSONB)
+
+
     # profile = relationship("Profile", backref="mentor_experiences")
 
 
@@ -78,6 +80,9 @@ class Profession(Base):
     profession_metadata = Column(JSONB)
     language = Column(String, nullable=False)
 
+    @staticmethod
+    def to_profession_vo(model: 'Profession') -> ProfessionVO:
+        return ProfessionVO(**model.__dict__)
 
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
