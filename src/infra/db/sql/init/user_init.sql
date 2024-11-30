@@ -33,7 +33,7 @@ CREATE TABLE profiles (
     "name" TEXT NOT NULL,
     avatar TEXT DEFAULT '',
     "location" TEXT DEFAULT '',
-    "position" TEXT DEFAULT '',
+    "job_title" TEXT DEFAULT '',
     linkedin_profile TEXT DEFAULT '',
     personal_statement TEXT DEFAULT '',
     about TEXT DEFAULT '',

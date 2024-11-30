@@ -47,7 +47,7 @@ class ProfileService:
             avatar=dto.avatar,
             timezone=dto.timezone,
             industry=industry,
-            position=dto.position,
+            job_title=dto.job_title,
             company=dto.company,
             linkedin_profile=dto.linkedin_profile,
             interested_positions=interested_positions,

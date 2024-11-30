@@ -19,7 +19,7 @@ class Profile(Base):
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
     location = Column(String, default='')
-    position = Column(String, default='')
+    job_title = Column(String, default='')
     linkedin_profile = Column(String, default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
@@ -44,7 +44,7 @@ class Profile(Base):
         profile.avatar = dto.avatar
         profile.timezone = dto.timezone
         profile.industry = dto.industry
-        profile.position = dto.position
+        profile.job_title = dto.job_title
         profile.company = dto.company
         profile.linkedin_profile = dto.linkedin_profile
         profile.interested_positions = dto.interested_positions

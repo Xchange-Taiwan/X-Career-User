@@ -57,7 +57,7 @@ class ProfileRepository:
                 if key != "_sa_instance_state":
                     setattr(existing_model, key, value)
 
-        db.add(model)
+        await db.merge(model)
 
         return Profile.to_dto(model)
 

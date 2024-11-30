@@ -36,7 +36,7 @@ class MentorRepository:
             'language': Profile.language,
             'seniority_level': Profile.seniority_level,
             'industry': Profile.industry,
-            'position': Profile.position,
+            'job_title': Profile.job_title,
             'company': Profile.company,
             'experience': Profile.experience
         }
@@ -105,7 +105,7 @@ class MentorRepository:
         profile_dto.avatar = model.avatar
         profile_dto.timezone = model.timezone
         profile_dto.industry = model.industry
-        profile_dto.position = model.position
+        profile_dto.position = model.job_title
         profile_dto.company = model.company
         profile_dto.linkedin_profile = model.linkedin_profile
         profile_dto.interested_positions = model.interested_positions
