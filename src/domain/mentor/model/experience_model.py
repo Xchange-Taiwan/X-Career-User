@@ -23,7 +23,9 @@ class ExperienceVO(BaseModel):
 
     @staticmethod
     def of(mentor_exp: MentorExperience):
-        return ExperienceVO(user_id=mentor_exp.user_id, category=mentor_exp.category, desc=mentor_exp.desc,
+        return ExperienceVO(user_id=mentor_exp.user_id,
+                            category=mentor_exp.category,
+                            desc=mentor_exp.desc,
                             order=mentor_exp.order)
 
 

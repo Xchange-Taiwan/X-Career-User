@@ -3,6 +3,7 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.exception import NotAcceptableException, NotFoundException
+from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.model.common_model import ProfessionVO, InterestListVO
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
@@ -41,6 +42,21 @@ class ProfileService:
         skills: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.skills)
         topics: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.topics)
         res: ProfileVO = ProfileVO.of(dto)
+        res.industry = industry
+        res.interested_positions = interested_positions
+        res.skills = skills
+        res.topics = topics
+        return res
+
+    async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO):
+        if dto is None:
+            raise NotFoundException(msg="no data found")
+        industry: Optional[ProfessionVO] = await self.__profession_service.get_profession_by_id(db, dto.industry)
+        interested_positions: Optional[InterestListVO] = \
+            await self.__interest_service.get_interest_by_ids(db, dto.interested_positions)
+        skills: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.skills)
+        topics: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.topics)
+        res: MentorProfileVO = MentorProfileVO.of(dto)
         res.industry = industry
         res.interested_positions = interested_positions
         res.skills = skills

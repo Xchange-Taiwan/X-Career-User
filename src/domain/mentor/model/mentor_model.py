@@ -54,28 +54,22 @@ class MentorProfileVO(ProfileVO):
     expertises: Optional[ProfessionListVO] = None
 
     @staticmethod
-    def of(model: MentorProfileDTO) -> 'MentorProfileVO':
-        res = MentorProfileVO(
-            user_id=model.user_id,
-            name=model.name,
-            avatar=model.avatar,
-            location=model.location,
-            timezone=model.timezone,
-            industry=model.industry,
-            job_title=model.job_title,
-            company=model.company,
-            experience=model.experience,
-            linkedin_profile=model.linkedin_profile,
-            interested_positions=model.interested_positions,
-            skills=model.skills,
-            topics=model.topics,
-            language=model.language,
-            personal_statement=model.personal_statement,
-            about=model.about,
-            seniority_level=model.seniority_level,
-            expertises=None
-        )
-        return res
+    def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
+        return MentorProfileVO(
+            user_id=mentor_profile_dto.user_id,
+            name=mentor_profile_dto.name,
+            avatar=mentor_profile_dto.avatar,
+            timezone=mentor_profile_dto.timezone,
+            location=mentor_profile_dto.location,
+            job_title=mentor_profile_dto.job_title,
+            company=mentor_profile_dto.company,
+            experience=mentor_profile_dto.experience,
+            linkedin_profile=mentor_profile_dto.linkedin_profile,
+            language=mentor_profile_dto.language,
+            personal_statement=mentor_profile_dto.personal_statement,
+            about=mentor_profile_dto.about,
+            seniority_level=mentor_profile_dto.seniority_level        )
+
 
 
 class TimeSlotDTO(BaseModel):
