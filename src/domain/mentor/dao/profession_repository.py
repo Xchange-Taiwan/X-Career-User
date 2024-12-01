@@ -20,12 +20,17 @@ class ProfessionRepository:
         return res
 
     async def get_by_profession_category(self, db: AsyncSession, category: ProfessionCategory) \
-            -> Optional[Type[Profession]]:
+            -> Optional[List[Profession]]:
         stmt: Select = select(Profession).filter(Profession.category == category)
-        res: Optional[Profession] = await get_first_template(db, stmt)
+        res: Optional[Profession] = await get_all_template(db, stmt)
         return res
 
     async def get_all_profession(self, db: AsyncSession) -> List[Type[Profession]]:
         stmt: Select = select(Profession)
+        res: List[Type[Profession]] = await get_all_template(db, stmt)
+        return res
+
+    async def get_all_expertise(self, db: AsyncSession) -> List[Type[Profession]]:
+        stmt: Select = select(Profession).filter(Profession.category == ProfessionCategory.EXPERTISE)
         res: List[Type[Profession]] = await get_all_template(db, stmt)
         return res

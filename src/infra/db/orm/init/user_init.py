@@ -2,7 +2,7 @@ from profile import Profile
 
 import sqlalchemy.dialects.postgresql
 from sqlalchemy import Integer, Column, String, types
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
@@ -75,7 +75,9 @@ class MentorExperience(Base):
 class Profession(Base):
     __tablename__ = 'professions'
     id = Column(Integer, primary_key=True)
-    category = Column(type_=types.Enum(ProfessionCategory))
+    category = Column(
+        ENUM(ProfessionCategory, name="profession_category"),  # Map to PostgreSQL enum
+        nullable=False)
     subject = Column(String)
     profession_metadata = Column(JSONB)
     language = Column(String, nullable=False)
@@ -127,7 +129,9 @@ class Reservation(Base):
 class Interest(Base):
     __tablename__ = 'interests'
     id = Column(Integer, primary_key=True)
-    category = Column(type_=types.Enum(InterestCategory))
+    category = Column(
+        ENUM(InterestCategory, name="interest_category"),  # Map to PostgreSQL enum
+        nullable=False)
     subject = Column(String)
     desc = Column(JSONB)
     language = Column(String, nullable=False)

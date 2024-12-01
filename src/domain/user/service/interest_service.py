@@ -19,8 +19,11 @@ class InterestService:
         interests: List[InterestVO] = [self.convert_to_interest_vo(interest) for interest in query]
         return InterestListVO(interests=interests)
 
-    async def get_by_interest_category(self, db: AsyncSession, interest: InterestCategory) -> InterestVO:
-        return self.convert_to_interest_vo(await self.__interest_repository.get_by_interest(db, interest))
+    async def get_by_interest_category(self, db: AsyncSession, interest: InterestCategory) -> InterestListVO:
+
+        db_res: Optional[List[Type[Interest]]] = await self.__interest_repository.get_by_interest(db, interest)
+        res: InterestListVO = InterestListVO(interests=[self.convert_to_interest_vo(interest) for interest in db_res])
+        return res
 
     async def get_interest_by_ids(self, db: AsyncSession, ids: List[int]) -> InterestListVO:
         query: List[Type[Interest]] = await self.__interest_repository.get_interest_by_ids(db, ids)

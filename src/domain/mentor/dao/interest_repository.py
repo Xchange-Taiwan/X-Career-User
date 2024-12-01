@@ -20,9 +20,9 @@ class InterestRepository:
         res: Optional[Interest] = await get_first_template(db, stmt)
         return res
 
-    async def get_by_interest(self, db: AsyncSession, interest: InterestCategory) -> Optional[Type[Interest]]:
+    async def get_by_interest(self, db: AsyncSession, interest: InterestCategory) -> Optional[List[Interest]]:
         stmt = select(Interest).filter(Interest.category == interest)
-        res: Optional[Interest] = await get_first_template(db, stmt)
+        res: Optional[List[Interest]] = await get_all_template(db, stmt)
         return res
 
     async def get_all_interest(self, db: AsyncSession) -> List[Type[Interest]]:

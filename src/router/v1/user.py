@@ -55,24 +55,23 @@ async def get_profile(
             responses=idempotent_response('get_interests', common.InterestListVO))
 async def get_interests(
         db: AsyncSession = Depends(get_db),
-        interest_service: InterestService = Depends(get_interest_service)
-        # ,interest: InterestCategory = Query(...)
+        interest_service: InterestService = Depends(get_interest_service),
+        interest: InterestCategory = Query(...)
 ):
     # 需確認是不是返回全部還是可以查詢特定
-    res: common.InterestListVO = await interest_service.get_all_interest(db)
-    return res_success(data=res.json())
+    res: common.InterestListVO = await interest_service.get_by_interest_category(db, interest)
+    return res_success(data=res.model_dump_json())
 
 
 @router.get('/industries',
             responses=idempotent_response('get_industries', common.ProfessionListVO))
 async def get_industries(
         db: AsyncSession = Depends(get_db),
-        profession_service: ProfessionService = Depends(get_profession_service)
-        # category = ProfessionCategory.INDUSTRY = Query(...),
-):
+        profession_service: ProfessionService = Depends(get_profession_service),
+        category: ProfessionCategory = Query(...)):
     # 需確認是不是返回全部還是可以查詢特定
-    res: common.ProfessionListVO = await profession_service.get_all_profession(db)
-    return res_success(data=res.json())
+    res: common.ProfessionListVO = await profession_service.get_by_profession_category(db, category)
+    return res_success(data=res.model_dump_json())
 
 
 @router.get('/{user_id}/reservations',
