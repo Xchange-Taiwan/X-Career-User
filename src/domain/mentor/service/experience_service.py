@@ -31,9 +31,9 @@ class ExperienceService:
 
         return res
 
-    async def delete_exp_by_id(self, db: AsyncSession, user_id: int) -> bool:
+    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession, user_id: int, exp_id: int, exp_cate: ExperienceCategory) -> bool:
         try:
-            await self.__exp_dao.delete_mentor_exp_by_id(db, user_id)
+            await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, exp_id, exp_cate)
             return True
         except NotFoundException:
             return False
