@@ -9,7 +9,7 @@ from mangum import Mangum
 from src.config import exception
 from src.router.v1 import (
     user,
-    mentor,
+    mentor, file_controller,
 )
 
 STAGE = os.environ.get('STAGE')
@@ -27,6 +27,7 @@ app.add_middleware(
 router_v1 = APIRouter(prefix='/user-service/api/v1')
 router_v1.include_router(user.router)
 router_v1.include_router(mentor.router)
+router_v1.include_router(file_controller.router)
 
 app.include_router(router_v1)
 

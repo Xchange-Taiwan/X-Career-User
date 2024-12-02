@@ -1,0 +1,11 @@
+CREATE TABLE file_info (
+    file_id UUID PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    file_size INTEGER NOT NULL,
+    content_type VARCHAR(255),
+    url VARCHAR,
+    create_user_id INTEGER NOT NULL,
+    create_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE
+);

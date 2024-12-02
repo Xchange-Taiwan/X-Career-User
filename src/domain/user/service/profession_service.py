@@ -3,7 +3,6 @@ from typing import List, Type, Optional, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.constant import ProfessionCategory
-from src.config.exception import NotFoundException
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
 from src.domain.user.model.common_model import ProfessionListVO, ProfessionVO
 from src.infra.db.orm.init.user_init import Profession
@@ -19,16 +18,25 @@ class ProfessionService:
         res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
         return res
 
+    async def get_all_expertises(self, db: AsyncSession) -> ProfessionListVO:
+        res: ProfessionListVO = ProfessionListVO()
+        interests: List[Type[Profession]] = await self.__profession_repository.get_all_expertise(db)
+        res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
+        return res
+
     async def get_by_profession_category(self, db: AsyncSession
-                                         , profession: ProfessionCategory) -> ProfessionVO:
-        return self.convert_to_profession_vo(
-            await self.__profession_repository.get_by_profession_category(db, profession))
+                                         , profession: ProfessionCategory) -> ProfessionListVO:
+        dao_res: Optional[List[Profession]] = \
+            await self.__profession_repository.get_by_profession_category(db, profession)
+        res: ProfessionListVO = ProfessionListVO(professions=[self.convert_to_profession_vo(profession)
+                                                              for profession in dao_res])
+        return res
 
     async def get_profession_by_ids(self, db: AsyncSession
                                     , ids: List[int]) -> ProfessionListVO:
-        query: List[Type[Profession]] = await self.__profession_repository.get_profession_by_ids(db, ids)
-        res = [self.convert_to_profession_vo(profession) for profession in query]
-        return ProfessionListVO(profession=res)
+        query: List[Optional[Profession]] = await self.__profession_repository.get_profession_by_ids(db, ids)
+        professions: List[ProfessionVO] = [Profession.to_profession_vo(q) for q in query]
+        return ProfessionListVO(professions=professions)
 
     async def get_profession_by_id(self, db: AsyncSession
                                    , interest_id: int) -> ProfessionVO:

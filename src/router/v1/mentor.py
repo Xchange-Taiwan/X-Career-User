@@ -3,10 +3,9 @@ from typing import List
 
 from fastapi import (
     APIRouter,
-    Path, Body, Depends
+    Path, Body, Depends, Query
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from src.domain.mentor.service.mentor_service import MentorService
 from ..res.response import *
@@ -44,7 +43,7 @@ async def upsert_mentor_profile(
 ):
     # TODO: implement
     res: mentor.MentorProfileVO = await mentor_service.upsert_mentor_profile(db, body)
-    return res_success(data=res.json())
+    return res_success(data=res.model_dump_json())
 
 
 @router.get('/{user_id}/{language}/profile',
@@ -56,9 +55,9 @@ async def get_mentor_profile(
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language=language)
+    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language)
 
-    return res_success(data=mentor_profile.json())
+    return res_success(data=mentor_profile.model_dump_json())
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
@@ -72,30 +71,32 @@ async def upsert_experience(
 ):
     res: experience.ExperienceVO = await exp_service.upsert_exp(db=db, experience_dto=body, user_id=user_id,
                                                                 exp_cate=experience_type)
-    return res_success(data=res.json())
+    return res_success(data=res.model_dump_json())
 
 
 @router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
-               responses=idempotent_response('delete_experience', experience.ExperienceVO))
+               responses=idempotent_response('delete_experience', bool))
 async def delete_experience(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
+        experience_id: int = Path(...),
+        experience_type: ExperienceCategory = Path(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.delete_exp_by_id(db, user_id)
+    res: bool = await exp_service.delete_exp_by_user_and_exp_id(db, user_id, experience_id, experience_type)
 
-    return res_success(data=res.json())
+    return res_success(data=res)
 
 
 @router.get('/expertises',
             responses=idempotent_response('get_expertises', common.ProfessionListVO))
 async def get_expertises(
-        # category = ProfessionCategory.EXPERTISE = Query(...),
+        # interest_category: ProfessionCategory.EXPERTISE = Query(...),
         db: AsyncSession = Depends(get_db),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
-    res: ProfessionListVO = await profession_service.get_all_profession(db=db)
-    return res_success(data=res.json())
+    res: ProfessionListVO = await profession_service.get_all_expertises(db=db)
+    return res_success(data=res.model_dump_json())
 
 
 @router.put('/{user_id}/schedule',
