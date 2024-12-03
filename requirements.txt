@@ -5,3 +5,4 @@ pydantic==1.9.0
 #botocore~=1.23.54
 SQLAlchemy~=2.0.29
 asyncpg~=0.27.0        # For async PostgreSQL support with SQLAlchemy
+uvicorn==0.17.1
