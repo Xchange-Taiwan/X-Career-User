@@ -1,8 +1,4 @@
-from typing import List
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.dialects.postgresql import insert
 
 from src.config.exception import NotFoundException
 from src.domain.file.dao.file_repository import FileRepository

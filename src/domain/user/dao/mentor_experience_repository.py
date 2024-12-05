@@ -43,10 +43,13 @@ class MentorExperienceRepository:
 
         return mentor_exp
 
-    async def delete_mentor_exp_by_id(self, db: AsyncSession, user_id: int, exp_id: int, exp_cate: ExperienceCategory) -> None:
+    async def delete_mentor_exp_by_id(self, db: AsyncSession, user_id: int, exp_id: int, exp_cate: ExperienceCategory) \
+            -> None:
         stmt: Select = (
             select(MentorExperience).filter(MentorExperience.user_id == user_id
-                                            and MentorExperience.id == exp_id) and MentorExperience.category == exp_cate)
+                                            and MentorExperience.id == exp_id
+                                            and MentorExperience.category == exp_cate)
+                                            )
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
         # mentor_stmt: Select = select(Profile).filter(Profile.user_id == mentor_exp.user_id)
         # mentor: Profile = await get_first_template(db, mentor_stmt)
