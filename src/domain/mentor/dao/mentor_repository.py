@@ -63,7 +63,7 @@ class MentorRepository:
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
         model: Profile = Profile.of_mentor_profile(mentor_profile_dto)
 
-        await db.merge(model)
+        model = await db.merge(model)
         res: MentorProfileDTO = Profile.to_mentor_profile_dto(model)
 
         return res
