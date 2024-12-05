@@ -2,47 +2,47 @@ from enum import Enum
 
 
 class InterestCategory(Enum):
-    INTERESTED_POSITION = 'interested_position'
-    SKILL = 'skill'
-    TOPIC = 'topic'
+    INTERESTED_POSITION = 'INTERESTED_POSITION'
+    SKILL = 'SKILL'
+    TOPIC = 'TOPIC'
 
 
 class ProfessionCategory(Enum):
-    EXPERTISE = 'expertise'
-    INDUSTRY = 'industry'
+    EXPERTISE = 'EXPERTISE'
+    INDUSTRY = 'INDUSTRY'
 
 
 class ExperienceCategory(Enum):
-    WORK = 'work'
-    EDUCATION = 'education'
-    LINK = 'link'
+    WORK = 'WORK'
+    EDUCATION = 'EDUCATION'
+    LINK = 'LINK'
 
 
 class ScheduleType(Enum):
-    ALLOW = 'allow'
-    FORBIDDEN = 'forbidden'
+    ALLOW = 'ALLOW'
+    FORBIDDEN = 'FORBIDDEN'
 
 
 class RoleType(Enum):
-    MENTOR = 'mentor'
-    MENTEE = 'mentee'
+    MENTOR = 'MENTOR'
+    MENTEE = 'MENTEE'
 
 
 class BookingStatus(Enum):
-    PENDING = 'pending'
-    ACCEPT = 'accept'
-    REJECT = 'reject'
+    PENDING = 'PENDING'
+    ACCEPT = 'ACCEPT'
+    REJECT = 'REJECT'
 
 
 class ReservationListState(Enum):
-    UPCOMING = 'upcoming'
-    PENDING = 'pending'
-    HISTORY = 'history'
+    UPCOMING = 'UPCOMING'
+    PENDING = 'PENDING'
+    HISTORY = 'HISTORY'
 
 
 class SortingBy(Enum):
-    UPDATED_TIME = 'updated_time'
-    # VIEW = 'view'
+    UPDATED_TIME = 'UPDATED_TIME'
+    # VIEW = 'VIEW'
 
 
 class Sorting(Enum):
@@ -51,5 +51,9 @@ class Sorting(Enum):
 
 
 class SchedulesType(Enum):
-    ALLOW = "allow"
-    FORBIDDEN = "forbidden"
+    ALLOW = "ALLOW"
+    FORBIDDEN = "FORBIDDEN"
+
+class Language(Enum):
+    EN = 'en_US'
+    ZH_TW = 'zh_TW'

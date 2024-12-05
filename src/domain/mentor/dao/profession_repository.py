@@ -25,7 +25,9 @@ class ProfessionRepository:
         res: Optional[Profession] = await get_first_template(db, stmt)
         return res
 
-    async def get_all_profession(self, db: AsyncSession) -> List[Type[Profession]]:
-        stmt: Select = select(Profession)
+    async def get_all_profession(self, db: AsyncSession, category: ProfessionCategory, language: str) -> List[Type[Profession]]:
+        stmt: Select = select(Profession) \
+            .filter(Profession.category == category) \
+            .filter(Profession.language == language)
         res: List[Type[Profession]] = await get_all_template(db, stmt)
         return res

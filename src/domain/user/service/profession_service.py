@@ -2,7 +2,7 @@ from typing import List, Type, Optional, Dict
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import ProfessionCategory
+from src.config.constant import ProfessionCategory, Language
 from src.config.exception import NotFoundException
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
 from src.domain.user.model.common_model import ProfessionListVO, ProfessionVO
@@ -13,9 +13,12 @@ class ProfessionService:
     def __init__(self, profession_repository: ProfessionRepository):
         self.__profession_repository: ProfessionRepository = profession_repository
 
-    async def get_all_profession(self, db: AsyncSession) -> ProfessionListVO:
+    async def get_all_profession(self, db: AsyncSession
+                                 , profession: ProfessionCategory
+                                 , language: Language) -> ProfessionListVO:
         res: ProfessionListVO = ProfessionListVO()
-        interests: List[Type[Profession]] = await self.__profession_repository.get_all_profession(db)
+        interests: List[Type[Profession]] = \
+            await self.__profession_repository.get_all_profession(db, profession, language.value)
         res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
         return res
 

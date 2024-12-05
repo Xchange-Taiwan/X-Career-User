@@ -68,7 +68,8 @@ class MentorExperience(Base):
 class Profession(Base):
     __tablename__ = 'professions'
     id = Column(Integer, primary_key=True)
-    category = Column(type_=types.Enum(ProfessionCategory))
+    category = Column(name="profession_category", type_=types.Enum(ProfessionCategory))
+    subject_group = Column(String)
     subject = Column(String)
     profession_metadata = Column(JSONB)
     language = Column(String, nullable=False)
@@ -78,7 +79,7 @@ class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
-    type = Column(type_=types.Enum(SchedulesType))
+    type = Column(name="schedule_type", type_=types.Enum(SchedulesType))
     year = Column(Integer, default=-1)
     month = Column(Integer, default=-1)
     day_of_month = Column(Integer, nullable=False)
@@ -94,7 +95,7 @@ class CannedMessage(Base):
     __tablename__ = 'canned_message'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
-    role = Column(type_=types.Enum(RoleType), nullable=False)
+    role = Column(name="role_type", type_=types.Enum(RoleType), nullable=False)
     message = Column(String)
     # profile = relationship("Profile", backref="canned_message")
 
@@ -117,7 +118,8 @@ class Reservation(Base):
 class Interest(Base):
     __tablename__ = 'interests'
     id = Column(Integer, primary_key=True)
-    category = Column(type_=types.Enum(InterestCategory))
+    category = Column(name="interest_category", type_=types.Enum(InterestCategory))
+    subject_group = Column(String)
     subject = Column(String)
     desc = Column(JSONB)
     language = Column(String, nullable=False)
