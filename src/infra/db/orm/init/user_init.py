@@ -28,7 +28,6 @@ class Profile(Base):
     company = Column(String, default='')
     seniority_level = Column(
         sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
-    timezone = Column(Integer, default=0)
     experience = Column(Integer, default=0)
     industry = Column(Integer)
     language = Column(String, default='')

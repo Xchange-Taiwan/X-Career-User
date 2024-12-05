@@ -39,7 +39,6 @@ CREATE TABLE profiles (
     about TEXT DEFAULT '',
     company TEXT DEFAULT '',
     seniority_level SENIORITY_LEVEL,
-    timezone INT DEFAULT 0,
     experience INT DEFAULT 0,
 	industry INT,
     interested_positions JSONB,

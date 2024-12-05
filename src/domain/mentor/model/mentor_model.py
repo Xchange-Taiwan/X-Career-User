@@ -59,7 +59,6 @@ class MentorProfileVO(ProfileVO):
             user_id=mentor_profile_dto.user_id,
             name=mentor_profile_dto.name,
             avatar=mentor_profile_dto.avatar,
-            timezone=mentor_profile_dto.timezone,
             location=mentor_profile_dto.location,
             job_title=mentor_profile_dto.job_title,
             company=mentor_profile_dto.company,

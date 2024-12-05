@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from typing import Optional, List, Union
 
 from pydantic import HttpUrl, BaseModel, UUID4
-from sqlalchemy import String
 
 from src.infra.db.orm.init.file_info_init import FileInfo
 

@@ -13,7 +13,6 @@ class ProfileDTO(BaseModel):
     name: Optional[str] = ""
     avatar: Optional[str] = ""
     location: Optional[str] = ""
-    timezone: Optional[int] = None
     industry: Optional[int] = None
     job_title: Optional[str] = ""
     company: Optional[str] = ""
@@ -29,7 +28,6 @@ class ProfileVO(BaseModel):
     user_id: int
     name: Optional[str] = ""
     avatar: Optional[str] = ""
-    timezone: Optional[int] = 0
     location: Optional[str] = ""
     industry: Optional[ProfessionVO] = None
     job_title: Optional[str] = ""
@@ -47,7 +45,6 @@ class ProfileVO(BaseModel):
             user_id=model.user_id,
             name=model.name,
             avatar=model.avatar,
-            timezone=model.timezone,
             location=model.location,
             job_title=model.job_title,
             company=model.company,

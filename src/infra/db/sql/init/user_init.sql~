@@ -12,11 +12,6 @@ CREATE TYPE industry_category AS ENUM (
     'FINANCE',
     'OTHER'
 );
-CREATE TYPE interest_category AS ENUM (
-    'INTERESTED_POSITION',
-    'SKILL',
-    'TOPIC'
-);
 CREATE TYPE account_type AS ENUM('XC', 'GOOGLE', 'LINKEDIN');
 
 

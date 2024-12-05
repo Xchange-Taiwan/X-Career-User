@@ -3,8 +3,7 @@ import uuid
 from datetime import timezone, datetime
 from typing import List
 
-from certifi import where
-from sqlalchemy import insert, Select, and_
+from sqlalchemy import Select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
