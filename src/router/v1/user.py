@@ -63,9 +63,9 @@ async def get_interests(
     return res_success(data=res.model_dump_json())
 
 
-@router.get('/professions',
-            responses=idempotent_response('get_professions', common.ProfessionListVO))
-async def get_professions(
+@router.get('/industries',
+            responses=idempotent_response('get_industries', common.ProfessionListVO))
+async def get_industries(
         db: AsyncSession = Depends(get_db),
         profession_service: ProfessionService = Depends(get_profession_service),
         category: ProfessionCategory = Query(...)):
