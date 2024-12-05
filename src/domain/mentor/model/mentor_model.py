@@ -24,7 +24,6 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class MentorProfileDTO(ProfileDTO):
-    location: Optional[str]
     personal_statement: Optional[str]
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
@@ -59,10 +58,10 @@ class MentorProfileVO(ProfileVO):
             user_id=mentor_profile_dto.user_id,
             name=mentor_profile_dto.name,
             avatar=mentor_profile_dto.avatar,
-            location=mentor_profile_dto.location,
+            region=mentor_profile_dto.region,
             job_title=mentor_profile_dto.job_title,
             company=mentor_profile_dto.company,
-            experience=mentor_profile_dto.experience,
+            years_of_experience=mentor_profile_dto.years_of_experience,
             linkedin_profile=mentor_profile_dto.linkedin_profile,
             language=mentor_profile_dto.language,
             personal_statement=mentor_profile_dto.personal_statement,
