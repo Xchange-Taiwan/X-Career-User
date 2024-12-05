@@ -28,8 +28,8 @@ class MentorProfileDTO(ProfileDTO):
     personal_statement: Optional[str]
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
-    experience: Optional[int]
     expertises: Optional[List[int]]
+
 
 
 class ProfessionsDTO(BaseModel):
@@ -49,9 +49,9 @@ class CannedMessageDTO(BaseModel):
 class MentorProfileVO(ProfileVO):
     personal_statement: Optional[str] = ""
     about: Optional[str] = ""
-    # TODO: enum
     seniority_level: Optional[SeniorityLevel] = ""
     expertises: Optional[ProfessionListVO] = None
+
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -67,7 +67,8 @@ class MentorProfileVO(ProfileVO):
             language=mentor_profile_dto.language,
             personal_statement=mentor_profile_dto.personal_statement,
             about=mentor_profile_dto.about,
-            seniority_level=mentor_profile_dto.seniority_level        )
+            seniority_level=mentor_profile_dto.seniority_level
+        )
 
 
 

@@ -20,7 +20,6 @@ class Profile(Base):
     user_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
-    location = Column(String, default='')
     job_title = Column(String, default='')
     linkedin_profile = Column(String, default='')
     personal_statement = Column(String, default='')
@@ -28,8 +27,9 @@ class Profile(Base):
     company = Column(String, default='')
     seniority_level = Column(
         sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
-    experience = Column(Integer, default=0)
     industry = Column(Integer)
+    years_of_experience = Column(Integer, default=0)
+    region = Column(String, default='')
     language = Column(String, default='')
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
