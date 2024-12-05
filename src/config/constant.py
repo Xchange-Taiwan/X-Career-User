@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class Language(Enum):
+    EN_US = 'en_US'
+    ZH_TW = 'zh_TW'
+
+
 class InterestCategory(Enum):
     INTERESTED_POSITION = 'INTERESTED_POSITION'
     SKILL = 'SKILL'
@@ -53,7 +58,3 @@ class Sorting(Enum):
 class SchedulesType(Enum):
     ALLOW = "ALLOW"
     FORBIDDEN = "FORBIDDEN"
-
-class Language(Enum):
-    EN = 'en_US'
-    ZH_TW = 'zh_TW'

@@ -16,7 +16,7 @@ class ProfessionService:
     async def get_all_profession(self, db: AsyncSession
                                  , profession: ProfessionCategory
                                  , language: Language) -> ProfessionListVO:
-        res: ProfessionListVO = ProfessionListVO()
+        res: ProfessionListVO = ProfessionListVO(language=language.value)
         interests: List[Type[Profession]] = \
             await self.__profession_repository.get_all_profession(db, profession, language.value)
         res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
@@ -43,10 +43,16 @@ class ProfessionService:
         if dto is None:
             return None  # return empty object
         profession_id: int = dto.id
-        subject: str = dto.subject
         category: ProfessionCategory = ProfessionCategory(dto.category)
+        subject_group: str = dto.subject_group
+        subject: str = dto.subject
         profession_metadata: Dict = dto.profession_metadata
-        res: ProfessionVO = ProfessionVO(id=profession_id, subject=subject, category=category,
-                                         profession_metadata=profession_metadata, language=dto.language)
+        res: ProfessionVO = ProfessionVO(
+            id=profession_id, 
+            category=category,
+            subject_group=subject_group,
+            subject=subject, 
+            profession_metadata=profession_metadata, 
+            language=dto.language)
 
         return res
