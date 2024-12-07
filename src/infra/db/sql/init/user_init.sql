@@ -84,8 +84,9 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
 CREATE TABLE IF NOT EXISTS professions (
     "id" SERIAL PRIMARY KEY,
     category PROFESSION_CATEGORY ,
+    subject_group varchar(40),
     "language" VARCHAR(10),
-    subject TEXT DEFAULT '',
+    "subject" TEXT DEFAULT '',
     profession_metadata JSONB
 );
 
@@ -131,20 +132,30 @@ CREATE TABLE IF NOT EXISTS reservations (
 CREATE INDEX reservations_index ON reservations(user_id, start_datetime, end_datetime);
 
 CREATE TABLE IF NOT EXISTS interests (
-    id SERIAL,
-    "language" VARCHAR(10),
+    "id" SERIAL PRIMARY KEY,
     category INTEREST_CATEGORY,
-    subject TEXT,
-    "desc" JSONB,
-    PRIMARY KEY (id, "language")
+    subject_group varchar(40),
+    "language" VARCHAR(10),
+    "subject" TEXT DEFAULT '',
+    "desc" JSONB
 );
 
 
 --以下測試用插入資料
-INSERT INTO public.interests
-("id", "language", category, subject, "desc")
-values(1, 'ENG', 'INTERESTED_POSITION', 'TEST', '{}');
+INSERT INTO interests (category, "subject_group", "language", "subject", "desc")
+VALUES (
+    'INTERESTED_POSITION',          -- category
+    'Photography',                  -- subject_group
+    'en_US',                        -- language
+    'Photography basics and tips',  -- subject
+    '{"difficulty": "beginner", "duration": "short"}'::jsonb -- desc (JSONB 格式)
+);
 
-INSERT INTO public.professions
-("id", category, subject, "profession_metadata")
-values(1, 'EXPERTISE', 'TEST', '{}');
+INSERT INTO professions (category, "subject_group", "language", "subject", profession_metadata)
+VALUES (
+    'EXPERTISE',                            -- category
+    'Software Development',                 -- subject_group
+    'en_US',                                -- language
+    'Introduction to Software Engineering', -- subject
+    '{"skills": ["programming", "problem-solving"], "experience_required": 3}'::jsonb -- profession_metadata (JSONB 格式)
+);
