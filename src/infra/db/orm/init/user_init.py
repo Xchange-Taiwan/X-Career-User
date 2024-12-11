@@ -2,12 +2,14 @@ from profile import Profile
 
 import sqlalchemy.dialects.postgresql
 from sqlalchemy import Integer, Column, String, types
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
+from src.domain.mentor.model.mentor_model import MentorProfileDTO
+from src.domain.user.model.common_model import ProfessionVO
 from src.domain.user.model.user_model import ProfileDTO
 
 Base = declarative_base()
@@ -19,7 +21,7 @@ class Profile(Base):
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
     location = Column(String, default='')
-    position = Column(String, default='')
+    job_title = Column(String, default='')
     linkedin_profile = Column(String, default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
@@ -39,19 +41,22 @@ class Profile(Base):
     # static of function for get user profile
     @staticmethod
     def of(dto: ProfileDTO):
-        profile: Profile = Profile()
-        profile.user_id = dto.user_id
-        profile.name = dto.name
-        profile.avatar = dto.avatar
-        profile.timezone = dto.timezone
-        profile.industry = dto.industry
-        profile.position = dto.position
-        profile.company = dto.company
-        profile.linkedin_profile = dto.linkedin_profile
-        profile.interested_positions = dto.interested_positions
-        profile.skills = dto.skills
-        profile.topics = dto.topics
-        return profile
+        return Profile(**dto.__dict__)
+
+    @staticmethod
+    def of_mentor_profile(dto: MentorProfileDTO):
+        return Profile(**dto.__dict__)
+
+    @staticmethod
+    def to_dto(model: Profile) -> ProfileDTO:
+        return ProfileDTO(**model.__dict__)
+
+    @staticmethod
+    def to_mentor_profile_dto(model: Profile) -> MentorProfileDTO:
+        if (model is None):
+            return None
+        return MentorProfileDTO(**model.__dict__)
+
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
@@ -63,20 +68,23 @@ class MentorExperience(Base):
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
     mentor_experiences_metadata = Column(JSONB)
+
+
     # profile = relationship("Profile", backref="mentor_experiences")
 
 
 class Profession(Base):
     __tablename__ = 'professions'
     id = Column(Integer, primary_key=True)
-    category = Column(
-        sqlalchemy.dialects.postgresql.ENUM(ProfessionCategory, name="profession_category", create_type=False),
-        nullable=False)
+    category = Column(type_=types.Enum(ProfessionCategory))
     subject_group = Column(String)
     subject = Column(String)
     profession_metadata = Column(JSONB)
     language = Column(String, nullable=False)
 
+    @staticmethod
+    def to_profession_vo(model: 'Profession') -> ProfessionVO:
+        return ProfessionVO(**model.__dict__)
 
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
@@ -127,9 +135,7 @@ class Reservation(Base):
 class Interest(Base):
     __tablename__ = 'interests'
     id = Column(Integer, primary_key=True)
-    category = Column(
-        sqlalchemy.dialects.postgresql.ENUM(
-            InterestCategory, name="interest_category", create_type=False))
+    category = Column(type_=types.Enum(InterestCategory))
     subject_group = Column(String)
     subject = Column(String)
     desc = Column(JSONB)

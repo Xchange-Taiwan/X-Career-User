@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     "name" TEXT NOT NULL,
     avatar TEXT DEFAULT '',
     "location" TEXT DEFAULT '',
-    "position" TEXT DEFAULT '',
+    "job_title" TEXT DEFAULT '',
     linkedin_profile TEXT DEFAULT '',
     personal_statement TEXT DEFAULT '',
     about TEXT DEFAULT '',
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
 CREATE TABLE IF NOT EXISTS professions (
     "id" SERIAL PRIMARY KEY,
     category PROFESSION_CATEGORY ,
-    subject_group varchar(40),
+    subject_group VARCHAR(40),
     "language" VARCHAR(10),
     "subject" TEXT DEFAULT '',
     profession_metadata JSONB
@@ -131,10 +131,11 @@ CREATE TABLE IF NOT EXISTS reservations (
 
 CREATE INDEX reservations_index ON reservations(user_id, start_datetime, end_datetime);
 
+
 CREATE TABLE IF NOT EXISTS interests (
     "id" SERIAL PRIMARY KEY,
     category INTEREST_CATEGORY,
-    subject_group varchar(40),
+    subject_group VARCHAR(40),
     "language" VARCHAR(10),
     "subject" TEXT DEFAULT '',
     "desc" JSONB

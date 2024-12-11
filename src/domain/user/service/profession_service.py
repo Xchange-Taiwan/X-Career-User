@@ -30,6 +30,14 @@ class ProfessionService:
             raise_http_exception(e, msg='Internal Server Error')
 
 
+    # TODO: 此 API 可回傳 ProfessionCategory.EXPERTISE 下的多個語言結果的集合
+    async def get_all_expertises(self, db: AsyncSession) -> ProfessionListVO:
+        res: ProfessionListVO = ProfessionListVO()
+        interests: List[Type[Profession]] = await self.__profession_repository.get_all_expertise(db)
+        res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
+        return res
+
+    # TODO: 此 API 可回傳相同 ProfessionCategory 下的多個語言結果的集合
     async def get_by_profession_category(self, db: AsyncSession
                                          , profession: ProfessionCategory) -> ProfessionVO:
         try:

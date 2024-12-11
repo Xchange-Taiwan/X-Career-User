@@ -9,16 +9,16 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 class InterestVO(BaseModel):
     id: int
-    category: InterestCategory
-    subject_group: str
+    category: InterestCategory = None
+    subject_group: Optional[str] = None
     language: Optional[str]
-    subject: str
-    desc: Dict
+    subject: Optional[str] = ''
+    desc: Optional[Dict] = {}
 
 
 class InterestListVO(BaseModel):
     interests: List[InterestVO] = []
-    language: Optional[str]
+    language: Optional[str] = None
     
     def to_json(self):
         result = self.json()
@@ -27,14 +27,14 @@ class InterestListVO(BaseModel):
 
 class ProfessionDTO(BaseModel):
     id: int
-    category: ProfessionCategory
-    language: Optional[str]
+    category: ProfessionCategory = None
+    language: Optional[str] = None
 
 
 class ProfessionVO(ProfessionDTO):
-    subject_group: str = ''
-    subject: str = ''
-    profession_metadata: Dict = {}
+    subject_group: Optional[str] = None
+    subject: Optional[str] = ''
+    profession_metadata: Optional[Dict] = {}
 
 
 class ProfessionListVO(BaseModel):

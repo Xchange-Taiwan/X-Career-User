@@ -32,7 +32,7 @@ class InterestService:
             log.error('get_all_interest error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
 
-
+    # TODO: 此 API 可回傳相同 InterestCategory 下的多個語言結果的集合
     async def get_by_interest_category(self, db: AsyncSession, interest: InterestCategory) -> InterestVO:
         try:
             return self.convert_to_interest_vo(await self.__interest_repository.get_by_interest(db, interest))
