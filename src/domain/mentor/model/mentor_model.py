@@ -35,7 +35,7 @@ class ProfessionsDTO(BaseModel):
     professions_id: int
     category: Optional[str]
     subject: Optional[str] = ''
-    professions_metadata: Optional[Dict] = {}
+    profession_metadata: Optional[Dict] = {}
 
 
 class CannedMessageDTO(BaseModel):
