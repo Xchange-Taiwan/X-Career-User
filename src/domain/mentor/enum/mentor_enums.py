@@ -2,14 +2,14 @@ from enum import Enum
 
 
 class SeniorityLevel(Enum):
-    NO_REVEAL = 'no reveal'
-    JUNIOR = 'junior'
-    INTERMEDIATE = 'intermediate'
-    SENIOR = 'senior'
-    STAFF = 'staff'
-    MANAGER = 'manager'
+    NO_REVEAL = 'NO REVEAL'
+    JUNIOR = 'JUNIOR'
+    INTERMEDIATE = 'INTERMEDIATE'
+    SENIOR = 'SENIOR'
+    STAFF = 'STAFF'
+    MANAGER = 'MANAGER'
 
 
 class ScheduleType(Enum):
-    ALLOW = 'allow'
-    FORBIDDEN = 'forbidden'
+    ALLOW = 'ALLOW'
+    FORBIDDEN = 'FORBIDDEN'

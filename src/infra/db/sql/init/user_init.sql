@@ -52,15 +52,14 @@ CREATE TABLE IF NOT EXISTS profiles (
     user_id SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     avatar TEXT DEFAULT '',
-    "location" TEXT DEFAULT '',
-    "position" TEXT DEFAULT '',
+    "region" TEXT DEFAULT '',
+    "job_title" TEXT DEFAULT '',
     linkedin_profile TEXT DEFAULT '',
     personal_statement TEXT DEFAULT '',
     about TEXT DEFAULT '',
     company TEXT DEFAULT '',
     seniority_level SENIORITY_LEVEL,
-    timezone INT DEFAULT 0,
-    experience INT DEFAULT 0,
+    years_of_experience INT DEFAULT 0,
 	industry INT,
     interested_positions JSONB,
     skills JSONB,
@@ -84,7 +83,7 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
 CREATE TABLE IF NOT EXISTS professions (
     "id" SERIAL PRIMARY KEY,
     category PROFESSION_CATEGORY ,
-    subject_group varchar(40),
+    subject_group VARCHAR(40),
     "language" VARCHAR(10),
     "subject" TEXT DEFAULT '',
     profession_metadata JSONB
@@ -134,7 +133,7 @@ CREATE INDEX reservations_index ON reservations(user_id, start_datetime, end_dat
 CREATE TABLE IF NOT EXISTS interests (
     "id" SERIAL PRIMARY KEY,
     category INTEREST_CATEGORY,
-    subject_group varchar(40),
+    subject_group VARCHAR(40),
     "language" VARCHAR(10),
     "subject" TEXT DEFAULT '',
     "desc" JSONB

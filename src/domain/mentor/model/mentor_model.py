@@ -8,6 +8,7 @@ from ....config.constant import *
 
 log.basicConfig(filemode='w', level=log.INFO)
 
+
 # class MentorProfileDTO(BaseModel):
 #     mentor_profile_id: Optional[int]
 #     avatar: Optional[str]
@@ -23,12 +24,11 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class MentorProfileDTO(ProfileDTO):
-    location: Optional[str]
     personal_statement: Optional[str]
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
-    experience: Optional[int]
     expertises: Optional[List[int]]
+
 
 
 class ProfessionsDTO(BaseModel):
@@ -46,11 +46,29 @@ class CannedMessageDTO(BaseModel):
 
 
 class MentorProfileVO(ProfileVO):
-    personal_statement: Optional[str]
-    about: Optional[str]
-    # TODO: enum
+    personal_statement: Optional[str] = ""
+    about: Optional[str] = ""
     seniority_level: Optional[SeniorityLevel] = ""
-    expertises: Optional[ProfessionListVO]
+    expertises: Optional[ProfessionListVO] = None
+
+
+    @staticmethod
+    def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
+        return MentorProfileVO(
+            user_id=mentor_profile_dto.user_id,
+            name=mentor_profile_dto.name,
+            avatar=mentor_profile_dto.avatar,
+            region=mentor_profile_dto.region,
+            job_title=mentor_profile_dto.job_title,
+            company=mentor_profile_dto.company,
+            years_of_experience=mentor_profile_dto.years_of_experience,
+            linkedin_profile=mentor_profile_dto.linkedin_profile,
+            language=mentor_profile_dto.language,
+            personal_statement=mentor_profile_dto.personal_statement,
+            about=mentor_profile_dto.about,
+            seniority_level=mentor_profile_dto.seniority_level
+        )
+
 
 
 class TimeSlotDTO(BaseModel):

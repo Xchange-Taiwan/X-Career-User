@@ -2,12 +2,14 @@ from profile import Profile
 
 import sqlalchemy.dialects.postgresql
 from sqlalchemy import Integer, Column, String, types
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
+from src.domain.mentor.model.mentor_model import MentorProfileDTO
+from src.domain.user.model.common_model import ProfessionVO
 from src.domain.user.model.user_model import ProfileDTO
 
 Base = declarative_base()
@@ -18,18 +20,16 @@ class Profile(Base):
     user_id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
-    location = Column(String, default='')
-    position = Column(String, default='')
+    job_title = Column(String, default='')
     linkedin_profile = Column(String, default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
     company = Column(String, default='')
     seniority_level = Column(
-        sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), 
-        nullable=False)
-    timezone = Column(Integer, default=0)
-    experience = Column(Integer, default=0)
+        ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
     industry = Column(Integer)
+    years_of_experience = Column(Integer, default=0)
+    region = Column(String, default='')
     language = Column(String, default='')
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
@@ -39,30 +39,35 @@ class Profile(Base):
     # static of function for get user profile
     @staticmethod
     def of(dto: ProfileDTO):
-        profile: Profile = Profile()
-        profile.user_id = dto.user_id
-        profile.name = dto.name
-        profile.avatar = dto.avatar
-        profile.timezone = dto.timezone
-        profile.industry = dto.industry
-        profile.position = dto.position
-        profile.company = dto.company
-        profile.linkedin_profile = dto.linkedin_profile
-        profile.interested_positions = dto.interested_positions
-        profile.skills = dto.skills
-        profile.topics = dto.topics
-        return profile
+        return Profile(**dto.__dict__)
+
+    @staticmethod
+    def of_mentor_profile(dto: MentorProfileDTO):
+        return Profile(**dto.__dict__)
+
+    @staticmethod
+    def to_dto(model: Profile) -> ProfileDTO:
+        return ProfileDTO(**model.__dict__)
+
+    @staticmethod
+    def to_mentor_profile_dto(model: Profile) -> MentorProfileDTO:
+        if (model is None):
+            return None
+        return MentorProfileDTO(**model.__dict__)
+
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer)
     category = Column(
-        sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False),
+        ENUM(ExperienceCategory, name='experience_category', create_type=False),
         nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
     mentor_experiences_metadata = Column(JSONB)
+
+
     # profile = relationship("Profile", backref="mentor_experiences")
 
 
@@ -70,20 +75,23 @@ class Profession(Base):
     __tablename__ = 'professions'
     id = Column(Integer, primary_key=True)
     category = Column(
-        sqlalchemy.dialects.postgresql.ENUM(ProfessionCategory, name="profession_category", create_type=False),
+        ENUM(ProfessionCategory, name="profession_category"),  # Map to PostgreSQL enum
         nullable=False)
     subject_group = Column(String)
     subject = Column(String)
     profession_metadata = Column(JSONB)
     language = Column(String, nullable=False)
 
+    @staticmethod
+    def to_profession_vo(model: 'Profession') -> ProfessionVO:
+        return ProfessionVO(**model.__dict__)
 
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
     type = Column(
-        sqlalchemy.dialects.postgresql.ENUM(SchedulesType, name="schedule_type", create_type=False))
+        ENUM(SchedulesType, name="schedule_type", create_type=False))
     year = Column(Integer, default=-1)
     month = Column(Integer, default=-1)
     day_of_month = Column(Integer, nullable=False)
@@ -100,7 +108,7 @@ class CannedMessage(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, nullable=False)
     role = Column(
-        sqlalchemy.dialects.postgresql.ENUM(RoleType, name="role_type", create_type=False),
+        ENUM(RoleType, name="role_type", create_type=False),
         nullable=False)
     message = Column(String)
     # profile = relationship("Profile", backref="canned_message")
@@ -114,11 +122,11 @@ class Reservation(Base):
     start_datetime = Column(Integer)
     end_datetime = Column(Integer)
     my_status = Column(
-        sqlalchemy.dialects.postgresql.ENUM(BookingStatus, name="my_status", create_type=False))
+        ENUM(BookingStatus, name="my_status", create_type=False))
     status = Column(
-        sqlalchemy.dialects.postgresql.ENUM(BookingStatus, name="status", create_type=False))
+        ENUM(BookingStatus, name="status", create_type=False))
     role = Column(
-        sqlalchemy.dialects.postgresql.ENUM(RoleType, name="role_type", create_type=False))
+        ENUM(RoleType, name="role_type", create_type=False))
     message_from_others = Column(String, default='')
     # profile = relationship("Profile", backref="reservations")
     # mentor_schedule = relationship("MentorSchedule", backref="reservations")
@@ -128,8 +136,8 @@ class Interest(Base):
     __tablename__ = 'interests'
     id = Column(Integer, primary_key=True)
     category = Column(
-        sqlalchemy.dialects.postgresql.ENUM(
-            InterestCategory, name="interest_category", create_type=False))
+        ENUM(InterestCategory, name="interest_category"),  # Map to PostgreSQL enum
+        nullable=False)
     subject_group = Column(String)
     subject = Column(String)
     desc = Column(JSONB)

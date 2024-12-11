@@ -20,7 +20,7 @@ class ProfessionService:
                                  , profession: ProfessionCategory
                                  , language: Language) -> ProfessionListVO:
         try:
-            res: ProfessionListVO = ProfessionListVO(language=language.value)
+            res: ProfessionListVO = ProfessionListVO()
             interests: List[Type[Profession]] = \
                 await self.__profession_repository.get_all_profession(db, profession, language.value)
             res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
@@ -29,6 +29,12 @@ class ProfessionService:
             log.error('get_all_profession error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
 
+
+    async def get_all_expertises(self, db: AsyncSession) -> ProfessionListVO:
+        res: ProfessionListVO = ProfessionListVO()
+        interests: List[Type[Profession]] = await self.__profession_repository.get_all_expertise(db)
+        res.professions = [self.convert_to_profession_vo(interest) for interest in interests]
+        return res
 
     async def get_by_profession_category(self, db: AsyncSession
                                          , profession: ProfessionCategory) -> ProfessionVO:
