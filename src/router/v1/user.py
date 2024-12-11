@@ -51,27 +51,33 @@ async def get_profile(
     return res_success(data=res.json())
 
 
-@router.get('/interests',
+@router.get('/{language}/interests',
             responses=idempotent_response('get_interests', common.InterestListVO))
 async def get_interests(
+        language: Language = Path(...),
+        interest: InterestCategory = Query(...),
         db: AsyncSession = Depends(get_db),
-        interest_service: InterestService = Depends(get_interest_service),
-        interest: InterestCategory = Query(...)
+        interest_service: InterestService = Depends(get_interest_service)
 ):
     # 需確認是不是返回全部還是可以查詢特定
-    res: common.InterestListVO = await interest_service.get_by_interest_category(db, interest)
-    return res_success(data=res.model_dump_json())
+    res: common.InterestListVO = await interest_service.get_all_interest(db, interest, language)
+    return res_success(data=res.to_json())
 
 
-@router.get('/industries',
+@router.get('/{language}/industries',
             responses=idempotent_response('get_industries', common.ProfessionListVO))
 async def get_industries(
+        language: Language = Path(...),
+        # category = ProfessionCategory.INDUSTRY = Query(...),
         db: AsyncSession = Depends(get_db),
-        profession_service: ProfessionService = Depends(get_profession_service),
-        category: ProfessionCategory = Query(...)):
+        profession_service: ProfessionService = Depends(get_profession_service)
+):
     # 需確認是不是返回全部還是可以查詢特定
-    res: common.ProfessionListVO = await profession_service.get_by_profession_category(db, category)
-    return res_success(data=res.model_dump_json())
+    res: common.ProfessionListVO = \
+        await profession_service.get_all_profession(db, 
+                                                    ProfessionCategory.INDUSTRY, 
+                                                    language)
+    return res_success(data=res.to_json())
 
 
 @router.get('/{user_id}/reservations',

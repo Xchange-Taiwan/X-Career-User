@@ -88,15 +88,19 @@ async def delete_experience(
     return res_success(data=res)
 
 
-@router.get('/expertises',
+@router.get('/{language}/expertises',
             responses=idempotent_response('get_expertises', common.ProfessionListVO))
 async def get_expertises(
-        # interest_category: ProfessionCategory.EXPERTISE = Query(...),
+        language: Language = Path(...),
+        # category = ProfessionCategory.EXPERTISE = Query(...),
         db: AsyncSession = Depends(get_db),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
-    res: ProfessionListVO = await profession_service.get_all_expertises(db=db)
-    return res_success(data=res.model_dump_json())
+    res: ProfessionListVO = \
+        await profession_service.get_all_profession(db, 
+                                                    ProfessionCategory.EXPERTISE, 
+                                                    language)
+    return res_success(data=res.to_json())
 
 
 @router.put('/{user_id}/schedule',

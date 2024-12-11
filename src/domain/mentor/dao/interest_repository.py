@@ -25,7 +25,9 @@ class InterestRepository:
         res: Optional[List[Interest]] = await get_all_template(db, stmt)
         return res
 
-    async def get_all_interest(self, db: AsyncSession) -> List[Type[Interest]]:
-        stmt: Select = select(Interest)
+    async def get_all_interest(self, db: AsyncSession, interest: InterestCategory, language: str) -> List[Type[Interest]]:
+        stmt: Select = select(Interest) \
+            .filter(Interest.category == interest) \
+            .filter(Interest.language == language)
         res: List[Type[Interest]] = await get_all_template(db, stmt)
         return res
