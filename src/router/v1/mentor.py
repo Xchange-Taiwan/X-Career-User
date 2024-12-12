@@ -21,7 +21,7 @@ from ...domain.user.model import (
 )
 from ...domain.user.model.common_model import ProfessionListVO
 from ...domain.user.service.profession_service import ProfessionService
-from ...infra.databse import get_db
+from ...infra.databse import get_db, db_session
 from ...infra.util.injection_util import get_mentor_service, get_experience_service, get_profession_service
 
 log.basicConfig(filemode='w', level=log.INFO)
@@ -93,7 +93,7 @@ async def delete_experience(
 async def get_expertises(
         language: Language = Path(...),
         # category = ProfessionCategory.EXPERTISE = Query(...),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(db_session),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
     res: ProfessionListVO = \

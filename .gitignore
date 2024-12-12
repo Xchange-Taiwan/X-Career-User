@@ -20,11 +20,16 @@ var/
 
 # Serverless directories
 .serverless
+.idea
 node_modules
 venv
 **/**__pycache__
 **.db
 
 **/**.sh
-**.env
-.idea
+**.env*
+
+!deploy.sh
+!dev-env-deploy.sh
+!.env.example
+

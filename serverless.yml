@@ -18,13 +18,16 @@ app: x-career-user
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-#frameworkVersion: '3'
+frameworkVersion: '3'
+
+package:
+  individually: true
 
 provider:
   name: aws
   runtime: python3.9
-  stage: dev
-  region: ${opt:region, "ap-northeast-1"}
+  region: ${env:THE_REGION} # ${opt:region, "ap-northeast-1"}
+  stage: ${env:STAGE} # ${opt:stage, "dev"}
   timeout: 30
 
 # you can overwrite defaults here

@@ -56,7 +56,7 @@ async def get_profile(
 async def get_interests(
         language: Language = Path(...),
         interest: InterestCategory = Query(...),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(db_session),
         interest_service: InterestService = Depends(get_interest_service)
 ):
     # 需確認是不是返回全部還是可以查詢特定
@@ -69,7 +69,7 @@ async def get_interests(
 async def get_industries(
         language: Language = Path(...),
         # category = ProfessionCategory.INDUSTRY = Query(...),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(db_session),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
     # 需確認是不是返回全部還是可以查詢特定
