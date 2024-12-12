@@ -17,7 +17,7 @@ from ...domain.user.model import (
 from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
-from ...infra.databse import get_db
+from ...infra.databse import get_db, db_session
 from ...infra.util.injection_util import get_interest_service, get_profession_service, get_profile_service
 
 log.basicConfig(filemode='w', level=log.INFO)
@@ -32,7 +32,7 @@ router = APIRouter(
 @router.put('/{user_id}/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(db_session),
         body: user.ProfileDTO = Body(...),
         profile_service: ProfileService = Depends(get_profile_service)
 ):
@@ -56,7 +56,7 @@ async def get_profile(
 async def get_interests(
         language: Language = Path(...),
         interest: InterestCategory = Query(...),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(db_session),
         interest_service: InterestService = Depends(get_interest_service)
 ):
     # 需確認是不是返回全部還是可以查詢特定
@@ -69,7 +69,7 @@ async def get_interests(
 async def get_industries(
         language: Language = Path(...),
         # category = ProfessionCategory.INDUSTRY = Query(...),
-        db: AsyncSession = Depends(get_db),
+        db: AsyncSession = Depends(db_session),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
     # 需確認是不是返回全部還是可以查詢特定
