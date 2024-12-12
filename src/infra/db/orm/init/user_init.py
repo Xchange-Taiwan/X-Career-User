@@ -1,7 +1,7 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, Column, String, types
+from sqlalchemy import Integer, BigInteger, Column, String, types
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -17,7 +17,7 @@ Base = declarative_base()
 
 class Profile(Base):
     __tablename__ = 'profiles'
-    user_id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, primary_key=True)
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
     job_title = Column(String, default='')
@@ -59,7 +59,7 @@ class Profile(Base):
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(BigInteger)
     category = Column(
         ENUM(ExperienceCategory, name='experience_category', create_type=False),
         nullable=False)
@@ -89,7 +89,7 @@ class Profession(Base):
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     type = Column(
         ENUM(SchedulesType, name="schedule_type", create_type=False))
     year = Column(Integer, default=-1)
@@ -104,20 +104,20 @@ class MentorSchedule(Base):
 
 
 class CannedMessage(Base):
-    __tablename__ = 'canned_message'
+    __tablename__ = 'canned_messages'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     role = Column(
         ENUM(RoleType, name="role_type", create_type=False),
         nullable=False)
     message = Column(String)
-    # profile = relationship("Profile", backref="canned_message")
+    # profile = relationship("Profile", backref="canned_messages")
 
 
 class Reservation(Base):
     __tablename__ = 'reservations'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     mentor_schedules_id = Column(Integer, nullable=False)
     start_datetime = Column(Integer)
     end_datetime = Column(Integer)

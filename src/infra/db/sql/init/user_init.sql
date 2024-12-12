@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 );
 
 CREATE TABLE IF NOT EXISTS profiles (
-    user_id SERIAL PRIMARY KEY,
+    user_id BIGSERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     avatar TEXT DEFAULT '',
     "region" TEXT DEFAULT '',
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 CREATE TABLE IF NOT EXISTS mentor_experiences (
     "id" SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BIGINT NOT NULL,
     category EXPERIENCE_CATEGORY NOT NULL,
     "order" INT NOT NULL,
     "desc" JSONB,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS professions (
 
 CREATE TABLE IF NOT EXISTS mentor_schedules (
     "id" SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BIGINT NOT NULL,
     "type" SCHEDULE_TYPE DEFAULT 'ALLOW',
     "year" INT DEFAULT -1,
     "month" INT DEFAULT -1,
@@ -106,9 +106,9 @@ CREATE TABLE IF NOT EXISTS mentor_schedules (
 
 CREATE INDEX mentor_schedule_index ON mentor_schedules("year", "month", day_of_month, day_of_week, start_time, end_time);
 
-CREATE TABLE IF NOT EXISTS canned_message (
+CREATE TABLE IF NOT EXISTS canned_messages (
     "id" SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BIGINT NOT NULL,
     "role" ROLE_TYPE NOT NULL,
     MESSAGE TEXT
     --,CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS canned_message (
 
 CREATE TABLE IF NOT EXISTS reservations (
     "id" SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id BIGINT NOT NULL,
     mentor_schedules_id INT NOT NULL,
     start_datetime BIGINT,
     end_datetime BIGINT,
