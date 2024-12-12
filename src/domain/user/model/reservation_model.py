@@ -78,7 +78,7 @@ class ReservationListVO(BaseModel):
     reservations: List[ReservationVO]
     next_id: Optional[int]
 
-# class MentorSchedulesDTO(BaseModel):
+# class MentorScheduleDTO(BaseModel):
 #     mentor_schedules_id: int
 #     type: str
 #     year: int = -1
@@ -91,7 +91,7 @@ class ReservationListVO(BaseModel):
 #     cycle_end_date: Optional[int] = None
 #
 #
-# class ReservationsDTO(BaseModel):
+# class ReservationDTO(BaseModel):
 #     reservations_id: int
 #     mentor_id: int
 #     mentee_id: int

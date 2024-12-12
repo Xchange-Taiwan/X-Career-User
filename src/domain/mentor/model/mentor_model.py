@@ -31,7 +31,7 @@ class MentorProfileDTO(ProfileDTO):
 
 
 
-class ProfessionsDTO(BaseModel):
+class ProfessionDTO(BaseModel):
     professions_id: int
     category: Optional[str]
     subject: Optional[str] = ''
@@ -39,7 +39,7 @@ class ProfessionsDTO(BaseModel):
 
 
 class CannedMessageDTO(BaseModel):
-    canned_message_id: int
+    canned_messages_id: int
     user_id: int
     role: Optional[str]
     message: Optional[str]
