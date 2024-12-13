@@ -46,16 +46,6 @@ class ProfessionService:
             raise_http_exception(e, msg='Internal Server Error')
 
 
-    async def get_profession_by_ids(self, db: AsyncSession
-                                    , ids: List[int]) -> ProfessionListVO:
-        try:
-            query: List[Type[Profession]] = await self.__profession_repository.get_profession_by_ids(db, ids)
-            res = [self.convert_to_profession_vo(profession) for profession in query]
-            return ProfessionListVO(profession=res)
-        except Exception as e:
-            log.error('get_profession_by_ids error: %s', str(e))
-            raise_http_exception(e, msg='Internal Server Error')
-
 
     async def get_profession_by_id(self, db: AsyncSession
                                    , interest_id: int) -> ProfessionVO:
