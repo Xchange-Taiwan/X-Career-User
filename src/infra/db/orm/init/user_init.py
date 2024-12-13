@@ -51,7 +51,7 @@ class Profile(Base):
 
     @staticmethod
     def to_mentor_profile_dto(model: Profile) -> MentorProfileDTO:
-        if (model is None):
+        if model is None:
             return None
         return MentorProfileDTO(**model.__dict__)
 
@@ -67,8 +67,6 @@ class MentorExperience(Base):
     desc = Column(JSONB)
     mentor_experiences_metadata = Column(JSONB)
 
-
-    # profile = relationship("Profile", backref="mentor_experiences")
 
 
 class Profession(Base):

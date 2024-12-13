@@ -14,11 +14,28 @@ from src.infra.util.convert_util import get_all_template, get_first_template
 
 
 class FileRepository:
-    async def insert(self, session: AsyncSession, file_info_dto: FileInfoDTO) -> FileInfo:
-        model = FileInfo(**file_info_dto.__dict__)
-        model.file_id = uuid.uuid4()
-        session.add(model)
-        return model
+    async def upsert(self, session: AsyncSession, file_info_dto: FileInfoDTO) -> FileInfo:
+        # query by user_id and file_name
+        stmt: Select = select(FileInfo).where(
+            and_(
+                FileInfo.create_user_id == file_info_dto.create_user_id,
+                FileInfo.file_name == file_info_dto.file_name,
+                ~FileInfo.is_deleted
+            )
+        )
+        res: FileInfo = await get_first_template(session, stmt)
+        if res is not None:
+            res.file_size = file_info_dto.file_size
+            res.update_time = datetime.now(timezone.utc)
+            res.content_type = file_info_dto.content_type
+            res.url = file_info_dto.url
+            res = await session.merge(res)
+            return res
+        else:
+            model = FileInfo(**file_info_dto.__dict__)
+            model.file_id = uuid.uuid4()
+            session.add(model)
+            return model
 
     async def get_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfo:
         stmt: Select = select(FileInfo).where(
@@ -31,11 +48,11 @@ class FileRepository:
         res: FileInfo = await get_first_template(session, stmt)
         return res
 
-    async def delete_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> bool:
+    async def delete_file_info_by_name(self, session: AsyncSession, user_id: int, file_name: str) -> bool:
         stmt: Select = select(FileInfo).where(
             and_(
                 FileInfo.create_user_id == user_id,
-                FileInfo.file_id == file_id,
+                FileInfo.file_name == file_name,
                 ~FileInfo.is_deleted
             )
         )
