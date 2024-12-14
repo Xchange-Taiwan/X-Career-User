@@ -1,5 +1,5 @@
 import logging as log
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -18,9 +18,9 @@ class ProfileDTO(BaseModel):
     years_of_experience: Optional[int] = 0
     region: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
-    interested_positions: Optional[List[int]] = []
-    skills: Optional[List[int]] = []
-    topics: Optional[List[int]] = []
+    interested_positions: Optional[List[Union[str]]] = []
+    skills: Optional[List[Union[str]]] = []
+    topics: Optional[List[Union[str]]] = []
     language: Optional[str] = 'CHT'
 
 

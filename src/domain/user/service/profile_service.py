@@ -1,4 +1,5 @@
-from typing import List, Optional
+import asyncio
+from typing import Optional, Coroutine, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,7 +27,6 @@ class ProfileService:
 
         return await self.convert_to_profile_vo(db, await self.__profile_repository.get_by_user_id(db, user_id))
 
-
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(db, dto)
         return await self.convert_to_profile_vo(db, res)
@@ -34,11 +34,22 @@ class ProfileService:
     async def convert_to_profile_vo(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         if dto is None:
             raise NotFoundException(msg="no data found")
-        industry: Optional[ProfessionVO] = await self.__profession_service.get_profession_by_id(db, dto.industry)
-        interested_positions: Optional[InterestListVO] = \
-            await self.__interest_service.get_interest_by_ids(db, dto.interested_positions)
-        skills: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.skills)
-        topics: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.topics)
+        industry_task: Coroutine[Any, Any, ProfessionVO] = \
+            self.__profession_service.get_profession_by_id(db, dto.industry)
+        interested_positions_task: Coroutine[Any, Any, InterestListVO] = \
+            (self.__interest_service.
+             get_by_subject_group_and_language(db, dto.interested_positions, language=dto.language))
+        skills_task: Coroutine[Any, Any, InterestListVO] = (self.__interest_service.
+                                                            get_by_subject_group_and_language(db,
+                                                                                              dto.skills,
+                                                                                              language=dto.language))
+        topics_task: Coroutine[Any, Any, InterestListVO] = (self.__interest_service.
+                                                            get_by_subject_group_and_language(db,
+                                                                                              dto.topics,
+                                                                                              language=dto.language))
+        industry, interested_positions, skills, topics = await asyncio.gather(
+            industry_task, interested_positions_task, skills_task, topics_task
+        )
         res: ProfileVO = ProfileVO.of(dto)
         res.industry = industry
         res.interested_positions = interested_positions
@@ -49,11 +60,23 @@ class ProfileService:
     async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO):
         if dto is None:
             raise NotFoundException(msg="no data found")
-        industry: Optional[ProfessionVO] = await self.__profession_service.get_profession_by_id(db, dto.industry)
-        interested_positions: Optional[InterestListVO] = \
-            await self.__interest_service.get_interest_by_ids(db, dto.interested_positions)
-        skills: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.skills)
-        topics: Optional[InterestListVO] = await self.__interest_service.get_interest_by_ids(db, dto.topics)
+        industry_task: Coroutine[Any, Any, ProfessionVO] = \
+            self.__profession_service.get_profession_by_id(db, dto.industry)
+        interested_positions_task: Coroutine[Any, Any, InterestListVO] = \
+            (self.__interest_service.
+             get_by_subject_group_and_language(db, dto.interested_positions, language=dto.language))
+        skills_task: Coroutine[Any, Any, InterestListVO] = (self.__interest_service.
+                                                            get_by_subject_group_and_language(db,
+                                                                                              dto.skills,
+                                                                                              language=dto.language))
+        topics_task: Coroutine[Any, Any, InterestListVO] = (self.__interest_service.
+                                                            get_by_subject_group_and_language(db,
+                                                                                              dto.topics,
+                                                                                              language=dto.language))
+        industry, interested_positions, skills, topics = await asyncio.gather(
+            industry_task, interested_positions_task, skills_task, topics_task
+        )
+
         res: MentorProfileVO = MentorProfileVO.of(dto)
         res.industry = industry
         res.interested_positions = interested_positions

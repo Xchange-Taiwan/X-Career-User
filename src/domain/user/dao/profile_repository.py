@@ -20,20 +20,11 @@ class ProfileRepository:
         return Profile.to_dto(query)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileDTO:
+        if (dto is None) or (dto.user_id is None):
+            raise NotFoundException(msg="not a valid user")
+        # directly upsert since the user_id should be pre dedined in auth service
+
         model: Profile = convert_dto_to_model(dto, Profile)
-
-        # Check if the record exists
-        query = select(Profile).filter_by(user_id=model.user_id)
-        result = await db.execute(query)
-
-        existing_model = result.scalars().first()
-
-        if existing_model is not None:
-            # Update the existing model
-            for key, value in model.__dict__.items():
-                if key != "_sa_instance_state":
-                    setattr(existing_model, key, value)
-
         model = await db.merge(model)
 
         await db.commit()
