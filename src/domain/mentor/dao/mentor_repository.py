@@ -10,13 +10,11 @@ from src.infra.util.convert_util import get_first_template, get_all_template
 
 class MentorRepository:
 
-    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, mentor_id: int,
-                                                    language: str) -> MentorProfileDTO:
-        stmt: Select = select(Profile).filter(Profile.user_id == mentor_id, Profile.language == language)
+    async def get_mentor_profile_by_id(self, db: AsyncSession, mentor_id: int) -> MentorProfileDTO:
+        stmt: Select = select(Profile).filter(Profile.user_id == mentor_id)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
         return Profile.to_mentor_profile_dto(mentor)
-
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
         model: Profile = Profile.of_mentor_profile(mentor_profile_dto)

@@ -3,7 +3,7 @@ from typing import List
 
 from fastapi import (
     APIRouter,
-    Path, Body, Depends, Query
+    Path, Body, Depends
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,14 +51,24 @@ async def upsert_mentor_profile(
 async def get_mentor_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
-        language: Language = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
     mentor_profile: MentorProfileVO = \
-        await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language.value)
+        await mentor_service.get_mentor_profile_by_id(db, user_id)
 
     return res_success(data=mentor_profile.model_dump_json())
+
+@router.get('/{user_id}/experiences',
+            responses=idempotent_response('get_exp_by_user_id', experience.ExperienceListVO))
+async def get_exp_by_user_id(
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
+        exp_service: ExperienceService = Depends(get_experience_service)
+):
+    res: experience.ExperienceListVO = await exp_service.get_exp_by_user_id(db, user_id)
+    return res_success(data=res.model_dump_json())
+
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
@@ -70,7 +80,9 @@ async def upsert_experience(
         body: experience.ExperienceDTO = Body(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db, experience_dto=body, user_id=user_id,
+    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db,
+                                                                experience_dto=body,
+                                                                user_id=user_id,
                                                                 exp_cate=experience_type)
     return res_success(data=res.model_dump_json())
 

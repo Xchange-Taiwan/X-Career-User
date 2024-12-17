@@ -23,11 +23,10 @@ class MentorService:
         res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(db, res_dto)
         return res_vo
 
-    async def get_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) \
+    async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int) \
             -> MentorProfileVO:
-        mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id_and_language(db, user_id,
-                                                                                                            language)
+        mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id(db, user_id)
         if mentor_dto is None:
-            raise NotFoundException(msg=f"No such user with id: {user_id}, language: {language}")
-        return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto, language)
+            raise NotFoundException(msg=f"No such user with id: {user_id}")
+        return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto)
 
