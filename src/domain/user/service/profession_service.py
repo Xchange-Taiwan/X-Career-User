@@ -1,3 +1,4 @@
+import logging as log
 from typing import List, Type, Optional, Dict
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +8,6 @@ from src.config.exception import raise_http_exception
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
 from src.domain.user.model.common_model import ProfessionListVO, ProfessionVO
 from src.infra.db.orm.init.user_init import Profession
-import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -29,7 +29,6 @@ class ProfessionService:
             log.error('get_all_profession error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
 
-
     async def get_all_expertises(self, db: AsyncSession) -> ProfessionListVO:
         res: ProfessionListVO = ProfessionListVO()
         interests: List[Type[Profession]] = await self.__profession_repository.get_all_expertise(db)
@@ -45,8 +44,6 @@ class ProfessionService:
             log.error('get_by_profession_category error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
 
-
-
     async def get_profession_by_id(self, db: AsyncSession
                                    , interest_id: int) -> ProfessionVO:
         try:
@@ -56,6 +53,20 @@ class ProfessionService:
             log.error('get_profession_by_id error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
 
+    async def get_expertise_by_subjects(self, db: AsyncSession, subject_groups: List[str],
+                                        language: str) -> ProfessionListVO:
+        try:
+            res: List[Type[Profession]] = \
+                await self.__profession_repository.get_profession_by_subjects_and_category(db,
+                                                                                           subject_groups,
+                                                                                           ProfessionCategory.EXPERTISE,
+                                                                                           language)
+            professions: List[ProfessionVO] = [self.convert_to_profession_vo(p) for p in res]
+            profession_list_vo: ProfessionListVO = ProfessionListVO(professions=professions)
+            return profession_list_vo
+        except Exception as e:
+            log.error('get_profession_by_subjects error: %s', str(e))
+            raise_http_exception(e, msg='Internal Server Error')
 
     def convert_to_profession_vo(self, dto: Optional[Type[Profession]]) -> Optional[ProfessionVO]:
         if dto is None:
@@ -66,11 +77,11 @@ class ProfessionService:
         subject: str = dto.subject
         profession_metadata: Dict = dto.profession_metadata
         res: ProfessionVO = ProfessionVO(
-            id=profession_id, 
+            id=profession_id,
             category=category,
             subject_group=subject_group,
-            subject=subject, 
-            profession_metadata=profession_metadata, 
+            subject=subject,
+            profession_metadata=profession_metadata,
             language=dto.language)
 
         return res

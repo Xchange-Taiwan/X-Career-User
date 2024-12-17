@@ -29,5 +29,5 @@ class MentorService:
                                                                                                             language)
         if mentor_dto is None:
             raise NotFoundException(msg=f"No such user with id: {user_id}, language: {language}")
-        return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto)
+        return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto, language)
 

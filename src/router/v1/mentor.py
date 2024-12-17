@@ -51,11 +51,12 @@ async def upsert_mentor_profile(
 async def get_mentor_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
-        language: str = Path(...),
+        language: Language = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language)
+    mentor_profile: MentorProfileVO = \
+        await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language.value)
 
     return res_success(data=mentor_profile.model_dump_json())
 

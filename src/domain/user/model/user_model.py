@@ -21,7 +21,7 @@ class ProfileDTO(BaseModel):
     interested_positions: Optional[List[Union[str]]] = []
     skills: Optional[List[Union[str]]] = []
     topics: Optional[List[Union[str]]] = []
-    language: Optional[str] = 'CHT'
+    language: Optional[str] = 'zh_TW'
 
 
 class ProfileVO(BaseModel):
