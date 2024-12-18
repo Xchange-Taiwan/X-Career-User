@@ -10,6 +10,7 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class ExperienceDTO(BaseModel):
+    exp_id: Optional[int] = None
     user_id: Optional[int] = None
     desc: Dict = {}
     order: int = 0

@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, BigInteger, Text
 from sqlalchemy import types
 from sqlalchemy.ext.declarative import declarative_base
 
+from .common_model import ProfessionVO
 from .user_model import *
 from ....config.constant import *
 

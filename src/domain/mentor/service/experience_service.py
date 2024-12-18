@@ -13,11 +13,7 @@ class ExperienceService:
     def __init__(self, exp_dao: MentorExperienceRepository):
         self.__exp_dao = exp_dao
 
-    async def get_exp_by_exp_id_and_language(self, db: AsyncSession, exp_id: int, language: str) -> ExperienceVO:
-        mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_id(db, exp_id)
-        return ExperienceVO.of(mentor_exp)
-
-    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int, language: str) -> ExperienceVO:
+    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int) -> ExperienceVO:
         mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_user_id(db, user_id)
         return ExperienceVO.of(mentor_exp)
 
