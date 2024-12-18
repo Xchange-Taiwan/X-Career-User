@@ -51,11 +51,12 @@ async def upsert_mentor_profile(
 async def get_mentor_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
+        language: Language = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
     mentor_profile: MentorProfileVO = \
-        await mentor_service.get_mentor_profile_by_id(db, user_id)
+        await mentor_service.get_mentor_profile_by_id(db, user_id, language.value)
 
     return res_success(data=mentor_profile.model_dump_json())
 
@@ -110,9 +111,9 @@ async def get_expertises(
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
     res: ProfessionListVO = \
-        await profession_service.get_all_profession(db, 
-                                                    ProfessionCategory.EXPERTISE, 
-                                                    language)
+        await profession_service.get_all_profession_by_category_and_language(db,
+                                                                             ProfessionCategory.EXPERTISE,
+                                                                             language)
     return res_success(data=res.to_json())
 
 

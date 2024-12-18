@@ -20,10 +20,8 @@ class MentorRepository:
         model: Profile = Profile.of_mentor_profile(mentor_profile_dto)
 
         model = await db.merge(model)
-        await db.commit()
-
         res: MentorProfileDTO = Profile.to_mentor_profile_dto(model)
-
+        await db.commit()
         return res
 
     async def delete_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) -> None:

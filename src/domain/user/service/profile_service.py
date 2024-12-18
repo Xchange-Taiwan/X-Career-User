@@ -31,38 +31,43 @@ class ProfileService:
         res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(db, dto)
         return await self.convert_to_profile_vo(db, res)
 
-    async def convert_to_profile_vo(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
+    async def convert_to_profile_vo(self, db: AsyncSession, dto: ProfileDTO, language: Optional[str] = None) \
+            -> ProfileVO:
         if dto is None:
             raise NotFoundException(msg="no data found")
+        if language is None:
+            language = dto.language
         industry_task: Coroutine[Any, Any, ProfessionVO] = \
-            self.__profession_service.get_profession_by_id(db, dto.industry)
+            self.__profession_service.get_industries_by_subjects(db, dto.industries, dto.language)
         interested_positions_task: Coroutine[Any, Any, InterestListVO] = \
             (self.__interest_service.
-             get_by_subject_group_and_language(db, dto.interested_positions, language=dto.language))
+             get_by_subject_group_and_language(db, dto.interested_positions, language))
         skills_task: Coroutine[Any, Any, InterestListVO] = (self.__interest_service.
                                                             get_by_subject_group_and_language(db,
                                                                                               dto.skills,
-                                                                                              language=dto.language))
+                                                                                              language))
         topics_task: Coroutine[Any, Any, InterestListVO] = (self.__interest_service.
                                                             get_by_subject_group_and_language(db,
                                                                                               dto.topics,
-                                                                                              language=dto.language))
-        industry, interested_positions, skills, topics = await asyncio.gather(
+                                                                                              language))
+        industries, interested_positions, skills, topics = await asyncio.gather(
             industry_task, interested_positions_task, skills_task, topics_task
         )
         res: ProfileVO = ProfileVO.of(dto)
-        res.industry = industry
+        res.industries = industries
         res.interested_positions = interested_positions
         res.skills = skills
         res.topics = topics
         return res
 
-    async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO, language: str) \
-            -> MentorProfileVO:
+    async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO,
+                                           language: Optional[str] = None) -> MentorProfileVO:
         if dto is None:
             raise NotFoundException(msg="no data found")
+        if language is None:
+            language = dto.language
         industry_task: Coroutine[Any, Any, ProfessionVO] = \
-            self.__profession_service.get_profession_by_id(db, dto.industry)
+            self.__profession_service.get_industries_by_subjects(db, dto.industries, language=language)
         interested_positions_task: Coroutine[Any, Any, InterestListVO] = \
             (self.__interest_service.
              get_by_subject_group_and_language(db, dto.interested_positions, language=language))
@@ -76,12 +81,12 @@ class ProfileService:
                                                                                               language=language))
         expertises_task: Coroutine[Any, Any, ProfessionListVO] = \
             self.__profession_service.get_expertise_by_subjects(db, dto.expertises, language=language)
-        industry, interested_positions, skills, topics, expertises = await asyncio.gather(
+        industries, interested_positions, skills, topics, expertises = await asyncio.gather(
             industry_task, interested_positions_task, skills_task, topics_task, expertises_task
         )
 
         res: MentorProfileVO = MentorProfileVO.of(dto)
-        res.industry = industry
+        res.industries = industries
         res.interested_positions = interested_positions
         res.skills = skills
         res.topics = topics

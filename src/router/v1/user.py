@@ -74,9 +74,9 @@ async def get_industries(
 ):
     # 需確認是不是返回全部還是可以查詢特定
     res: common.ProfessionListVO = \
-        await profession_service.get_all_profession(db, 
-                                                    ProfessionCategory.INDUSTRY, 
-                                                    language)
+        await profession_service.get_all_profession_by_category_and_language(db,
+                                                                             ProfessionCategory.INDUSTRY,
+                                                                             language)
     return res_success(data=res.to_json())
 
 

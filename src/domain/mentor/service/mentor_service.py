@@ -20,13 +20,13 @@ class MentorService:
 
     async def upsert_mentor_profile(self, db: AsyncSession, profile_dto: MentorProfileDTO) -> MentorProfileVO:
         res_dto: MentorProfileDTO = await self.__mentor_repository.upsert_mentor(db, profile_dto)
-        res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(db, res_dto)
+        res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(db, res_dto, language=profile_dto.language)
         return res_vo
 
-    async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int) \
+    async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int, language: str) \
             -> MentorProfileVO:
         mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id(db, user_id)
         if mentor_dto is None:
             raise NotFoundException(msg=f"No such user with id: {user_id}")
-        return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto)
+        return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto, language=language)
 

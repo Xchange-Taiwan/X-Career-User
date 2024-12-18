@@ -1,9 +1,7 @@
-from profile import Profile
-
-import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, types
+from sqlalchemy import Integer, BigInteger, Column, String
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
+from typing_extensions import Optional
 
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
@@ -27,13 +25,14 @@ class Profile(Base):
     company = Column(String, default='')
     seniority_level = Column(
         ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
-    industry = Column(Integer)
+
     years_of_experience = Column(Integer, default=0)
     region = Column(String, default='')
     language = Column(String, default='')
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
     topics = Column(JSONB)
+    industries = Column(JSONB)
     expertises = Column(JSONB)
 
     # static of function for get user profile
@@ -46,14 +45,28 @@ class Profile(Base):
         return Profile(**dto.__dict__)
 
     @staticmethod
-    def to_dto(model: Profile) -> ProfileDTO:
+    def to_dto(model) -> ProfileDTO:
         return ProfileDTO(**model.__dict__)
 
     @staticmethod
-    def to_mentor_profile_dto(model: Profile) -> MentorProfileDTO:
+    def to_mentor_profile_dto(model) -> Optional[MentorProfileDTO]:
         if model is None:
             return None
-        return MentorProfileDTO(**model.__dict__)
+        return MentorProfileDTO(
+            user_id=model.user_id,
+            name=model.name,
+            avatar=model.avatar,
+            region=model.region,
+            job_title=model.job_title,
+            company=model.company,
+            years_of_experience=model.years_of_experience,
+            linkedin_profile=model.linkedin_profile,
+            language=model.language,
+            personal_statement=model.personal_statement,
+            about=model.about,
+            seniority_level=model.seniority_level,
+            expertises=model.expertises
+        )
 
 
 class MentorExperience(Base):
