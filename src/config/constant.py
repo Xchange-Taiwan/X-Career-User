@@ -58,3 +58,7 @@ class Sorting(Enum):
 class SchedulesType(Enum):
     ALLOW = "ALLOW"
     FORBIDDEN = "FORBIDDEN"
+
+
+AVAILABLE_EVT = 'AVAILABLE'
+UNAVAILABLE_EVT = 'UNAVAILABLE'
