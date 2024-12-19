@@ -36,3 +36,17 @@ class ProfessionRepository:
         stmt: Select = select(Profession).filter(Profession.category == ProfessionCategory.EXPERTISE)
         res: List[Type[Profession]] = await get_all_template(db, stmt)
         return res
+
+    async def get_profession_by_subjects_and_category(self, db,
+                                                      subject_groups: List[str],
+                                                      category: ProfessionCategory,
+                                                      language: str
+                                                      ) \
+            -> List[Type[Profession]]:
+        stmt: Select = (select(Profession)
+                        .filter(Profession.subject_group.in_(subject_groups))
+                        .filter(Profession.category == category)
+                        .filter(Profession.language == language))
+
+        res: List[Type[Profession]] = await get_all_template(db, stmt)
+        return res

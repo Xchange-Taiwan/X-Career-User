@@ -10,7 +10,7 @@ class FileService:
         self.file_repository = file_repository
 
     async def save_file_info(self, session: AsyncSession, file_info: FileInfoDTO) -> FileInfoVO:
-        res: FileInfoDTO = await self.file_repository.insert(session, file_info)
+        res: FileInfoDTO = await self.file_repository.upsert(session, file_info)
         return FileInfoVO.of(res)
 
     async def get_file_info(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfoVO:
@@ -19,8 +19,8 @@ class FileService:
             raise NotFoundException(msg="File not found", code="40400", data=False)
         return FileInfoVO.of(file_info)
 
-    async def delete_file_info(self, session: AsyncSession, user_id: int, file_id: str) -> bool:
-        return await self.file_repository.delete_file_info_by_id(session, user_id, file_id)
+    async def delete_file_info(self, session: AsyncSession, user_id: int, file_name: str) -> bool:
+        return await self.file_repository.delete_file_info_by_name(session, user_id, file_name)
 
     # async def get_all_files(self, session: AsyncSession) -> List[FileInfoVO]:
     #     res: List[FileInfoDTO] = await self.file_repository.get_all_files_info(session)
