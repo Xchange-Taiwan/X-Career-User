@@ -1,10 +1,13 @@
 from typing import Dict
+from pydantic import Field
+from datetime import datetime
 
 from ..enum.mentor_enums import SeniorityLevel
 from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
 from ....config.conf import *
 from ....config.constant import *
+from ....infra.util.convert_util import json_encoders
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -19,7 +22,7 @@ log.basicConfig(filemode='w', level=log.INFO)
 #     personal_statement: Optional[str]
 #     about: Optional[str]
 #     # TODO: enum
-#     seniority_level: Optional[str] = ""
+#     seniority_level: Optional[str] = ''
 #     expertises: Optional[List[ProfessionDTO]] = []
 
 
@@ -46,9 +49,9 @@ class CannedMessageDTO(BaseModel):
 
 
 class MentorProfileVO(ProfileVO):
-    personal_statement: Optional[str] = ""
-    about: Optional[str] = ""
-    seniority_level: Optional[SeniorityLevel] = ""
+    personal_statement: Optional[str] = ''
+    about: Optional[str] = ''
+    seniority_level: Optional[SeniorityLevel] = ''
     expertises: Optional[ProfessionListVO] = None
 
 
@@ -70,22 +73,46 @@ class MentorProfileVO(ProfileVO):
         )
 
 
-
 class TimeSlotDTO(BaseModel):
-    schedule_id: Optional[int]
-    type: ScheduleType
-    year: Optional[int] = SCHEDULE_YEAR
-    month: Optional[int] = SCHEDULE_MONTH
-    day_of_month: Optional[int] = SCHEDULE_DAY_OF_MONTH
-    day_of_week: Optional[int] = SCHEDULE_DAY_OF_WEEK
-    start_time: Optional[int]
-    end_time: Optional[int]
+    id: Optional[int] = Field(None, example=0)
+    user_id: int = Field(..., example=1)
+    dt_type: str = Field(..., example=AVAILABLE_EVT, regex=f'^({AVAILABLE_EVT}|{UNAVAILABLE_EVT})$')
+    dt_year: Optional[int] = Field(default=None, example=2024)
+    dt_month: Optional[int] = Field(default=None, example=6)
+    dtstart: datetime = Field(..., example='2024-06-01T09:00:00')
+    dtend: datetime = Field(..., example='2024-06-01T10:00:00')
+    timezone: str = Field(default='UTC', exclude='UTC')
+    rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
+    exdate: List[datetime] = Field(default=[], example=['2024-06-15T09:00:00', '2024-06-29T09:00:00'])
+    
+    class Config:
+        orm_mode = True
+        json_encoders = {
+            datetime: lambda v: v.strftime(DATETIME_FORMAT)
+        }
+
+    def init_fields(self, user_id: int) -> 'TimeSlotDTO':
+        self.user_id = user_id
+        now = datetime.now()
+        self.dt_year = self.dtstart.year if self.dtstart else now.year
+        self.dt_month = self.dtstart.month if self.dtstart else now.month
+        return self
+    
+    def to_json(self):
+        return json_encoders(self)
 
 
 class TimeSlotVO(TimeSlotDTO):
-    schedule_id: int
+    id: int
 
 
 class MentorScheduleVO(BaseModel):
-    timeslots: Optional[List[TimeSlotVO]] = []
-    next_id: Optional[int]
+    timeslots: Optional[List[TimeSlotVO]] = Field(default=[])
+    next_id: Optional[int] = Field(default=None, example=0)
+    
+    def to_json(self) -> Dict:
+        timeslots: Dict = [timeslot.to_json() for timeslot in self.timeslots]
+        return {
+            'timeslots': timeslots,
+            'next_id': self.next_id,
+        }

@@ -1,14 +1,24 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, types
+from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, JSON
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 
-from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
-    ExperienceCategory
+from src.config.constant import (
+    ProfessionCategory, 
+    RoleType, 
+    InterestCategory,
+    SchedulesType, 
+    BookingStatus,
+    ExperienceCategory,
+)
+from src.infra.util.time_util import current_seconds
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
-from src.domain.mentor.model.mentor_model import MentorProfileDTO
+from src.domain.mentor.model.mentor_model import (
+    MentorProfileDTO,
+    TimeSlotDTO,
+)
 from src.domain.user.model.common_model import ProfessionVO
 from src.domain.user.model.user_model import ProfileDTO
 
@@ -86,21 +96,55 @@ class Profession(Base):
     def to_profession_vo(model: 'Profession') -> ProfessionVO:
         return ProfessionVO(**model.__dict__)
 
+
+# class MentorSchedule(Base):
+#     __tablename__ = 'mentor_schedules'
+#     id = Column(Integer, primary_key=True)
+#     user_id = Column(BigInteger, nullable=False)
+#     type = Column(
+#         ENUM(SchedulesType, name="schedule_type", create_type=False))
+#     year = Column(Integer, default=-1)
+#     month = Column(Integer, default=-1)
+#     day_of_month = Column(Integer, nullable=False)
+#     day_of_week = Column(Integer, nullable=False)
+#     start_time = Column(Integer, nullable=False)
+#     end_time = Column(Integer, nullable=False)
+#     cycle_start_date = Column(Integer)
+#     cycle_end_date = Column(Integer)
+#     # profile = relationship("Profile", backref="mentor_schedules")
+
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
-    id = Column(Integer, primary_key=True)
-    user_id = Column(BigInteger, nullable=False)
-    type = Column(
-        ENUM(SchedulesType, name="schedule_type", create_type=False))
-    year = Column(Integer, default=-1)
-    month = Column(Integer, default=-1)
-    day_of_month = Column(Integer, nullable=False)
-    day_of_week = Column(Integer, nullable=False)
-    start_time = Column(Integer, nullable=False)
-    end_time = Column(Integer, nullable=False)
-    cycle_start_date = Column(Integer)
-    cycle_end_date = Column(Integer)
-    # profile = relationship("Profile", backref="mentor_schedules")
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, nullable=False)    # User ID
+    dt_type = Column(String(20), nullable=False) # Event type
+    dt_year = Column(Integer, nullable=False, index=True)      # Year
+    dt_month = Column(Integer, nullable=False, index=True)     # Month
+    dtstart = Column(DateTime, nullable=False, index=True)  # Start time
+    dtend = Column(DateTime, nullable=False, index=True)    # End time
+    timezone = Column(String(50), nullable=False)   # Timezone
+    rrule = Column(Text, nullable=True)             # Repeat event rules
+    exdate = Column(JSON, default=[])               # Use JSONB to store exclusion dates
+    created_at = Column(BigInteger, default=current_seconds())
+    updated_at = Column(BigInteger, default=current_seconds(), onupdate=current_seconds())
+    
+    @staticmethod
+    def of(dto: TimeSlotDTO):
+        if (dto is None):
+            return None
+        return MentorSchedule(**dto.__dict__)
+
+    def __repr__(self):
+        return f'<MentorSchedules(id={self.id}, \
+            user_id={self.user_id}, \
+            dt_type={self.dt_type}, \
+            dt_year={self.dt_year}, \
+            dt_month={self.dt_month}, \
+            dtstart={self.dtstart}, \
+            dtend={self.dtend}, \
+            rrule={self.rrule}, \
+            exdate={self.exdate})>'
 
 
 class CannedMessage(Base):

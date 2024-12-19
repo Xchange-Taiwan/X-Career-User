@@ -9,6 +9,8 @@ from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.mentor.service.mentor_service import MentorService
+from src.domain.mentor.service.schedule_service import ScheduleService
+from src.domain.mentor.dao.schedule_repository import ScheduleRepository
 from src.domain.user.dao import profile_repository
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.domain.user.dao.profile_repository import ProfileRepository
@@ -39,6 +41,9 @@ def get_profession_dao() -> ProfessionRepository:
 
 def get_file_dao() -> FileRepository:
     return FileRepository()
+
+def get_schedule_dao() -> ScheduleRepository:
+    return ScheduleRepository()
 
 
 def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao)) -> InterestService:
@@ -82,3 +87,6 @@ def get_profession_service(profession_repository: ProfessionRepository = Depends
 
 def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
     return FileService(file_repository)
+
+def get_schedule_service(schedule_repository: ScheduleRepository = Depends(get_schedule_dao)):
+    return ScheduleService(schedule_repository)

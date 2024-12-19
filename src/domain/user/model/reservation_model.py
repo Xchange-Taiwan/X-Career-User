@@ -1,44 +1,9 @@
-import logging as log
-
-from sqlalchemy import Column, Integer, BigInteger, Text
-from sqlalchemy import types
-from sqlalchemy.ext.declarative import declarative_base
-
 from .user_model import *
 from ....config.constant import *
+import logging as log
+
 
 log.basicConfig(filemode='w', level=log.INFO)
-
-Base = declarative_base()
-
-
-class MentorSchedules(Base):
-    __tablename__ = 'mentor_schedules'
-
-    mentor_schedules_id = Column(Integer, primary_key=True)
-    type = Column(types.Enum(ScheduleType), default=ScheduleType.ALLOW)
-    year = Column(Integer, default=-1)
-    month = Column(Integer, default=-1)
-    day_of_month = Column(Integer, nullable=False)
-    day_of_week = Column(Integer, nullable=False)
-    start_time = Column(Integer, nullable=False)
-    end_time = Column(Integer, nullable=False)
-    cycle_start_date = Column(BigInteger)
-    cycle_end_date = Column(BigInteger)
-
-
-class Reservations(Base):
-    __tablename__ = 'reservations'
-
-    reservations_id = Column(Integer, primary_key=True)
-    mentor_id = Column(Integer, nullable=False)
-    mentee_id = Column(Integer, nullable=False)
-    start_datetime = Column(BigInteger)
-    end_datetime = Column(BigInteger)
-    my_status = Column(types.Enum(BookingStatus), nullable=False, default=BookingStatus.PENDING)
-    status = Column(types.Enum(BookingStatus), nullable=False, default=BookingStatus.PENDING)
-    role = Column(types.Enum(RoleType))
-    message_from_others = Column(Text, default='')
 
 
 class UserDTO(BaseModel):
