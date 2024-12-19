@@ -79,27 +79,31 @@ class TimeSlotDTO(BaseModel):
     dt_type: str = Field(..., example=AVAILABLE_EVT, regex=f'^({AVAILABLE_EVT}|{UNAVAILABLE_EVT})$')
     dt_year: Optional[int] = Field(default=None, example=2024)
     dt_month: Optional[int] = Field(default=None, example=6)
-    dtstart: datetime = Field(..., example='2024-06-01T09:00:00')
-    dtend: datetime = Field(..., example='2024-06-01T10:00:00')
+    dtstart: int = Field(..., example=1717203600)
+    dtend: int = Field(..., example=1717207200)
     timezone: str = Field(default='UTC', exclude='UTC')
     rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
-    exdate: List[datetime] = Field(default=[], example=['2024-06-15T09:00:00', '2024-06-29T09:00:00'])
-    
+    exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
+
     class Config:
         orm_mode = True
-        json_encoders = {
-            datetime: lambda v: v.strftime(DATETIME_FORMAT)
-        }
+        # json_encoders = {
+        #     datetime: lambda v: v.strftime(DATETIME_FORMAT)
+        # }
 
     def init_fields(self, user_id: int) -> 'TimeSlotDTO':
         self.user_id = user_id
-        now = datetime.now()
-        self.dt_year = self.dtstart.year if self.dtstart else now.year
-        self.dt_month = self.dtstart.month if self.dtstart else now.month
+        if self.dtstart:
+            date = datetime.fromtimestamp(self.dtstart)
+        else:
+            date = datetime.now()
+        self.dt_year = date.year
+        self.dt_month = date.month
         return self
     
     def to_json(self):
         return json_encoders(self)
+        # return self.json()
 
 
 class TimeSlotVO(TimeSlotDTO):

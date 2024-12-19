@@ -111,13 +111,13 @@ CREATE TABLE IF NOT EXISTS mentor_schedules (
     id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,    -- user ID, used to distinguish users
     dt_type VARCHAR(20) NOT NULL CHECK (dt_type IN ('AVAILABLE', 'UNAVAILABLE')), -- event type
-    dt_year INT NOT NULL,        -- dt_year of the event
-    dt_month INT NOT NULL,       -- dt_month of the event
-    dtstart TIMESTAMP NOT NULL, -- start time of the event
-    dtend TIMESTAMP NOT NULL,   -- end time of the event
+    dt_year INT NOT NULL,       -- dt_year of the event
+    dt_month INT NOT NULL,      -- dt_month of the event
+    dtstart BIGINT NOT NULL,    -- start timestamp of the event
+    dtend BIGINT NOT NULL,      -- end timestamp of the event
     timezone VARCHAR(50) NOT NULL DEFAULT 'UTC', -- timezone, for example: 'America/New_York'
     rrule TEXT,                 -- rule for repeating events, for example: 'FREQ=WEEKLY;COUNT=4'
-    exdate JSONB DEFAULT '[]'::jsonb,   -- list of excluded dates (ISO format)
+    exdate JSONB DEFAULT '[]'::jsonb,   -- list of excluded dates/timestamps (ISO format)
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );

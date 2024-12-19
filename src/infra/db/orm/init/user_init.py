@@ -116,13 +116,13 @@ class Profession(Base):
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(BigInteger, nullable=False)    # User ID
     dt_type = Column(String(20), nullable=False) # Event type
-    dt_year = Column(Integer, nullable=False, index=True)      # Year
-    dt_month = Column(Integer, nullable=False, index=True)     # Month
-    dtstart = Column(DateTime, nullable=False, index=True)  # Start time
-    dtend = Column(DateTime, nullable=False, index=True)    # End time
+    dt_year = Column(Integer, nullable=False, index=True)       # Year
+    dt_month = Column(Integer, nullable=False, index=True)      # Month
+    dtstart = Column(BigInteger, nullable=False, index=True)    # Start time
+    dtend = Column(BigInteger, nullable=False, index=True)      # End time
     timezone = Column(String(50), nullable=False)   # Timezone
     rrule = Column(Text, nullable=True)             # Repeat event rules
     exdate = Column(JSON, default=[])               # Use JSONB to store exclusion dates

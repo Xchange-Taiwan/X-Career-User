@@ -45,7 +45,8 @@ class ScheduleService:
     async def save_schedules(self, db: AsyncSession, schedules: List[TimeSlotDTO]) -> MentorScheduleVO:
         try:
             res: MentorScheduleVO = MentorScheduleVO()
-            schedule_rows: List[Schedule] = await self.__schedule_repository.save_schedules(db, schedules)
+            schedule_rows: List[Schedule] = [Schedule.of(schedule) for schedule in schedules]
+            schedule_rows = await self.__schedule_repository.save_schedules(db, schedule_rows)
             res.timeslots = [TimeSlotVO.from_orm(schedule) for schedule in schedule_rows]
             return res
         except Exception as e:
