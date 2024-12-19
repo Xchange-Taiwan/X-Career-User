@@ -10,8 +10,8 @@ log.basicConfig(filemode='w', level=log.INFO)
 class InterestVO(BaseModel):
     id: int
     category: InterestCategory = None
-    subject_group: Optional[str] = None
-    language: Optional[str]
+    language: Optional[str] = None
+    subject_group: str = 'unknown'
     subject: Optional[str] = ''
     desc: Optional[Dict] = {}
 
@@ -32,9 +32,10 @@ class ProfessionDTO(BaseModel):
 
 
 class ProfessionVO(ProfessionDTO):
-    subject_group: Optional[str] = None
-    subject: Optional[str] = ''
-    profession_metadata: Optional[Dict] = {}
+    subject_group: str = 'unknown'
+    subject: str = ''
+    profession_metadata: Dict = {}
+    language: Optional[str] = ''
 
 
 class ProfessionListVO(BaseModel):

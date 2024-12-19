@@ -24,13 +24,11 @@ class InterestService:
             query: List[Type[Interest]] = await self.__interest_repository.get_all_interest(db, interest, language.value)
 
             interests: List[InterestVO] = [self.convert_to_interest_vo(interest) for interest in query]
-            return InterestListVO(
-                interests=interests,
-                language=language.value,
-            )
+            return InterestListVO(interests=interests)
         except Exception as e:
             log.error('get_all_interest error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
+
 
     # TODO: 此 API 可回傳相同 InterestCategory 下的多個語言結果的集合
     async def get_by_interest_category(self, db: AsyncSession, interest: InterestCategory) -> InterestVO:

@@ -26,7 +26,9 @@ class MentorExperienceRepository:
             mentor_exp.order = mentor_exp_dto.order
             mentor_exp.category = exp_cate
             mentor_exp.desc = mentor_exp_dto.desc
-        await db.merge(mentor_exp)
+        mentor_exp = await db.merge(mentor_exp)
+        await db.commit()
+        await db.refresh(mentor_exp)
         mentor.experience = mentor_exp.id
 
         return mentor_exp

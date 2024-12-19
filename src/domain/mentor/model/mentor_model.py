@@ -24,15 +24,14 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class MentorProfileDTO(ProfileDTO):
-    location: Optional[str]
     personal_statement: Optional[str]
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
-    experience: Optional[int]
     expertises: Optional[List[int]]
 
 
-class ProfessionsDTO(BaseModel):
+
+class ProfessionDTO(BaseModel):
     professions_id: int
     category: Optional[str]
     subject: Optional[str] = ''
@@ -40,7 +39,7 @@ class ProfessionsDTO(BaseModel):
 
 
 class CannedMessageDTO(BaseModel):
-    canned_message_id: int
+    canned_messages_id: int
     user_id: int
     role: Optional[str]
     message: Optional[str]
@@ -49,9 +48,9 @@ class CannedMessageDTO(BaseModel):
 class MentorProfileVO(ProfileVO):
     personal_statement: Optional[str] = ""
     about: Optional[str] = ""
-    # TODO: enum
     seniority_level: Optional[SeniorityLevel] = ""
     expertises: Optional[ProfessionListVO] = None
+
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -59,16 +58,16 @@ class MentorProfileVO(ProfileVO):
             user_id=mentor_profile_dto.user_id,
             name=mentor_profile_dto.name,
             avatar=mentor_profile_dto.avatar,
-            timezone=mentor_profile_dto.timezone,
-            location=mentor_profile_dto.location,
+            region=mentor_profile_dto.region,
             job_title=mentor_profile_dto.job_title,
             company=mentor_profile_dto.company,
-            experience=mentor_profile_dto.experience,
+            years_of_experience=mentor_profile_dto.years_of_experience,
             linkedin_profile=mentor_profile_dto.linkedin_profile,
             language=mentor_profile_dto.language,
             personal_statement=mentor_profile_dto.personal_statement,
             about=mentor_profile_dto.about,
-            seniority_level=mentor_profile_dto.seniority_level        )
+            seniority_level=mentor_profile_dto.seniority_level
+        )
 
 
 

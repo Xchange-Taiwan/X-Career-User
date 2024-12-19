@@ -10,15 +10,14 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 class ProfileDTO(BaseModel):
     user_id: Optional[int]
-    name: Optional[str] = ""
-    avatar: Optional[str] = ""
-    location: Optional[str] = ""
-    timezone: Optional[int] = None
+    name: Optional[str] = ''
+    avatar: Optional[str] = ''
     industry: Optional[int] = None
-    job_title: Optional[str] = ""
-    company: Optional[str] = ""
-    experience: Optional[int] = None
-    linkedin_profile: Optional[str] = ""
+    job_title: Optional[str] = ''
+    company: Optional[str] = ''
+    years_of_experience: Optional[int] = 0
+    region: Optional[str] = ''
+    linkedin_profile: Optional[str] = ''
     interested_positions: Optional[List[int]] = []
     skills: Optional[List[int]] = []
     topics: Optional[List[int]] = []
@@ -27,15 +26,14 @@ class ProfileDTO(BaseModel):
 
 class ProfileVO(BaseModel):
     user_id: int
-    name: Optional[str] = ""
-    avatar: Optional[str] = ""
-    timezone: Optional[int] = 0
-    location: Optional[str] = ""
+    name: Optional[str] = ''
+    avatar: Optional[str] = ''
     industry: Optional[ProfessionVO] = None
-    job_title: Optional[str] = ""
-    company: Optional[str] = ""
-    experience: Optional[int] = None
-    linkedin_profile: Optional[str] = ""
+    job_title: Optional[str] = ''
+    company: Optional[str] = ''
+    years_of_experience: Optional[int] = 0
+    region: Optional[str] = ''
+    linkedin_profile: Optional[str] = ''
     interested_positions: Optional[InterestListVO] = None
     skills: Optional[InterestListVO] = None
     topics: Optional[InterestListVO] = None
@@ -47,10 +45,9 @@ class ProfileVO(BaseModel):
             user_id=model.user_id,
             name=model.name,
             avatar=model.avatar,
-            timezone=model.timezone,
-            location=model.location,
             job_title=model.job_title,
             company=model.company,
-            experience=model.experience,
+            years_of_experience=model.years_of_experience,
+            region=model.region,
             linkedin_profile=model.linkedin_profile
         )

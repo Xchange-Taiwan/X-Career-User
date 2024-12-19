@@ -1,7 +1,7 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, Column, String, types
+from sqlalchemy import Integer, BigInteger, Column, String, types
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -17,21 +17,18 @@ Base = declarative_base()
 
 class Profile(Base):
     __tablename__ = 'profiles'
-    user_id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, primary_key=True)
     name = Column(String, nullable=False)
     avatar = Column(String, default='')
-    location = Column(String, default='')
     job_title = Column(String, default='')
     linkedin_profile = Column(String, default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
     company = Column(String, default='')
-    seniority_level = Column(
-        sqlalchemy.dialects.postgresql.ENUM(SeniorityLevel, name='seniority_level', create_type=False), 
-        nullable=False)
-    timezone = Column(Integer, default=0)
-    experience = Column(Integer, default=0)
+        ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
     industry = Column(Integer)
+    years_of_experience = Column(Integer, default=0)
+    region = Column(String, default='')
     language = Column(String, default='')
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
@@ -61,9 +58,9 @@ class Profile(Base):
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(BigInteger)
     category = Column(
-        sqlalchemy.dialects.postgresql.ENUM(ExperienceCategory, name='experience_category', create_type=False),
+        ENUM(ExperienceCategory, name='experience_category', create_type=False),
         nullable=False)
     order = Column(Integer, nullable=False)
     desc = Column(JSONB)
@@ -76,7 +73,9 @@ class MentorExperience(Base):
 class Profession(Base):
     __tablename__ = 'professions'
     id = Column(Integer, primary_key=True)
-    category = Column(type_=types.Enum(ProfessionCategory))
+    category = Column(
+        ENUM(ProfessionCategory, name="profession_category"),  # Map to PostgreSQL enum
+        nullable=False)
     subject_group = Column(String)
     subject = Column(String)
     profession_metadata = Column(JSONB)
@@ -89,9 +88,9 @@ class Profession(Base):
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     type = Column(
-        sqlalchemy.dialects.postgresql.ENUM(SchedulesType, name="schedule_type", create_type=False))
+        ENUM(SchedulesType, name="schedule_type", create_type=False))
     year = Column(Integer, default=-1)
     month = Column(Integer, default=-1)
     day_of_month = Column(Integer, nullable=False)
@@ -104,29 +103,29 @@ class MentorSchedule(Base):
 
 
 class CannedMessage(Base):
-    __tablename__ = 'canned_message'
+    __tablename__ = 'canned_messages'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     role = Column(
-        sqlalchemy.dialects.postgresql.ENUM(RoleType, name="role_type", create_type=False),
+        ENUM(RoleType, name="role_type", create_type=False),
         nullable=False)
     message = Column(String)
-    # profile = relationship("Profile", backref="canned_message")
+    # profile = relationship("Profile", backref="canned_messages")
 
 
 class Reservation(Base):
     __tablename__ = 'reservations'
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     mentor_schedules_id = Column(Integer, nullable=False)
     start_datetime = Column(Integer)
     end_datetime = Column(Integer)
     my_status = Column(
-        sqlalchemy.dialects.postgresql.ENUM(BookingStatus, name="my_status", create_type=False))
+        ENUM(BookingStatus, name="my_status", create_type=False))
     status = Column(
-        sqlalchemy.dialects.postgresql.ENUM(BookingStatus, name="status", create_type=False))
+        ENUM(BookingStatus, name="status", create_type=False))
     role = Column(
-        sqlalchemy.dialects.postgresql.ENUM(RoleType, name="role_type", create_type=False))
+        ENUM(RoleType, name="role_type", create_type=False))
     message_from_others = Column(String, default='')
     # profile = relationship("Profile", backref="reservations")
     # mentor_schedule = relationship("MentorSchedule", backref="reservations")
@@ -135,7 +134,9 @@ class Reservation(Base):
 class Interest(Base):
     __tablename__ = 'interests'
     id = Column(Integer, primary_key=True)
-    category = Column(type_=types.Enum(InterestCategory))
+    category = Column(
+        ENUM(InterestCategory, name="interest_category"),  # Map to PostgreSQL enum
+        nullable=False)
     subject_group = Column(String)
     subject = Column(String)
     desc = Column(JSONB)

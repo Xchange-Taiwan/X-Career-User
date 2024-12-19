@@ -57,8 +57,10 @@ class ProfileRepository:
                 if key != "_sa_instance_state":
                     setattr(existing_model, key, value)
 
-        await db.merge(model)
+        model = await db.merge(model)
 
+        await db.commit()
+        await db.refresh(model)
         return Profile.to_dto(model)
 
     async def delete_profile(self, db: AsyncSession, user_id: str) -> None:
