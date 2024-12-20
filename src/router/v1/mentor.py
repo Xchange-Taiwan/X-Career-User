@@ -118,7 +118,7 @@ async def get_mentor_schedule_list(
         user_id: int = Path(...),
         dt_year: int = Path(...),
         dt_month: int = Path(...),
-        limit: int = Query(None),
+        limit: int = Query(None, ge=1),
         next_dtstart: int = Query(None),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):

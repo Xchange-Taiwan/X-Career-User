@@ -23,6 +23,10 @@ def upsert_mentor_schedule_check(
         raise ClientException(msg=f'The number of timeslots shouldn\'t over {BATCH}')
 
 
+    # 初始化欄位
+    timeslot_dtos = [timeslot.init_fields(user_id) for timeslot in timeslot_dtos]
+
+
     # CHECK: 開始時間(dtstart)應小於結束時間(dtend)
     for timeslot in timeslot_dtos:
         if timeslot.dtstart >= timeslot.dtend:
@@ -34,12 +38,4 @@ def upsert_mentor_schedule_check(
     if max_dtend - min_dtstart > MAX_PERIOD_SECS:
         raise ClientException(msg=f'The max time period shouldn\'t over {MAX_PERIOD_SECS / 86400} days')
 
-
-    # CHECK: 儲存前檢查用戶的時間是否衝突? 若有則拋錯 (這裡僅比對用戶的輸入資料)
-    if timeslots_length > 1:
-        TimeSlotDTO.datetime_conflict_check(timeslot_dtos)
-
-
-    # 初始化欄位
-    timeslot_dtos = [timeslot.init_fields(user_id) for timeslot in timeslot_dtos]
     return timeslot_dtos

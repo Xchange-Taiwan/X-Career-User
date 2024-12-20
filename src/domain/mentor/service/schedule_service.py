@@ -1,6 +1,5 @@
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.config.conf import BATCH
 from src.domain.mentor.model.mentor_model import (
     TimeSlotDTO,
     TimeSlotVO,
@@ -23,17 +22,18 @@ class ScheduleService:
     def __init__(self, schedule_repository: ScheduleRepository):
         self.__schedule_repository: ScheduleRepository = schedule_repository
 
-    async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: int = BATCH, next_dtstart: Optional[int] = None) -> MentorScheduleVO:
+    async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: Optional[int] = None, next_dtstart: Optional[int] = None) -> MentorScheduleVO:
         try:
             res: MentorScheduleVO = MentorScheduleVO()
-            timeslot_dtos: List[Optional[TimeSlotDTO]] = await self.__schedule_repository.get_schedule_list(db, filter, (limit + 1), next_dtstart)
+            limit = (limit + 1) if limit else None
+            timeslot_dtos: List[Optional[TimeSlotDTO]] = await self.__schedule_repository.get_schedule_list(db, filter, limit, next_dtstart)
 
             list_size = len(timeslot_dtos)
             if list_size == 0:
                 return res
 
             timeslot_vos: List[TimeSlotVO] = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
-            if list_size <= limit:
+            if not limit or list_size < limit:
                 res.timeslots = timeslot_vos
             else:
                 res.next_dtstart = timeslot_vos[-1].dtstart
