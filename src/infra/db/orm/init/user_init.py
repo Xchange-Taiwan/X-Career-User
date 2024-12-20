@@ -97,22 +97,6 @@ class Profession(Base):
         return ProfessionVO(**model.__dict__)
 
 
-# class MentorSchedule(Base):
-#     __tablename__ = 'mentor_schedules'
-#     id = Column(Integer, primary_key=True)
-#     user_id = Column(BigInteger, nullable=False)
-#     type = Column(
-#         ENUM(SchedulesType, name="schedule_type", create_type=False))
-#     year = Column(Integer, default=-1)
-#     month = Column(Integer, default=-1)
-#     day_of_month = Column(Integer, nullable=False)
-#     day_of_week = Column(Integer, nullable=False)
-#     start_time = Column(Integer, nullable=False)
-#     end_time = Column(Integer, nullable=False)
-#     cycle_start_date = Column(Integer)
-#     cycle_end_date = Column(Integer)
-#     # profile = relationship("Profile", backref="mentor_schedules")
-
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
 

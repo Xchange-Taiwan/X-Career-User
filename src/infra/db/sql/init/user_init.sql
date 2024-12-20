@@ -89,23 +89,6 @@ CREATE TABLE IF NOT EXISTS professions (
     profession_metadata JSONB
 );
 
--- CREATE TABLE IF NOT EXISTS mentor_schedules (
---     "id" SERIAL PRIMARY KEY,
---     user_id BIGINT NOT NULL,
---     "type" SCHEDULE_TYPE DEFAULT 'ALLOW',
---     "year" INT DEFAULT -1,
---     "month" INT DEFAULT -1,
---     day_of_month INT NOT NULL,
---     day_of_week INT NOT NULL,
---     start_time INT NOT NULL,
---     end_time INT NOT NULL,
---     cycle_start_date BIGINT,
---     cycle_end_date BIGINT
---     --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
--- );
-
--- CREATE INDEX mentor_schedule_index ON mentor_schedules("year", "dt_month", day_of_month, day_of_week, start_time, end_time);
-
 
 CREATE TABLE IF NOT EXISTS mentor_schedules (
     id SERIAL PRIMARY KEY,
