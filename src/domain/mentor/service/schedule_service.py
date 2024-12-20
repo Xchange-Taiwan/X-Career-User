@@ -20,21 +20,21 @@ class ScheduleService:
     def __init__(self, schedule_repository: ScheduleRepository):
         self.__schedule_repository: ScheduleRepository = schedule_repository
 
-    async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: int = BATCH, next_id: Optional[int] = None) -> MentorScheduleVO:
+    async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: int = BATCH, next_dtstart: Optional[int] = None) -> MentorScheduleVO:
         try:
             res: MentorScheduleVO = MentorScheduleVO()
-            schedule_rows: List[Schedule] = await self.__schedule_repository.get_schedule_list(db, filter, (limit + 1), next_id)
-            
-            list_size = len(schedule_rows)
+            timeslot_dtos: List[Optional[TimeSlotDTO]] = await self.__schedule_repository.get_schedule_list(db, filter, (limit + 1), next_dtstart)
+
+            list_size = len(timeslot_dtos)
             if list_size == 0:
                 return res
-            
-            timeslots: List[TimeSlotVO] = [TimeSlotVO.from_orm(schedule) for schedule in schedule_rows]
+
+            timeslot_vos: List[TimeSlotVO] = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
             if list_size <= limit:
-                res.timeslots = timeslots
+                res.timeslots = timeslot_vos
             else:
-                res.next_id = schedule_rows[-1].id
-                res.timeslots = timeslots[:-1]
+                res.next_dtstart = timeslot_vos[-1].dtstart
+                res.timeslots = timeslot_vos[:-1]
 
             return res
         except Exception as e:
@@ -42,14 +42,14 @@ class ScheduleService:
             raise_http_exception(e, msg='Schedule list not found')
 
 
-    async def save_schedules(self, db: AsyncSession, schedules: List[TimeSlotDTO]) -> MentorScheduleVO:
+    async def save_schedules(self, db: AsyncSession, timeslot_dtos: List[TimeSlotDTO]) -> MentorScheduleVO:
         try:
             res: MentorScheduleVO = MentorScheduleVO()
-            schedule_rows: List[Schedule] = [Schedule.of(schedule) for schedule in schedules]
 
             # TODO: 儲存前檢查用戶的時間是否衝突? 若有則拋錯 (等有人開始用 反饋了再優化)
-            schedule_rows = await self.__schedule_repository.save_schedules(db, schedule_rows)
-            res.timeslots = [TimeSlotVO.from_orm(schedule) for schedule in schedule_rows]
+            # 這裡需比對資料庫內的時間衝突
+            timeslot_dtos = await self.__schedule_repository.save_schedules(db, timeslot_dtos)
+            res.timeslots = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
             return res
         except Exception as e:
             log.error('save_schedules error: %s', str(e))
@@ -62,7 +62,7 @@ class ScheduleService:
             if deleted_count:
                 return 'Schedule deleted successfully'
             return 'Schedule not found'
-        
+
         except Exception as e:
             log.error('delete_schedule error: %s', str(e))
             raise_http_exception(e, msg='Schedule delete failed')

@@ -11,8 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.mentor.service.mentor_service import MentorService
 from src.domain.mentor.service.schedule_service import ScheduleService
 from ..res.response import *
+from ..req.mentor_validation import *
 from ...config.constant import *
-from ...config.conf import BATCH
 from ...domain.mentor.model import (
     mentor_model as mentor,
     experience_model as experience,
@@ -118,8 +118,8 @@ async def get_mentor_schedule_list(
         user_id: int = Path(...),
         dt_year: int = Path(...),
         dt_month: int = Path(...),
-        limit: int = Query(BATCH),
-        next_id: int = Query(None),
+        limit: int = Query(None),
+        next_dtstart: int = Query(None),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
     res: mentor.MentorScheduleVO = await schedule_service.get_schedule_list(
@@ -129,7 +129,7 @@ async def get_mentor_schedule_list(
             'dt_month': dt_month,
         }, 
         limit=limit, 
-        next_id=next_id)
+        next_dtstart=next_dtstart)
     return res_success(data=res.to_json())
 
 
@@ -138,10 +138,9 @@ async def get_mentor_schedule_list(
 async def upsert_mentor_schedule(
         db: AsyncSession = Depends(db_session),
         user_id: int = Path(...),
-        body: List[mentor.TimeSlotDTO] = Body(...),
+        body: List[mentor.TimeSlotDTO] = Depends(upsert_mentor_schedule_check),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
-    body = [timeslot.init_fields(user_id) for timeslot in body]
     res: mentor.MentorScheduleVO = await schedule_service.save_schedules(db, body)
     return res_success(data=res.to_json())
 

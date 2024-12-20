@@ -109,14 +109,20 @@ class TimeSlotDTO(BaseModel):
 class TimeSlotVO(TimeSlotDTO):
     id: int
 
+    @staticmethod
+    def of(dto: TimeSlotDTO):
+        if (dto is None):
+            return None
+        return TimeSlotVO(**dto.__dict__)
+
 
 class MentorScheduleVO(BaseModel):
     timeslots: Optional[List[TimeSlotVO]] = Field(default=[])
-    next_id: Optional[int] = Field(default=None, example=0)
+    next_dtstart: Optional[int] = Field(default=None, example=0)
     
     def to_json(self) -> Dict:
         timeslots: Dict = [timeslot.to_json() for timeslot in self.timeslots]
         return {
             'timeslots': timeslots,
-            'next_id': self.next_id,
+            'next_dtstart': self.next_dtstart,
         }
