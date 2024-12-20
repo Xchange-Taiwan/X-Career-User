@@ -127,8 +127,8 @@ async def get_mentor_schedule_list(
             'user_id': user_id,
             'dt_year': dt_year,
             'dt_month': dt_month,
-        }, 
-        limit=limit, 
+        },
+        limit=limit,
         next_dtstart=next_dtstart)
     return res_success(data=res.to_json())
 
@@ -141,7 +141,7 @@ async def upsert_mentor_schedule(
         body: List[mentor.TimeSlotDTO] = Depends(upsert_mentor_schedule_check),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
-    res: mentor.MentorScheduleVO = await schedule_service.save_schedules(db, body)
+    res: mentor.MentorScheduleVO = await schedule_service.save_schedules(db, user_id, body)
     return res_success(data=res.to_json())
 
 

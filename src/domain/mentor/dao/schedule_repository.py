@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 
-from sqlalchemy import select, Select
+from sqlalchemy import select, Select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
@@ -22,6 +22,19 @@ class ScheduleRepository:
         if next_dtstart:
             stmt = stmt.filter(Schedule.dtstart >= next_dtstart)
 
+        schedules: List[Optional[Schedule]] = await get_all_template(db, stmt)
+        timeslot_dtos: List[Optional[TimeSlotDTO]] = [TimeSlotDTO.from_orm(schedule) for schedule in schedules]
+        return timeslot_dtos
+
+
+    async def get_schedules_by_time_range(self, db: AsyncSession, user_id: int, dtstart: int, dtend: int):
+        stmt: Select = select(Schedule).filter(
+            and_(
+                Schedule.user_id == user_id,
+                Schedule.dtstart >= dtstart,
+                Schedule.dtend <= dtend
+            )
+        )
         schedules: List[Optional[Schedule]] = await get_all_template(db, stmt)
         timeslot_dtos: List[Optional[TimeSlotDTO]] = [TimeSlotDTO.from_orm(schedule) for schedule in schedules]
         return timeslot_dtos
