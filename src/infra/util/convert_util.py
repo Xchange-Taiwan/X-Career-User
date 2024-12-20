@@ -1,10 +1,12 @@
 from types import coroutine
-from typing import Any, Optional, Type, Dict
+from typing import Any, Optional, Dict, Type, TypeVar, List
 from datetime import datetime
 
 from pydantic import BaseModel
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import DeclarativeMeta
+from sqlalchemy.dialects.postgresql import insert as pg_insert  # PostgreSQL 專用
 from src.config.conf import DATETIME_FORMAT
 
 
@@ -27,6 +29,33 @@ async def get_first_template(db: AsyncSession, stmt: Select) -> Optional[Any]:
     result = await db.execute(stmt)
     res: coroutine = result.scalars().first()
     return res
+
+
+T = TypeVar('T', bound=DeclarativeMeta)
+
+
+async def bulk_insert(
+    db: AsyncSession, 
+    model_class: Type[T], 
+    objects: List[T],
+    pk_columns: List[str],  # 用於移除 primary keys 的欄位
+) -> List[T]:
+    insert_data = []
+    for obj in objects:
+        data = obj.__dict__.copy()
+        for pk in pk_columns:
+            data.pop(pk, None)
+        insert_data.append(data)
+
+    # NOTE: bulk insert
+    result = await db.execute(model_class.__table__.insert().returning(*model_class.__table__.c), 
+        insert_data)
+    # Update new objs with database values
+    for i, row in enumerate(result.fetchall()):
+        for key, value in row._mapping.items():
+            setattr(objects[i], key, value)
+
+    return objects
 
 
 '''

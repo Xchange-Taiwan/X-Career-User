@@ -11,8 +11,6 @@ from src.config.exception import (
     raise_http_exception,
     ClientException,
 )
-
-
 import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
@@ -56,13 +54,14 @@ class ScheduleService:
             if len(stored_timeslot_dtos) > 0:
                 self.__datetime_conflict_check(timeslot_dtos, stored_timeslot_dtos)
 
-
             timeslot_dtos = await self.__schedule_repository.save_schedules(db, timeslot_dtos)
             res.timeslots = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
             return res
+
         except Exception as e:
-            log.error('save_schedules error: %s', str(e))
-            raise_http_exception(e, msg='Schedule save failed' if not e.msg else e.msg)
+            error_msg = getattr(e, 'msg', str(e)) 
+            log.error('save_schedules error: %s', error_msg)
+            raise_http_exception(e, msg=error_msg)
 
 
     # CHECK: 檢查是否有時間重疊

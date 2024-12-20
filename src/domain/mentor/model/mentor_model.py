@@ -82,7 +82,7 @@ class TimeSlotDTO(BaseModel):
     dt_month: Optional[int] = Field(default=None, example=6)
     dtstart: int = Field(..., example=1717203600)
     dtend: int = Field(..., example=1717207200)
-    timezone: str = Field(default='UTC', exclude='UTC')
+    timezone: str = Field(default='UTC', example='UTC')
     rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
     exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
 
@@ -152,10 +152,9 @@ class TimeSlotDTO(BaseModel):
         self.dt_year = date.year
         self.dt_month = date.month
         return self
-    
+
     def to_json(self):
-        return json_encoders(self)
-        # return self.json()
+        return self.dict()
 
 
 class TimeSlotVO(TimeSlotDTO):
@@ -165,7 +164,10 @@ class TimeSlotVO(TimeSlotDTO):
     def of(dto: TimeSlotDTO):
         if (dto is None):
             return None
-        return TimeSlotVO(**dto.__dict__)
+        dto_dict = dto.__dict__
+        for exclude in ['created_at', 'updated_at']:
+            dto_dict.pop(exclude, None)
+        return TimeSlotVO(**dto_dict)
 
 
 class MentorScheduleVO(BaseModel):

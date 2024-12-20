@@ -146,7 +146,7 @@ async def upsert_mentor_schedule(
 
 
 @router.delete('/{user_id}/schedule/{schedule_id}',
-               responses=idempotent_response('delete_mentor_schedule', mentor.TimeSlotVO))
+               responses=idempotent_response('delete_mentor_schedule', int))
 async def delete_mentor_schedule(
         db: AsyncSession = Depends(db_session),
         user_id: int = Path(...),
@@ -154,4 +154,4 @@ async def delete_mentor_schedule(
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
     msg: str = await schedule_service.delete_schedule(db, user_id, schedule_id)
-    return res_success(data=None, msg=msg)
+    return res_success(data=schedule_id, msg=msg)

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
 from src.infra.util.convert_util import (
     get_all_template, 
-    get_first_template,
+    bulk_insert,
 )
 from src.domain.mentor.model.mentor_model import TimeSlotDTO
 
@@ -14,7 +14,7 @@ from src.domain.mentor.model.mentor_model import TimeSlotDTO
 class ScheduleRepository:
     async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: Optional[int] = None, next_dtstart: Optional[int] = None) -> List[Optional[TimeSlotDTO]]:
         stmt: Select = select(Schedule).filter_by(**filter) \
-            .order_by(Schedule.dtstart) \
+            .order_by(Schedule.dtstart)
 
         if limit:
             stmt = stmt.limit(limit=limit)
@@ -43,31 +43,22 @@ class ScheduleRepository:
     async def save_schedules(self, db: AsyncSession, timeslot_dtos: List[TimeSlotDTO]) -> List[TimeSlotDTO]:
         schedules: List[Schedule] = [Schedule.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
 
-        # # Separate existing and new schedules
-        exist_schedules = [schedule for schedule in schedules if schedule.id]
-        new_schedules = [schedule for schedule in schedules if not schedule.id]
+        # Separate existing and new schedules
+        exist_schedules: List[Schedule] = [schedule for schedule in schedules if schedule.id]
+        new_schedules: List[Schedule] = [schedule for schedule in schedules if not schedule.id]
 
-        # Update existing schedules
+        # Update first: update existing schedules
         for exist_schedule in exist_schedules:
             exist_schedule = await db.merge(exist_schedule)
 
-
-        # # Insert new schedules
+        # Insert after: insert new schedules
         if new_schedules:
-            # 將 __dict__ 轉換為字典並移除 id 欄位
-            insert_data = []
-            for schedule in new_schedules:
-                data = schedule.__dict__.copy()
-                data.pop('id', None)  # 移除 id
-                insert_data.append(data)
-
-            # NOTE: bulk insert
-            result = await db.execute(Schedule.__table__.insert().returning(*Schedule.__table__.c), 
-                insert_data)
-            # Update new schedules with database values
-            for i, row in enumerate(result.fetchall()):
-                for key, value in row._mapping.items():
-                    setattr(new_schedules[i], key, value)
+            new_schedules = await bulk_insert(
+                db,
+                Schedule,
+                new_schedules,
+                ['id'], # 用於移除 primary keys 的欄位
+            )
 
         await db.commit()
         timeslot_dtos: List[TimeSlotDTO] = [TimeSlotDTO.from_orm(schedule) for schedule in schedules]

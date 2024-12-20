@@ -38,4 +38,10 @@ def upsert_mentor_schedule_check(
     if max_dtend - min_dtstart > MAX_PERIOD_SECS:
         raise ClientException(msg=f'The max time period shouldn\'t over {MAX_PERIOD_SECS / 86400} days')
 
+
+    # CHECK: 儲存前檢查用戶的時間是否衝突? 若有則拋錯 (這裡僅比對用戶的輸入資料)
+    if timeslots_length > 1:
+        TimeSlotDTO.datetime_conflict_check(timeslot_dtos)
+
+
     return timeslot_dtos
