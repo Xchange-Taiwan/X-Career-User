@@ -40,7 +40,7 @@ class ScheduleRepository:
                 data.pop('_sa_instance_state', None)  # 移除 SQLAlchemy 的內部狀態
                 insert_data.append(data)
 
-            # NOTE: batch insert
+            # NOTE: bulk insert
             result = await db.execute(Schedule.__table__.insert().returning(*Schedule.__table__.c), 
                 insert_data)
             # Update new schedules with database values

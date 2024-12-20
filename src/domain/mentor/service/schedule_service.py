@@ -46,6 +46,8 @@ class ScheduleService:
         try:
             res: MentorScheduleVO = MentorScheduleVO()
             schedule_rows: List[Schedule] = [Schedule.of(schedule) for schedule in schedules]
+
+            # TODO: 儲存前檢查用戶的時間是否衝突? 若有則拋錯 (等有人開始用 反饋了再優化)
             schedule_rows = await self.__schedule_repository.save_schedules(db, schedule_rows)
             res.timeslots = [TimeSlotVO.from_orm(schedule) for schedule in schedule_rows]
             return res
