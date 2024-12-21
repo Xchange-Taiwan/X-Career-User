@@ -30,11 +30,13 @@ class FileRepository:
             res.content_type = file_info_dto.content_type
             res.url = file_info_dto.url
             res = await session.merge(res)
+            await session.commit()
             return res
         else:
             model = FileInfo(**file_info_dto.__dict__)
             model.file_id = uuid.uuid4()
             session.add(model)
+            await session.commit()
             return model
 
     async def get_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfo:
@@ -60,6 +62,7 @@ class FileRepository:
         if res is None:
             return False
         res.is_deleted = True
+        await session.commit()
         return True
 
     async def get_by_user_id(self, session: AsyncSession, user_id: int) -> List[FileInfo]:
@@ -91,6 +94,7 @@ class FileRepository:
             model.is_deleted = file_info_dto.is_deleted
             model.content_type = file_info_dto.content_type
             model.url = file_info_dto.url
+            await session.commit()
             return model
         else:
             raise NotFoundException(msg="File not found", code="40400", data=False)
