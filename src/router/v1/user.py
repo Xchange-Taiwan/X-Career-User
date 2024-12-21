@@ -37,7 +37,7 @@ async def upsert_profile(
         profile_service: ProfileService = Depends(get_profile_service)
 ):
     res: user.ProfileVO = await profile_service.upsert_profile(db, body)
-    return res_success(data=res.json())
+    return res_success(data=res.dict())
 
 
 @router.get('/{user_id}/{language}/profile',
@@ -49,7 +49,7 @@ async def get_profile(
         profile_service: ProfileService = Depends(get_profile_service)
 ):
     res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id, language.value)
-    return res_success(data=res.json())
+    return res_success(data=res.dict())
 
 
 @router.get('/{language}/interests',
