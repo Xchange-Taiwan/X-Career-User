@@ -4,7 +4,7 @@ from typing import Optional, Coroutine, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.exception import NotAcceptableException, NotFoundException, ServerException
+from src.config.exception import NotAcceptableException, NotFoundException, ServerException, raise_http_exception
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.model.common_model import ProfessionVO, InterestListVO, ProfessionListVO
@@ -33,7 +33,8 @@ class ProfileService:
                                                     language=language)
         except Exception as e:
             log.error(f'get_by_user_id error: %s', str(e))
-            raise ServerException(msg='get profile response failed')
+            err_msg = getattr(e, 'msg', 'get profile response failed')
+            raise_http_exception(msg=err_msg)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         try:
@@ -42,7 +43,8 @@ class ProfileService:
             return await self.convert_to_profile_vo(db, res)
         except Exception as e:
             log.error(f'upsert_profile error: %s', str(e))
-            raise ServerException(msg='upsert profile response failed')
+            err_msg = getattr(e, 'msg', 'upsert profile response failed')
+            raise_http_exception(e, msg=err_msg)
 
     async def convert_to_profile_vo(self, db: AsyncSession, dto: ProfileDTO, language: Optional[str] = None) \
             -> ProfileVO:
@@ -75,7 +77,8 @@ class ProfileService:
             return res
         except Exception as e:
             log.error(f'convert_to_profile_vo error: %s', str(e))
-            raise ServerException(msg='profile response failed')
+            err_msg = getattr(e, 'msg', 'profile response failed')
+            raise_http_exception(e, msg=err_msg)
 
     async def convert_to_mentor_profile_vo(self, db: AsyncSession, dto: MentorProfileDTO,
                                            language: Optional[str] = None) -> MentorProfileVO:
@@ -113,4 +116,5 @@ class ProfileService:
 
         except Exception as e:
             log.error(f'convert_to_mentor_profile_vo error: %s', str(e))
-            raise ServerException(msg='mentor profile response failed')
+            err_msg = getattr(e, 'msg', 'mentor profile response failed')
+            raise_http_exception(e, msg=err_msg)

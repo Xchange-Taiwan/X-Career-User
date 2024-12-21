@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.exception import NotFoundException, ServerException
+from src.config.exception import NotFoundException, ServerException, raise_http_exception
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
 from src.domain.user.dao.profile_repository import ProfileRepository
@@ -27,7 +27,8 @@ class MentorService:
             return res_vo
         except Exception as e:
             log.error(f'upsert_mentor_profile error: %s', str(e))
-            raise ServerException(msg='upsert mentor profile response failed')
+            err_msg = getattr(e, 'msg', 'upsert mentor profile response failed')
+            raise ServerException(msg=err_msg)
 
     async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int, language: str) \
             -> MentorProfileVO:
@@ -38,4 +39,5 @@ class MentorService:
             return await self.__profile_service.convert_to_mentor_profile_vo(db, mentor_dto, language=language)
         except Exception as e:
             log.error(f'get_mentor_profile_by_id error: %s', str(e))
-            raise ServerException(msg='get mentor profile response failed')
+            err_msg = getattr(e, 'msg', 'get mentor profile response failed')
+            raise_http_exception(e, msg=err_msg)
