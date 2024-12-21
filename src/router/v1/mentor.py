@@ -46,7 +46,7 @@ async def upsert_mentor_profile(
     return res_success(data=res.model_dump_json())
 
 
-@router.get('/{user_id}/{language}/profile',
+@router.get('/{user_id}/{language}/mentor_profile',
             responses=idempotent_response('get_mentor_profile', MentorProfileVO))
 async def get_mentor_profile(
         db: AsyncSession = Depends(get_db),

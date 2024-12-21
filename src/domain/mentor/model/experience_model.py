@@ -19,14 +19,14 @@ class ExperienceDTO(BaseModel):
 class ExperienceVO(BaseModel):
     id: int
     category: ExperienceCategory = None
-    metadata: Dict = {}
+    mentor_experiences_metadata: Dict = {}
     order: int = 0
 
     @staticmethod
     def of(mentor_exp: MentorExperience):
         return ExperienceVO(id=mentor_exp.id,
                             category=mentor_exp.category,
-                            metadata=mentor_exp.metadata,
+                            mentor_experiences_metadata=mentor_exp.mentor_experiences_metadata,
                             order=mentor_exp.order)
 
 

@@ -77,7 +77,7 @@ class MentorExperience(Base):
         ENUM(ExperienceCategory, name='experience_category', create_type=False),
         nullable=False)
     order = Column(Integer, nullable=False)
-    metadata = Column(JSONB)
+    mentor_experiences_metadata = Column(JSONB)
 
 
 

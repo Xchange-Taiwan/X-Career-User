@@ -21,11 +21,12 @@ class ProfileService:
         self.__profession_service: ProfessionService = profession_service
         self.__profile_repository: ProfileRepository = profile_repository
 
-    async def get_by_user_id(self, db: AsyncSession, user_id: int) -> ProfileVO:
+    async def get_by_user_id(self, db: AsyncSession, user_id: int, language: Optional[str] = None) -> ProfileVO:
         if user_id is None:
             raise NotAcceptableException(msg="No user interest_id is provided")
 
-        return await self.convert_to_profile_vo(db, await self.__profile_repository.get_by_user_id(db, user_id))
+        return await self.convert_to_profile_vo(db, await self.__profile_repository.get_by_user_id(db, user_id),
+                                                language=language)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(db, dto)

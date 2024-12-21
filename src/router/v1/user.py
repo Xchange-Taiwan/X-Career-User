@@ -40,14 +40,15 @@ async def upsert_profile(
     return res_success(data=res.json())
 
 
-@router.get('/{user_id}/profile',
+@router.get('/{user_id}/{language}/profile',
             responses=idempotent_response('get_profile', user.ProfileVO))
 async def get_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
+        language: Language = Path(...),
         profile_service: ProfileService = Depends(get_profile_service)
 ):
-    res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id)
+    res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id, language.value)
     return res_success(data=res.json())
 
 

@@ -74,7 +74,6 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
     user_id BIGINT NOT NULL,
     category EXPERIENCE_CATEGORY NOT NULL,
     "order" INT NOT NULL,
-    "desc" JSONB,
     mentor_experiences_metadata JSONB
     --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
