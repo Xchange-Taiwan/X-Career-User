@@ -31,8 +31,7 @@ class MentorProfileDTO(ProfileDTO):
     personal_statement: Optional[str]
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
-    expertises: Optional[List[int]]
-
+    expertises: Optional[List[str]]
 
 
 class ProfessionDTO(BaseModel):
@@ -54,7 +53,6 @@ class MentorProfileVO(ProfileVO):
     about: Optional[str] = ''
     seniority_level: Optional[SeniorityLevel] = ''
     expertises: Optional[ProfessionListVO] = None
-
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':

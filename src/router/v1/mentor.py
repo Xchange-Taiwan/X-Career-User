@@ -41,7 +41,7 @@ router = APIRouter(
 )
 
 
-@router.put('/mentor_profile/create',
+@router.put('/mentor_profile',
             responses=idempotent_response('upsert_mentor_profile', mentor.MentorProfileVO))
 async def upsert_mentor_profile(
         db: AsyncSession = Depends(get_db),
@@ -54,18 +54,30 @@ async def upsert_mentor_profile(
     return res_success(data=res.model_dump_json())
 
 
-@router.get('/{user_id}/{language}/profile',
+@router.get('/{user_id}/{language}/mentor_profile',
             responses=idempotent_response('get_mentor_profile', MentorProfileVO))
 async def get_mentor_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
-        language: str = Path(...),
+        language: Language = Path(...),
         mentor_service: MentorService = Depends(get_mentor_service)
 ):
     # TODO: implement
-    mentor_profile: MentorProfileVO = await mentor_service.get_mentor_profile_by_id_and_language(db, user_id, language)
+    mentor_profile: MentorProfileVO = \
+        await mentor_service.get_mentor_profile_by_id(db, user_id, language.value)
 
     return res_success(data=mentor_profile.model_dump_json())
+
+@router.get('/{user_id}/experiences',
+            responses=idempotent_response('get_exp_by_user_id', experience.ExperienceListVO))
+async def get_exp_by_user_id(
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Path(...),
+        exp_service: ExperienceService = Depends(get_experience_service)
+):
+    res: experience.ExperienceListVO = await exp_service.get_exp_by_user_id(db, user_id)
+    return res_success(data=res.model_dump_json())
+
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
@@ -77,7 +89,9 @@ async def upsert_experience(
         body: experience.ExperienceDTO = Body(...),
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
-    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db, experience_dto=body, user_id=user_id,
+    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db,
+                                                                experience_dto=body,
+                                                                user_id=user_id,
                                                                 exp_cate=experience_type)
     return res_success(data=res.model_dump_json())
 
@@ -105,9 +119,9 @@ async def get_expertises(
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
     res: ProfessionListVO = \
-        await profession_service.get_all_profession(db, 
-                                                    ProfessionCategory.EXPERTISE, 
-                                                    language)
+        await profession_service.get_all_profession_by_category_and_language(db,
+                                                                             ProfessionCategory.EXPERTISE,
+                                                                             language)
     return res_success(data=res.to_json())
 
 

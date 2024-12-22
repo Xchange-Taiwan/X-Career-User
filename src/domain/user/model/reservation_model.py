@@ -1,3 +1,4 @@
+from .common_model import ProfessionVO
 from .user_model import *
 from ....config.constant import *
 import logging as log
