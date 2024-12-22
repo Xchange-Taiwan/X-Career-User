@@ -37,18 +37,19 @@ async def upsert_profile(
         profile_service: ProfileService = Depends(get_profile_service)
 ):
     res: user.ProfileVO = await profile_service.upsert_profile(db, body)
-    return res_success(data=res.json())
+    return res_success(data=res.dict())
 
 
-@router.get('/{user_id}/profile',
+@router.get('/{user_id}/{language}/profile',
             responses=idempotent_response('get_profile', user.ProfileVO))
 async def get_profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Path(...),
+        language: Language = Path(...),
         profile_service: ProfileService = Depends(get_profile_service)
 ):
-    res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id)
-    return res_success(data=res.json())
+    res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id, language.value)
+    return res_success(data=res.dict())
 
 
 @router.get('/{language}/interests',
@@ -74,9 +75,9 @@ async def get_industries(
 ):
     # 需確認是不是返回全部還是可以查詢特定
     res: common.ProfessionListVO = \
-        await profession_service.get_all_profession(db, 
-                                                    ProfessionCategory.INDUSTRY, 
-                                                    language)
+        await profession_service.get_all_profession_by_category_and_language(db,
+                                                                             ProfessionCategory.INDUSTRY,
+                                                                             language)
     return res_success(data=res.to_json())
 
 

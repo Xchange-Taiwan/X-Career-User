@@ -27,8 +27,7 @@ class MentorProfileDTO(ProfileDTO):
     personal_statement: Optional[str]
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
-    expertises: Optional[List[int]]
-
+    expertises: Optional[List[str]]
 
 
 class ProfessionDTO(BaseModel):
@@ -51,7 +50,6 @@ class MentorProfileVO(ProfileVO):
     seniority_level: Optional[SeniorityLevel] = ""
     expertises: Optional[ProfessionListVO] = None
 
-
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
         return MentorProfileVO(
@@ -68,7 +66,6 @@ class MentorProfileVO(ProfileVO):
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level
         )
-
 
 
 class TimeSlotDTO(BaseModel):

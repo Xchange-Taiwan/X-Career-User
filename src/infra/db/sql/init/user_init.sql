@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     company TEXT DEFAULT '',
     seniority_level SENIORITY_LEVEL,
     years_of_experience INT DEFAULT 0,
-	industry INT,
+	industries JSONB,
     interested_positions JSONB,
     skills JSONB,
     topics JSONB,
@@ -74,7 +74,6 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
     user_id BIGINT NOT NULL,
     category EXPERIENCE_CATEGORY NOT NULL,
     "order" INT NOT NULL,
-    "desc" JSONB,
     mentor_experiences_metadata JSONB
     --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );

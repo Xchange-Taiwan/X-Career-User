@@ -31,3 +31,16 @@ class InterestRepository:
             .filter(Interest.language == language)
         res: List[Type[Interest]] = await get_all_template(db, stmt)
         return res
+
+    async def get_by_subject_group_and_language(self, db: AsyncSession,
+                                                subject_groups: List[str],
+                                                language: str) -> Optional[List[Type[Interest]]]:
+        stmt: Select = select(Interest).filter(
+            Interest.subject_group.in_(subject_groups),
+            Interest.language == language
+        )
+        res: List[Interest] = await get_all_template(db, stmt)
+        return res
+
+
+
