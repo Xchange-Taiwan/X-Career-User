@@ -33,7 +33,7 @@ router = APIRouter(
 )
 
 
-@router.put('/mentor_profile/create',
+@router.put('/mentor_profile',
             responses=idempotent_response('upsert_mentor_profile', mentor.MentorProfileVO))
 async def upsert_mentor_profile(
         db: AsyncSession = Depends(get_db),
