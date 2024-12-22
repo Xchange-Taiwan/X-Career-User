@@ -16,7 +16,7 @@ from src.config.conf import DATETIME_FORMAT
 def convert_dto_to_model(dto: BaseModel, model_class: Any, exclude: set = {}):
     # 僅處理同名key/value
     # exclude代表有些值不存在於dto/model中 需手動決定要怎麼處理
-    return model_class(**dto.dict(exclude=exclude))
+    return model_class(**dto.model_dump(exclude=exclude))
 
 
 async def get_all_template(db: AsyncSession, stmt: Select) -> Optional[Any]:
