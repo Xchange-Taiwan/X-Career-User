@@ -1,14 +1,17 @@
+import json
 import logging as log
 from typing import List
 
 from fastapi import (
     APIRouter,
-    Path, Body, Depends
+    Path, Body, Depends, Query
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.mentor.service.mentor_service import MentorService
+from src.domain.mentor.service.schedule_service import ScheduleService
 from ..res.response import *
+from ..req.mentor_validation import *
 from ...config.constant import *
 from ...domain.mentor.model import (
     mentor_model as mentor,
@@ -22,7 +25,12 @@ from ...domain.user.model import (
 from ...domain.user.model.common_model import ProfessionListVO
 from ...domain.user.service.profession_service import ProfessionService
 from ...infra.databse import get_db, db_session
-from ...infra.util.injection_util import get_mentor_service, get_experience_service, get_profession_service
+from ...infra.util.injection_util import (
+    get_mentor_service, 
+    get_experience_service, 
+    get_profession_service,
+    get_schedule_service,
+)
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -43,7 +51,7 @@ async def upsert_mentor_profile(
 ):
     # TODO: implement
     res: mentor.MentorProfileVO = await mentor_service.upsert_mentor_profile(db, body)
-    return res_success(data=res.model_dump_json())
+    return res_success(data=res.model_dump())
 
 
 @router.get('/{user_id}/{language}/mentor_profile',
@@ -58,7 +66,7 @@ async def get_mentor_profile(
     mentor_profile: MentorProfileVO = \
         await mentor_service.get_mentor_profile_by_id(db, user_id, language.value)
 
-    return res_success(data=mentor_profile.model_dump_json())
+    return res_success(data=mentor_profile.model_dump())
 
 @router.get('/{user_id}/experiences',
             responses=idempotent_response('get_exp_by_user_id', experience.ExperienceListVO))
@@ -68,7 +76,7 @@ async def get_exp_by_user_id(
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
     res: experience.ExperienceListVO = await exp_service.get_exp_by_user_id(db, user_id)
-    return res_success(data=res.model_dump_json())
+    return res_success(data=res.model_dump())
 
 
 
@@ -85,7 +93,7 @@ async def upsert_experience(
                                                                 experience_dto=body,
                                                                 user_id=user_id,
                                                                 exp_cate=experience_type)
-    return res_success(data=res.model_dump_json())
+    return res_success(data=res.model_dump())
 
 
 @router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
@@ -105,9 +113,9 @@ async def delete_experience(
 @router.get('/{language}/expertises',
             responses=idempotent_response('get_expertises', common.ProfessionListVO))
 async def get_expertises(
+        db: AsyncSession = Depends(db_session),
         language: Language = Path(...),
         # category = ProfessionCategory.EXPERTISE = Query(...),
-        db: AsyncSession = Depends(db_session),
         profession_service: ProfessionService = Depends(get_profession_service)
 ):
     res: ProfessionListVO = \
@@ -117,21 +125,47 @@ async def get_expertises(
     return res_success(data=res.to_json())
 
 
+@router.get('/{user_id}/schedule/{dt_year}/{dt_month}',
+            responses=idempotent_response('get_mentor_schedule_list', mentor.MentorScheduleVO))
+async def get_mentor_schedule_list(
+        db: AsyncSession = Depends(db_session),
+        user_id: int = Path(...),
+        dt_year: int = Path(...),
+        dt_month: int = Path(...),
+        limit: int = Query(None, ge=1),
+        next_dtstart: int = Query(None),
+        schedule_service: ScheduleService = Depends(get_schedule_service),
+):
+    res: mentor.MentorScheduleVO = await schedule_service.get_schedule_list(
+        db, filter={
+            'user_id': user_id,
+            'dt_year': dt_year,
+            'dt_month': dt_month,
+        },
+        limit=limit,
+        next_dtstart=next_dtstart)
+    return res_success(data=res.to_json())
+
+
 @router.put('/{user_id}/schedule',
             responses=idempotent_response('upsert_mentor_schedule', mentor.MentorScheduleVO))
 async def upsert_mentor_schedule(
+        db: AsyncSession = Depends(db_session),
         user_id: int = Path(...),
-        body: List[mentor.TimeSlotDTO] = Body(...),
+        body: List[mentor.TimeSlotDTO] = Depends(upsert_mentor_schedule_check),
+        schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
-    # TODO: implement
-    return res_success(data=None)
+    res: mentor.MentorScheduleVO = await schedule_service.save_schedules(db, user_id, body)
+    return res_success(data=res.to_json())
 
 
 @router.delete('/{user_id}/schedule/{schedule_id}',
-               responses=idempotent_response('delete_mentor_schedule', mentor.MentorScheduleVO))
+               responses=idempotent_response('delete_mentor_schedule', int))
 async def delete_mentor_schedule(
+        db: AsyncSession = Depends(db_session),
         user_id: int = Path(...),
         schedule_id: int = Path(...),
+        schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
-    # TODO: implement
-    return res_success(data=None)
+    msg: str = await schedule_service.delete_schedule(db, user_id, schedule_id)
+    return res_success(data=schedule_id, msg=msg)
