@@ -61,8 +61,11 @@ def get_experience_service(
 
 def get_profile_service(interest_service: InterestService = Depends(get_interest_service),
                         profession_service: ProfessionService = Depends(get_profession_service),
+                        experience_service: ExperienceService = Depends(get_experience_service),
                         profile_repository: ProfileRepository = Depends(get_profile_dao)) -> ProfileService:
-    return ProfileService(interest_service=interest_service, profession_service=profession_service,
+    return ProfileService(interest_service=interest_service, 
+                          profession_service=profession_service,
+                          experience_service=experience_service,
                           profile_repository=profile_repository)
 def get_mentor_service(mentor_repository: MentorRepository = Depends(get_mentor_dao),
                        profile_repository: ProfileRepository = Depends(get_profile_dao),

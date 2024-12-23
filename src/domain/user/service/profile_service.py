@@ -4,9 +4,11 @@ from typing import Optional, Coroutine, Any, Set, Dict, List, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import InterestCategory, ProfessionCategory
+from src.config.constant import InterestCategory, ExperienceCategory
 from src.config.exception import NotAcceptableException, NotFoundException, ServerException, raise_http_exception
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
+from src.domain.mentor.model.experience_model import ExperienceListVO
+from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.model.common_model import ProfessionVO, InterestListVO, ProfessionListVO
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
@@ -19,10 +21,12 @@ log.basicConfig(filemode='w', level=log.INFO)
 class ProfileService:
     def __init__(self,
                  interest_service: InterestService,
-                 profile_repository: ProfileRepository,
-                 profession_service: ProfessionService):
+                 profession_service: ProfessionService,
+                 experience_service: ExperienceService,
+                 profile_repository: ProfileRepository):
         self.__interest_service: InterestService = interest_service
         self.__profession_service: ProfessionService = profession_service
+        self.__exp_service: ExperienceService = experience_service
         self.__profile_repository: ProfileRepository = profile_repository
 
     async def get_by_user_id(self, db: AsyncSession, user_id: int, language: Optional[str] = None) -> ProfileVO:
@@ -54,6 +58,9 @@ class ProfileService:
         if language is None:
             language = dto.language
         try:
+            user_id = dto.user_id
+            experience_list_vo: ExperienceListVO = \
+                await self.__exp_service.get_exp_by_user_id(db, user_id)
             industries: Coroutine[Any, Any, ProfessionVO] = \
                 await (self.__profession_service.
                     get_industries_by_subjects(db, dto.industries, dto.language))
@@ -81,6 +88,15 @@ class ProfileService:
                 res.interested_positions = all_interests[InterestCategory.INTERESTED_POSITION.value]
                 res.skills = all_interests[InterestCategory.SKILL.value]
                 res.topics  = all_interests[InterestCategory.TOPIC.value]
+
+            # 是否為 Mentor, 透過是否皆有填寫經驗類別判斷
+            exp_categories = set()
+            for exp in experience_list_vo.experiences:
+                exp_categories.add(exp.category)
+
+            # 如果有填寫所有經驗類別, 則視為已完成 Onboarding
+            res.on_boarding = (len(exp_categories) == len(ExperienceCategory))
+
             return res
         except Exception as e:
             log.error(f'convert_to_profile_vo error: %s', str(e))
@@ -94,6 +110,9 @@ class ProfileService:
         if language is None:
             language = dto.language
         try:
+            user_id = dto.user_id
+            experience_list_vo: ExperienceListVO = \
+                await self.__exp_service.get_exp_by_user_id(db, user_id)
             industries: Coroutine[Any, Any, ProfessionVO] = \
                 await self.__profession_service.get_industries_by_subjects(db, dto.industries, language=language)
             expertises: Coroutine[Any, Any, ProfessionListVO] = \
@@ -123,7 +142,9 @@ class ProfileService:
                 res.interested_positions = all_interests[InterestCategory.INTERESTED_POSITION.value]
                 res.skills = all_interests[InterestCategory.SKILL.value]
                 res.topics  = all_interests[InterestCategory.TOPIC.value]
-                
+            
+            # mentor experiences
+            res.experiences = experience_list_vo.experiences
             return res
 
         except Exception as e:

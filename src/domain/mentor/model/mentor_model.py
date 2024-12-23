@@ -3,6 +3,7 @@ from typing import Dict
 from ..enum.mentor_enums import SeniorityLevel
 from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
+from .experience_model import ExperienceVO
 from ....config.conf import *
 from ....config.constant import *
 
@@ -28,6 +29,7 @@ class MentorProfileDTO(ProfileDTO):
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
     expertises: Optional[List[str]]
+    experiences: Optional[List[ExperienceVO]]
 
 
 class ProfessionDTO(BaseModel):
