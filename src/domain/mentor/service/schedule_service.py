@@ -52,7 +52,7 @@ class ScheduleService:
             stored_timeslot_dtos: List[TimeSlotDTO] = await self.__schedule_repository \
                 .get_schedules_by_time_range(db, user_id, min_dtstart, max_dtend)
             if len(stored_timeslot_dtos) > 0:
-                self.__datetime_conflict_check(timeslot_dtos, stored_timeslot_dtos)
+                self.__opverlapping_interval_check(timeslot_dtos, stored_timeslot_dtos)
 
             timeslot_dtos = await self.__schedule_repository.save_schedules(db, timeslot_dtos)
             res.timeslots = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
@@ -65,7 +65,7 @@ class ScheduleService:
 
 
     # CHECK: 檢查是否有時間重疊
-    def __datetime_conflict_check(self, input_timeslots: List[TimeSlotDTO], stored_timeslots: List[TimeSlotDTO]):
+    def __opverlapping_interval_check(self, input_timeslots: List[TimeSlotDTO], stored_timeslots: List[TimeSlotDTO]):
         # 1) stored in database
         stored_timeslots_dict: Dict[int, TimeSlotDTO] = {timeslot.id: timeslot for timeslot in stored_timeslots}
         # 2) user inputs timeslots with id
@@ -89,7 +89,7 @@ class ScheduleService:
 
 
         # Check Conflicts by Greedy Algorithm
-        TimeSlotDTO.datetime_conflict_check(timeslots)
+        TimeSlotDTO.opverlapping_interval_check(timeslots)
 
 
 

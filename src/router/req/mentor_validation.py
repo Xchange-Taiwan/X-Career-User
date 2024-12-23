@@ -33,7 +33,7 @@ def upsert_mentor_schedule_check(
             raise ClientException(msg=f'dtstart:{timeslot.dtstart} should smaller then dtend:{timeslot.dtend}')
 
 
-    # CHECK: 所有的時間區間中，最早(dtstart)和最晚(dtend)時間區間相差不超過 MAX_PERIOD
+    # CHECK: 所有"事件"的時間區間中(不展開 rrule)，最早(dtstart)和最晚(dtend)時間區間相差不超過 MAX_PERIOD
     (min_dtstart, max_dtend) = TimeSlotDTO.min_dtstart_and_max_dtend(timeslot_dtos)
     if max_dtend - min_dtstart > MAX_PERIOD_SECS:
         raise ClientException(msg=f'The max time period shouldn\'t over {MAX_PERIOD_SECS / 86400} days')
@@ -41,7 +41,7 @@ def upsert_mentor_schedule_check(
 
     # CHECK: 儲存前檢查用戶的時間是否衝突? 若有則拋錯 (這裡僅比對用戶的輸入資料)
     if timeslots_length > 1:
-        TimeSlotDTO.datetime_conflict_check(timeslot_dtos)
+        TimeSlotDTO.opverlapping_interval_check(timeslot_dtos)
 
 
     return timeslot_dtos

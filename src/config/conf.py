@@ -3,7 +3,7 @@ import os
 
 BATCH = int(os.getenv('BATCH', 20))
 MAX_PERIOD_SECS = int(os.getenv('MAX_PERIOD_SECS', 86400 * 31))
-DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y-%m-%dT%H:%M:%Z')
+DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y%m%dT%H%M%S%z')
 
 # db config params
 DB_HOST = os.getenv('DB_HOST', 'localhost')
