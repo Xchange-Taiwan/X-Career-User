@@ -22,6 +22,9 @@ class ProfileDTO(BaseModel):
     topics: Optional[List[Union[str]]] = []
     industries: Optional[List[Union[str]]] = []
     language: Optional[str] = 'zh_TW'
+    
+    class Config:
+        orm_mode = True
 
     def get_all_subject_groups(self) -> List[str]:
         return self.interested_positions + self.skills + self.topics

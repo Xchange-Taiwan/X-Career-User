@@ -6,6 +6,7 @@ from ...user.model.user_model import *
 from .experience_model import ExperienceVO
 from ....config.conf import *
 from ....config.constant import *
+from src.infra.db.orm.init.user_init import Profile, Profession
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -29,7 +30,19 @@ class MentorProfileDTO(ProfileDTO):
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
     expertises: Optional[List[str]]
-    experiences: Optional[List[ExperienceVO]]
+
+    class Config:
+        orm_mode = True
+
+    # FIXME: deprecated
+    # @staticmethod
+    # def of(dto: ProfileDTO):
+    #     return Profile(**dto.__dict__)
+
+    # FIXME: deprecated
+    # @staticmethod
+    # def from_orm(model: Profile) -> 'MentorProfileDTO':
+    #     return MentorProfileDTO(**model.__dict__)
 
 
 class ProfessionDTO(BaseModel):
@@ -51,6 +64,7 @@ class MentorProfileVO(ProfileVO):
     about: Optional[str] = ""
     seniority_level: Optional[SeniorityLevel] = ""
     expertises: Optional[ProfessionListVO] = None
+    experiences: Optional[List[ExperienceVO]]
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
