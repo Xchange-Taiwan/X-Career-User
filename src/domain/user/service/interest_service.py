@@ -80,7 +80,7 @@ class InterestService:
                 return self.filter_by_subject_group(cache_res, subject_groups)
 
             interest_list: Optional[List[Type[Interest]]] =\
-                await self.__interest_repository.get_by_subject_group_and_language(db, subject_groups, language)
+                await self.__interest_repository.get_interests_by_lang(db, language)
             res: InterestListVO = self.convert_to_interest_list_vo(interest_list)
             # set local cache
             await self.cache.set(cache_key, res, CACHE_TTL)
