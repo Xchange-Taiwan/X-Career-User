@@ -80,6 +80,17 @@ class DuplicateUserException(HTTPException, ErrorLogger):
         return self.msg
 
 
+class UnprocessableClientException(HTTPException, ErrorLogger):
+    def __init__(self, msg: str, code: str = '42200', data: Any = None):
+        self.msg = msg
+        self.code = code
+        self.data = data
+        self.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def __str__(self) -> str:
+        return self.msg
+
+
 class TooManyRequestsException(HTTPException, ErrorLogger):
     def __init__(self, msg: str, code: str = '42900', data: Any = None):
         self.msg = msg
@@ -126,6 +137,10 @@ def __duplicate_user_exception_handler(request: Request, exc: DuplicateUserExcep
     return JSONResponse(status_code=exc.status_code, content=res_err_format(msg=exc.msg, code=exc.code, data=exc.data))
 
 
+def __unprocessable_client_exception_handler(request: Request, exc: UnprocessableClientException):
+    return JSONResponse(status_code=exc.status_code, content=res_err_format(msg=exc.msg, code=exc.code, data=exc.data))
+
+
 def __too_many_requests_exception_handler(request: Request, exc: TooManyRequestsException):
     return JSONResponse(status_code=exc.status_code, content=res_err_format(msg=exc.msg, code=exc.code, data=exc.data))
 
@@ -141,6 +156,7 @@ def include_app(app: FastAPI):
     app.add_exception_handler(NotFoundException, __not_found_exception_handler)
     app.add_exception_handler(NotAcceptableException, __not_acceptable_exception_handler)
     app.add_exception_handler(DuplicateUserException, __duplicate_user_exception_handler)
+    app.add_exception_handler(UnprocessableClientException, __unprocessable_client_exception_handler)
     app.add_exception_handler(TooManyRequestsException, __too_many_requests_exception_handler)
     app.add_exception_handler(ServerException, __server_exception_handler)
 
@@ -163,6 +179,12 @@ def raise_http_exception(e: Exception, msg: str = None):
 
     if isinstance(e, DuplicateUserException):
         raise DuplicateUserException(msg=msg or e.msg, data=e.data)
+
+    if isinstance(e, UnprocessableClientException):
+        raise UnprocessableClientException(msg=msg or e.msg, data=e.data)
+
+    if isinstance(e, TooManyRequestsException):
+        raise TooManyRequestsException(msg=msg or e.msg, data=e.data)
 
     if isinstance(e, ServerException):
         raise ServerException(msg=msg or e.msg, data=e.data)

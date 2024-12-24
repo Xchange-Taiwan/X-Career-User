@@ -7,7 +7,7 @@ from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
 from ....config.conf import *
 from ....config.constant import *
-from ....config.exception import ClientException
+from ....config.exception import ClientException, UnprocessableClientException
 from ....infra.util.time_util import (
     create_calendar_with_rrule,
     rrule_events,
@@ -116,7 +116,7 @@ class TimeSlotDTO(BaseModel):
         # timeslots.sort(key=TimeSlotDTO.sort_by_dtend)
         timeslots = TimeSlotDTO.sort_with_rrule(timeslots)
         if len(timeslots) < 2:
-            raise ClientException(msg='Parse iCalendar rrule error')
+            raise UnprocessableClientException(msg='Parse iCalendar rrule error')
 
         first_timeslot = timeslots[0]
         last_timeslot = timeslots[len(timeslots) - 1]
@@ -130,8 +130,10 @@ class TimeSlotDTO(BaseModel):
             if timeslot.dtstart < prev_timeslot.dtend:
                 conflicts += 1
                 conflict_records.update({
-                    prev_timeslot.hash(): prev_timeslot.to_json(),
-                    timeslot.hash(): timeslot.to_json(),
+                    conflicts: [
+                        prev_timeslot.to_json(),
+                        timeslot.to_json(),
+                    ]
                 })
             else:
                 prev_timeslot = timeslot
@@ -141,7 +143,7 @@ class TimeSlotDTO(BaseModel):
             noun = 'conflict' if conflicts == 1 else 'conflicts'
             first_yearmonth = f'{first_timeslot.dt_year}/{first_timeslot.dt_month}'
             last_yearmonth = f'{last_timeslot.dt_year}/{last_timeslot.dt_month}'
-            conflict_records = [record for record in conflict_records.values()]
+            # conflict_records = [record for record in conflict_records.values()]
             if first_yearmonth == last_yearmonth:
                 raise ClientException(msg=f'There {be} {conflicts} {noun} in {first_yearmonth}',
                                       data={'conflicts': conflict_records})
