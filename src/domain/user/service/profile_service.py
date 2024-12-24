@@ -89,14 +89,14 @@ class ProfileService:
                 res.skills = all_interests[InterestCategory.SKILL.value]
                 res.topics  = all_interests[InterestCategory.TOPIC.value]
 
-            # 是否為 Mentor, 透過是否皆有填寫經驗類別判斷
+            # 是否為 Mentor, 透過是否有填寫經驗類別判斷
             exp_categories = set()
             for exp in experiences:
                 if exp.category:
                     exp_categories.add(exp.category)
 
-            # 如果有填寫所有經驗類別, 則視為已完成 Onboarding
-            res.on_boarding = (len(exp_categories) == len(ExperienceCategory))
+            # 如果有填寫至少 2 種經驗類別, 則視為已完成 Onboarding
+            res.on_boarding = (len(exp_categories) == len(ExperienceCategory) - 1)
 
             return res
         except Exception as e:
