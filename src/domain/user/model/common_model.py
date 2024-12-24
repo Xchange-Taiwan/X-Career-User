@@ -38,7 +38,7 @@ class ProfessionVO(ProfessionDTO):
     language: Optional[str] = ''
 
     class Config:
-        orm_mode = True
+        from_attributes = True # orm_mode = True
 
 
 class ProfessionListVO(BaseModel):

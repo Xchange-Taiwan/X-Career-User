@@ -24,7 +24,7 @@ class ProfileDTO(BaseModel):
     language: Optional[str] = 'zh_TW'
     
     class Config:
-        orm_mode = True
+        from_attributes = True # orm_mode = True
 
     def get_all_subject_groups(self) -> List[str]:
         return self.interested_positions + self.skills + self.topics

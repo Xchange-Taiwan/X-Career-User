@@ -1,3 +1,4 @@
+import json
 from typing import Dict
 
 from ..enum.mentor_enums import SeniorityLevel
@@ -32,7 +33,7 @@ class MentorProfileDTO(ProfileDTO):
     expertises: Optional[List[str]]
 
     class Config:
-        orm_mode = True
+        from_attributes = True # orm_mode = True
 
     # FIXME: deprecated
     # @staticmethod
@@ -64,7 +65,7 @@ class MentorProfileVO(ProfileVO):
     about: Optional[str] = ""
     seniority_level: Optional[SeniorityLevel] = ""
     expertises: Optional[ProfessionListVO] = None
-    experiences: Optional[List[ExperienceVO]]
+    experiences: Optional[List[ExperienceVO]] = []
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -82,6 +83,10 @@ class MentorProfileVO(ProfileVO):
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level
         )
+
+    def to_json(self):
+        result = self.model_dump_json()
+        return json.loads(result)
 
 
 class TimeSlotDTO(BaseModel):
