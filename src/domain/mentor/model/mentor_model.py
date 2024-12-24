@@ -35,16 +35,6 @@ class MentorProfileDTO(ProfileDTO):
     class Config:
         from_attributes = True # orm_mode = True
 
-    # FIXME: deprecated
-    # @staticmethod
-    # def of(dto: ProfileDTO):
-    #     return Profile(**dto.__dict__)
-
-    # FIXME: deprecated
-    # @staticmethod
-    # def from_orm(model: Profile) -> 'MentorProfileDTO':
-    #     return MentorProfileDTO(**model.__dict__)
-
 
 class ProfessionDTO(BaseModel):
     professions_id: int

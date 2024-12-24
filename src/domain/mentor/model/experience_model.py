@@ -29,14 +29,6 @@ class ExperienceVO(BaseModel):
     class Config:
         from_attributes = True
 
-    # FIXME: deprecated
-    @staticmethod
-    def of(mentor_exp: MentorExperience):
-        return ExperienceVO(id=mentor_exp.id,
-                            category=mentor_exp.category,
-                            mentor_experiences_metadata=mentor_exp.mentor_experiences_metadata,
-                            order=mentor_exp.order)
-
     def to_json(self):
         result = self.model_dump_json()
         return json.loads(result)
