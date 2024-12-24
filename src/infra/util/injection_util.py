@@ -15,6 +15,7 @@ from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
+from src.infra.cache.local_cache import _local_cache
 
 
 def get_experience_dao() -> MentorExperienceRepository:
@@ -42,12 +43,12 @@ def get_file_dao() -> FileRepository:
 
 
 def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao)) -> InterestService:
-    return InterestService(interest_repo)
+    return InterestService(interest_repo, _local_cache)
 
 
 def get_profession_service(
         profession_repository: ProfessionRepository = Depends(get_profession_dao)) -> ProfessionService:
-    return ProfessionService(profession_repository)
+    return ProfessionService(profession_repository, _local_cache)
 
 
 def get_experience_service(
@@ -61,9 +62,13 @@ def get_experience_service(
 
 def get_profile_service(interest_service: InterestService = Depends(get_interest_service),
                         profession_service: ProfessionService = Depends(get_profession_service),
+                        experience_service: ExperienceService = Depends(get_experience_service),
                         profile_repository: ProfileRepository = Depends(get_profile_dao)) -> ProfileService:
-    return ProfileService(interest_service=interest_service, profession_service=profession_service,
+    return ProfileService(interest_service=interest_service, 
+                          profession_service=profession_service,
+                          experience_service=experience_service,
                           profile_repository=profile_repository)
+
 def get_mentor_service(mentor_repository: MentorRepository = Depends(get_mentor_dao),
                        profile_repository: ProfileRepository = Depends(get_profile_dao),
                        interest_service: InterestService = Depends(get_interest_service),
@@ -71,14 +76,6 @@ def get_mentor_service(mentor_repository: MentorRepository = Depends(get_mentor_
                        profile_service: ProfileService = Depends(get_profile_service),
                        ) -> MentorService:
     return MentorService(mentor_repository, profile_repository, interest_service, profession_service, profile_service)
-
-def get_interest_service(interest_dao: InterestRepository = Depends(get_interest_dao)):
-    return InterestService(interest_dao)
-
-
-def get_profession_service(profession_repository: ProfessionRepository = Depends(get_profession_dao)):
-    return ProfessionService(profession_repository)
-
 
 def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
     return FileService(file_repository)
