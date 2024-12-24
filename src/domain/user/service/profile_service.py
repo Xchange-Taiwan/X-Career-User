@@ -61,7 +61,7 @@ class ProfileService:
             user_id = dto.user_id
             experiences: List[ExperienceVO] = \
                 await self.__exp_service.get_exp_list_by_user_id(db, user_id)
-            industries: Coroutine[Any, Any, ProfessionVO] = \
+            industries: Coroutine[Any, Any, ProfessionListVO] = \
                 await (self.__profession_service.
                     get_industries_by_subjects(db, dto.industries, dto.language))
 
@@ -114,7 +114,7 @@ class ProfileService:
             user_id = dto.user_id
             experiences: List[ExperienceVO] = \
                 await self.__exp_service.get_exp_list_by_user_id(db, user_id)
-            industries: Coroutine[Any, Any, ProfessionVO] = \
+            industries: Coroutine[Any, Any, ProfessionListVO] = \
                 await self.__profession_service.get_industries_by_subjects(db, dto.industries, language=language)
             expertises: Coroutine[Any, Any, ProfessionListVO] = \
                 await self.__profession_service.get_expertise_by_subjects(db, dto.expertises, language=language)

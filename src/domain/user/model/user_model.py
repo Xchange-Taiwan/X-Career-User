@@ -28,7 +28,14 @@ class ProfileDTO(BaseModel):
         from_attributes = True # orm_mode = True
 
     def get_all_subject_groups(self) -> List[str]:
-        return self.interested_positions + self.skills + self.topics
+        all = []
+        if self.interested_positions:
+            all += self.interested_positions
+        if self.skills:
+            all += self.skills
+        if self.topics:
+            all += self.topics
+        return all
 
     def get_all_interest_details(self, all_interests: InterestListVO) -> Dict:
         interest_set: Set = { subject_group for subject_group in self.interested_positions }
