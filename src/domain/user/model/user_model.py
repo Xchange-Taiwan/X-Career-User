@@ -1,9 +1,10 @@
-import logging as log
+import json
 from typing import List, Optional, Union, Dict, Set
 
 from pydantic import BaseModel
 from src.config.constant import InterestCategory
 from .common_model import InterestListVO, ProfessionListVO
+import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -79,3 +80,7 @@ class ProfileVO(BaseModel):
             region=model.region,
             linkedin_profile=model.linkedin_profile
         )
+
+    def to_json(self):
+        result = self.model_dump_json()
+        return json.loads(result)

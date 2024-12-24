@@ -39,7 +39,7 @@ class ProfileService:
         except Exception as e:
             log.error(f'get_by_user_id error: %s', str(e))
             err_msg = getattr(e, 'msg', 'get profile response failed')
-            raise_http_exception(msg=err_msg)
+            raise_http_exception(e, msg=err_msg)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         try:
