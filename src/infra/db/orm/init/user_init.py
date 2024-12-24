@@ -16,10 +16,7 @@ from src.config.constant import (
 )
 from src.infra.util.time_util import current_seconds
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
-from src.domain.mentor.model.mentor_model import (
-    MentorProfileDTO,
-    TimeSlotDTO,
-)
+from src.domain.mentor.model.mentor_model import MentorProfileDTO
 from src.domain.user.model.common_model import ProfessionVO
 from src.domain.user.model.user_model import ProfileDTO
 
@@ -125,12 +122,7 @@ class MentorSchedule(Base):
     exdate = Column(JSON, default=[])               # Use JSONB to store exclusion dates
     created_at = Column(BigInteger, default=current_seconds())
     updated_at = Column(BigInteger, default=current_seconds(), onupdate=current_seconds())
-    
-    @staticmethod
-    def of(dto: TimeSlotDTO):
-        if (dto is None):
-            return None
-        return MentorSchedule(**dto.__dict__)
+
 
     def __repr__(self):
         return f'<MentorSchedules(id={self.id}, \

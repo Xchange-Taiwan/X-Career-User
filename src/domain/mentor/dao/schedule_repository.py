@@ -7,6 +7,7 @@ from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
 from src.infra.util.convert_util import (
     get_all_template, 
     bulk_insert,
+    convert_dto_to_model,
 )
 from src.domain.mentor.model.mentor_model import TimeSlotDTO
 
@@ -41,7 +42,7 @@ class ScheduleRepository:
 
 
     async def save_schedules(self, db: AsyncSession, timeslot_dtos: List[TimeSlotDTO]) -> List[TimeSlotDTO]:
-        schedules: List[Schedule] = [Schedule.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
+        schedules: List[Schedule] = [convert_dto_to_model(timeslot_dto, Schedule) for timeslot_dto in timeslot_dtos]
 
         # Separate existing and new schedules
         exist_schedules: List[Schedule] = [schedule for schedule in schedules if schedule.id]
