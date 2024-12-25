@@ -85,13 +85,10 @@ class ScheduleService:
 
         # merge 3) and 4)
         merged_timeslots: List[TimeSlotDTO] = []
-        if exist_timeslots and new_timeslots:
-            exist_timeslots.extend(new_timeslots)
-            merged_timeslots = exist_timeslots
-        elif new_timeslots:
-            merged_timeslots = new_timeslots
-        elif exist_timeslots:
-            merged_timeslots = exist_timeslots
+        if new_timeslots:
+            merged_timeslots += new_timeslots
+        if exist_timeslots:
+            merged_timeslots += exist_timeslots
 
         return merged_timeslots
 
