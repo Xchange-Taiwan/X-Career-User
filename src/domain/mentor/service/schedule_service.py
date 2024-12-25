@@ -2,6 +2,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.mentor.model.mentor_model import (
     TimeSlotDTO,
+    MentorScheduleDTO,
     TimeSlotVO,
     MentorScheduleVO,
 )
@@ -43,19 +44,22 @@ class ScheduleService:
             raise_http_exception(e, msg='Schedule list not found')
 
 
-    async def save_schedules(self, db: AsyncSession, user_id: int, timeslot_dtos: List[TimeSlotDTO]) -> MentorScheduleVO:
+    async def save_schedules(self, db: AsyncSession, user_id: int, schedule_dto: MentorScheduleDTO) -> MentorScheduleVO:
         try:
             res: MentorScheduleVO = MentorScheduleVO()
+            input_timeslots: List[TimeSlotDTO] = schedule_dto.timeslots
 
             # CHECK: 儲存前檢查用戶的時間是否衝突? 若有則拋錯 (這裡需比對資料庫內的時間衝突)
-            (min_dtstart, max_dtend) = TimeSlotDTO.min_dtstart_and_max_dtend(timeslot_dtos)
-            stored_timeslot_dtos: List[TimeSlotDTO] = await self.__schedule_repository \
+            (min_dtstart, max_dtend) = schedule_dto.min_dtstart_to_max_dtend()
+            stored_timeslots: List[TimeSlotDTO] = await self.__schedule_repository \
                 .get_schedules_by_time_range(db, user_id, min_dtstart, max_dtend)
-            if len(stored_timeslot_dtos) > 0:
-                self.__opverlapping_interval_check(timeslot_dtos, stored_timeslot_dtos)
+            if len(stored_timeslots) > 0:
+                merged_timeslots = self.__merge_timeslots(input_timeslots, stored_timeslots)
+                MentorScheduleDTO.opverlapping_interval_check(merged_timeslots, schedule_dto.until)
 
-            timeslot_dtos = await self.__schedule_repository.save_schedules(db, timeslot_dtos)
-            res.timeslots = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
+            # save input timeslots only
+            saved_timeslots = await self.__schedule_repository.save_schedules(db, input_timeslots)
+            res.timeslots = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in saved_timeslots]
             return res
 
         except Exception as e:
@@ -64,8 +68,10 @@ class ScheduleService:
             raise_http_exception(e, msg=error_msg)
 
 
-    # CHECK: 檢查是否有時間重疊
-    def __opverlapping_interval_check(self, input_timeslots: List[TimeSlotDTO], stored_timeslots: List[TimeSlotDTO]):
+    # CHECK: 合併用戶輸入和資料庫內的時間區間
+    def __merge_timeslots(self, 
+                          input_timeslots: List[TimeSlotDTO], 
+                          stored_timeslots: List[TimeSlotDTO]) -> List[TimeSlotDTO]:
         # 1) stored in database
         stored_timeslots_dict: Dict[int, TimeSlotDTO] = {timeslot.id: timeslot for timeslot in stored_timeslots}
         # 2) user inputs timeslots with id
@@ -78,18 +84,16 @@ class ScheduleService:
         new_timeslots: List[TimeSlotDTO] = [input_timeslot for input_timeslot in input_timeslots if not input_timeslot.id]
 
         # merge 3) and 4)
-        timeslots: List[TimeSlotDTO] = []
+        merged_timeslots: List[TimeSlotDTO] = []
         if exist_timeslots and new_timeslots:
             exist_timeslots.extend(new_timeslots)
-            timeslots = exist_timeslots
+            merged_timeslots = exist_timeslots
         elif new_timeslots:
-            timeslots = new_timeslots
+            merged_timeslots = new_timeslots
         elif exist_timeslots:
-            timeslots = exist_timeslots
+            merged_timeslots = exist_timeslots
 
-
-        # Check Conflicts by Greedy Algorithm
-        TimeSlotDTO.opverlapping_interval_check(timeslots)
+        return merged_timeslots
 
 
 

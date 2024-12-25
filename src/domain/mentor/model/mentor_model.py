@@ -95,26 +95,50 @@ class TimeSlotDTO(BaseModel):
         #     datetime: lambda v: v.strftime(DATETIME_FORMAT)
         # }
 
-    @staticmethod
-    def min_dtstart_and_max_dtend(dtos: List['TimeSlotDTO']) -> Tuple[int, int]:
-        min_dtstart, max_dtend = 9999999999, 0
-        for timeslot in dtos:
+    def hash(self):
+        srt_timestamp = int(self.dtstart)
+        end_timestamp = int(self.dtend)
+        # 不考慮 exdate, 除非整個流程考慮 exdate
+        if self.rrule:
+            return hash((self.dt_type, srt_timestamp, end_timestamp, self.rrule,))
+        return hash((self.dt_type, srt_timestamp, end_timestamp,))
+
+    def init_fields(self, user_id: int) -> 'TimeSlotDTO':
+        self.user_id = user_id
+        if self.dtstart:
+            date = datetime.fromtimestamp(self.dtstart)
+        else:
+            date = datetime.now()
+        self.dt_year = date.year
+        self.dt_month = date.month
+        return self
+
+    def to_json(self):
+        # make sure all fields are in correct type
+        if isinstance(self.dtstart, float):
+            self.dtstart = int(self.dtstart)
+        if isinstance(self.dtend, float):
+            self.dtend = int(self.dtend)
+        self.exdate = [int(ex) if isinstance(ex, float) else ex for ex in self.exdate]
+        return self.model_dump()
+
+
+class MentorScheduleDTO(BaseModel):
+    until: int = Field(default=None, example=1735689600)
+    timeslots: List[TimeSlotDTO] = Field(default=[])
+
+    def min_dtstart_to_max_dtend(self) -> Tuple[int, int]:
+        min_dtstart = 9999999999
+        for timeslot in self.timeslots:
             min_dtstart = min(min_dtstart, timeslot.dtstart)
-            max_dtend = max(max_dtend, timeslot.dtend)
-        return (min_dtstart, max_dtend)
+        return (min_dtstart, self.until)
 
-    # for list sorting
-
-    @staticmethod
-    def sort_by_dtend(dto: 'TimeSlotDTO') -> int:
-        return dto.dtend
 
     # Check Conflicts by Greedy Algorithm
-
-    @staticmethod
-    def opverlapping_interval_check(timeslots: List['TimeSlotDTO']):
-        # timeslots.sort(key=TimeSlotDTO.sort_by_dtend)
-        timeslots = TimeSlotDTO.sort_with_rrule(timeslots)
+    @classmethod
+    def opverlapping_interval_check(cls, timeslots: List[TimeSlotDTO], UNTIL_TIMESTAMP: int):
+        UNTIL_END_DATE = datetime.fromtimestamp(UNTIL_TIMESTAMP)
+        timeslots = cls.sort_with_rrule(timeslots, UNTIL_END_DATE)
         if len(timeslots) < 2:
             raise UnprocessableClientException(msg='Parse iCalendar rrule error')
 
@@ -151,27 +175,22 @@ class TimeSlotDTO(BaseModel):
             raise ClientException(msg=f'There {be} {conflicts} {noun} between {first_yearmonth} and {last_yearmonth}',
                                   data={'conflicts': conflict_records})
 
-    @staticmethod
-    def sort_with_rrule(timeslots: List['TimeSlotDTO']):
-        # get MIN_DTSTART
-        (MIN_DTSTART, max_dtend) = TimeSlotDTO.min_dtstart_and_max_dtend(timeslots)
-
+    @classmethod
+    def sort_with_rrule(cls, timeslots: List[TimeSlotDTO], UNTIL_END_DATE: datetime):
         all_timeslots = []
         for timeslot in timeslots:
             if not timeslot.rrule:
                 all_timeslots.append(timeslot)
             else:
                 copies_with_rrule = \
-                    TimeSlotDTO.get_copies_by_rrule(timeslot, MIN_DTSTART)
+                    cls.get_copies_by_rrule(timeslot, UNTIL_END_DATE)
                 all_timeslots.extend(copies_with_rrule)
 
-        all_timeslots.sort(key=TimeSlotDTO.sort_by_dtend)
+        all_timeslots.sort(key=lambda dto: dto.dtend)
         return all_timeslots
 
-    # Check recurring events in the time range
-
-    @staticmethod
-    def get_copies_by_rrule(timeslot: 'TimeSlotDTO', MIN_DTSTART: int):
+    @classmethod
+    def get_copies_by_rrule(cls, timeslot: TimeSlotDTO, UNTIL_END_DATE: datetime):
         start_date = datetime.fromtimestamp(timeslot.dtstart)
         end_date = datetime.fromtimestamp(timeslot.dtend)
 
@@ -186,8 +205,7 @@ class TimeSlotDTO(BaseModel):
 
         # Parse the iCalendar and generate all event instances
         timeslot_copies = []
-        FINAL_DTEND = datetime.fromtimestamp(MIN_DTSTART + MAX_PERIOD_SECS)
-        events = rrule_events(calendar, start_date, FINAL_DTEND)
+        events = rrule_events(calendar, start_date, UNTIL_END_DATE)
 
         # Traverse all events and output
         for event in events:
@@ -196,34 +214,6 @@ class TimeSlotDTO(BaseModel):
             timeslot_copy.dtend = event.get('DTEND').dt.timestamp()
             timeslot_copies.append(timeslot_copy)
         return timeslot_copies
-
-    def hash(self):
-        srt_timestamp = int(self.dtstart)
-        end_timestamp = int(self.dtend)
-        # 不考慮 exdate, 除非整個流程考慮 exdate
-        if self.rrule:
-            return hash((self.dt_type, srt_timestamp, end_timestamp, self.rrule,))
-        return hash((self.dt_type, srt_timestamp, end_timestamp,))
-
-    def init_fields(self, user_id: int) -> 'TimeSlotDTO':
-        self.user_id = user_id
-        if self.dtstart:
-            date = datetime.fromtimestamp(self.dtstart)
-        else:
-            date = datetime.now()
-        self.dt_year = date.year
-        self.dt_month = date.month
-        return self
-
-    def to_json(self):
-        # make sure all fields are in correct type
-        if isinstance(self.dtstart, float):
-            self.dtstart = int(self.dtstart)
-        if isinstance(self.dtend, float):
-            self.dtend = int(self.dtend)
-        self.exdate = [int(ex) if isinstance(ex, float) else ex for ex in self.exdate]
-
-        return self.model_dump()
 
 
 class TimeSlotVO(TimeSlotDTO):

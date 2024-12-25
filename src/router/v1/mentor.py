@@ -152,7 +152,7 @@ async def get_mentor_schedule_list(
 async def upsert_mentor_schedule(
         db: AsyncSession = Depends(db_session),
         user_id: int = Path(...),
-        body: List[mentor.TimeSlotDTO] = Depends(upsert_mentor_schedule_check),
+        body: mentor.MentorScheduleDTO = Depends(upsert_mentor_schedule_check),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
     res: mentor.MentorScheduleVO = await schedule_service.save_schedules(db, user_id, body)
