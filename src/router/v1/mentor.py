@@ -125,7 +125,7 @@ async def get_expertises(
     return res_success(data=res.to_json())
 
 
-@router.get('/{user_id}/schedule/{dt_year}/{dt_month}',
+@router.get('/{user_id}/schedule/y/{dt_year}/m/{dt_month}',
             responses=idempotent_response('get_mentor_schedule_list', mentor.MentorScheduleVO))
 async def get_mentor_schedule_list(
         db: AsyncSession = Depends(db_session),
