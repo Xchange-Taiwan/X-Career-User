@@ -1,7 +1,7 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, JSON
+from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
@@ -119,7 +119,7 @@ class MentorSchedule(Base):
     dtend = Column(BigInteger, nullable=False, index=True)      # End time
     timezone = Column(String(50), nullable=False)   # Timezone
     rrule = Column(Text, nullable=True)             # Repeat event rules
-    exdate = Column(JSON, default=[])               # Use JSONB to store exclusion dates
+    exdate = Column(JSONB, default=[])               # Use JSONB to store exclusion dates
     created_at = Column(BigInteger, default=current_seconds())
     updated_at = Column(BigInteger, default=current_seconds(), onupdate=current_seconds())
 
