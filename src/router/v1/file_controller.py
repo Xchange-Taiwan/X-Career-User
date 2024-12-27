@@ -8,6 +8,7 @@ from fastapi import (
 )
 import logging as log
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..res.response import *
@@ -33,7 +34,7 @@ async def create_file_info(
         file_service: FileService = Depends(get_file_service)
 ):
     res: FileInfoVO = await file_service.save_file_info(db, body)
-    return res_success(data=res.json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{user_id}/{file_id}',
@@ -45,7 +46,7 @@ async def get_file_info_by_id(
         file_service: FileService = Depends(get_file_service)
 ):
     res: FileInfoVO = await file_service.get_file_info(db, user_id, file_id)
-    return res_success(data=res.json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.delete('/{user_id}/{file_id}',
@@ -69,7 +70,7 @@ async def get_file_info_by_by_user_id(
 ):
     res: FileInfoListVO = await file_service.get_file_info_by_user_id(db, user_id)
 
-    return res_success(data=res.json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.put('/{user_id}/update',
@@ -81,4 +82,4 @@ async def update_file_info(
         file_service: FileService = Depends(get_file_service)
 ):
     res: FileInfoVO = await file_service.update_file_info(db, user_id, body)
-    return res_success(data=res.json())
+    return res_success(data=jsonable_encoder(res))

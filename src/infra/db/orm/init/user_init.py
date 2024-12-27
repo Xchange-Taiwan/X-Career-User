@@ -65,7 +65,11 @@ class Profile(Base):
             personal_statement=model.personal_statement,
             about=model.about,
             seniority_level=model.seniority_level,
-            expertises=model.expertises
+            expertises=model.expertises,
+            interested_positions=model.interested_positions,
+            skills=model.skills,
+            topics=model.topics,
+            industries=model.industries
         )
 
 

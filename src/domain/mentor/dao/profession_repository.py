@@ -43,6 +43,9 @@ class ProfessionRepository:
                                                       language: str
                                                       ) \
             -> List[Type[Profession]]:
+        # If subject_groups || language is empty or null, return an empty list immediately
+        if not subject_groups or not language:
+            return []
         stmt: Select = (select(Profession)
                         .filter(Profession.subject_group.in_(subject_groups))
                         .filter(Profession.category == category)
