@@ -15,6 +15,9 @@ from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
+from src.domain.user.dao.reservation_repository import ReservationRepository
+from src.domain.user.service.reservation_service import ReservationService
+from src.app.reservation.booking import Booking
 
 
 def get_experience_dao() -> MentorExperienceRepository:
@@ -39,6 +42,9 @@ def get_profession_dao() -> ProfessionRepository:
 
 def get_file_dao() -> FileRepository:
     return FileRepository()
+
+def get_resevation_dao() -> ReservationRepository:
+    return ReservationRepository()
 
 
 def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao)) -> InterestService:
@@ -82,3 +88,9 @@ def get_profession_service(profession_repository: ProfessionRepository = Depends
 
 def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
     return FileService(file_repository)
+
+def get_reservation_service(reservation_repository: ReservationRepository = Depends(get_resevation_dao)):
+    return ReservationService(reservation_repository)
+
+def get_booking_service(reservation_service: ReservationService = Depends(get_reservation_service)):
+    return Booking(reservation_service)
