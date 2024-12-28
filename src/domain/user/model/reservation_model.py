@@ -207,44 +207,10 @@ class RUserInfoVO(BaseModel):
 
 
 class ReservationQueryDTO(BaseModel):
-    user_id: int
-    state: ReservationListState = Field(None, example=ReservationListState.UPCOMING.value,
-        pattern=f'^({ReservationListState.UPCOMING.value}|\
-                {ReservationListState.PENDING.value}|\
-                {ReservationListState.HISTORY.value})$')
-    batch: int = BATCH
-    next_dtstart: Optional[int] = None
-    
-    # my_user_id: int
-    # my_status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-    #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-    # status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-    #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-
-
-    def query(self) -> Dict:
-        if self.state == ReservationListState.UPCOMING:
-            return {
-                'my_user_id': self.user_id,
-                'my_status': BookingStatus.ACCEPT.value,
-                'status': BookingStatus.ACCEPT.value,
-                'dtstart': self.next_dtstart
-            }
-        if self.state == ReservationListState.PENDING:
-            return {
-                'my_user_id': self.user_id,
-                'my_status': BookingStatus.PENDING.value,
-                # 'status': BookingStatus.PENDING.value
-            }
-
-        # if self.state == ReservationListState.HISTORY:
-        return {
-            'my_user_id': self.user_id,
-            'my_status': BookingStatus.REJECT.value,
-            # 'status': BookingStatus.REJECT.value,
-            'dtstart': self.next_dtstart
-        }
-
+    state: str = Field(None, example=ReservationListState.UPCOMING.value,
+                        pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
+    batch: int = Field(..., example=BATCH, ge=1)
+    next_dtend: Optional[int] = Field(None, example=1735398000)
 
 
 class ReservationMessageVO(BaseModel):
@@ -318,7 +284,6 @@ class ReservationVO(ReservationDTO):
 class ReservationInfoVO(BaseModel):
     id: Optional[int] = None
     sender: RUserInfoVO    # sharding key: sneder.user_id
-    # id2: Optional[int] = None
     participant: RUserInfoVO
     schedule_id: int = 0
     dtstart: int = 0    # timestamp
@@ -331,7 +296,7 @@ class ReservationInfoVO(BaseModel):
     def from_sender_model(reservation: Reservation):
         # sender_role = reservation.my_role
         # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
-        return ReservationVO(
+        return ReservationInfoVO(
             id=reservation.id,
             sender=RUserInfoVO(
                     user_id=reservation.my_user_id,
@@ -342,17 +307,21 @@ class ReservationInfoVO(BaseModel):
                     user_id=reservation.user_id,
                     # role=participant_role,
                     status=reservation.status,
+                    name=reservation.name,
+                    avatar=reservation.avatar,
+                    job_title=reservation.job_title,
+                    years_of_experience=reservation.years_of_experience,
                 ),
             schedule_id=reservation.schedule_id,
             dtstart=reservation.dtstart,
             dtend=reservation.dtend,
             previous_reserve=reservation.previous_reserve,
-            message=reservation.messages
+            messages=reservation.messages
         )
 
-class ReservationListVO(BaseModel):
-    reservations: List[ReservationVO]
-    next_dtstart: Optional[int]
+class ReservationInfoListVO(BaseModel):
+    reservations: Optional[List[ReservationInfoVO]] = []
+    next_dtend: Optional[int] = 0
 
 # class MentorScheduleDTO(BaseModel):
 #     mentor_schedules_id: int

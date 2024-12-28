@@ -132,8 +132,8 @@ CREATE TABLE IF NOT EXISTS reservations (
 
 CREATE UNIQUE INDEX uidx_reservation_user_dtstart_dtend_schedule_id_user_id
     ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id);
-CREATE INDEX idx_reservation_user_my_status_status_dtstart
-    ON reservations(my_user_id, my_status, "status", dtstart);
+CREATE INDEX idx_reservation_user_my_status_status_dtend
+    ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
     ON reservations(my_user_id, my_status, dtstart, dtend);
 

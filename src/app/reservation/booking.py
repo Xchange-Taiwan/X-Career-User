@@ -1,10 +1,11 @@
 from typing import Optional
-from src.config.constant import BookingStatus
-from src.config.exception import ClientException
 from src.domain.user.model.reservation_model import (
     UpdateReservationDTO,
     ReservationDTO,
     ReservationVO,
+    ReservationQueryDTO,
+    ReservationInfoVO,
+    ReservationInfoListVO,
 )
 from src.domain.user.service.reservation_service import ReservationService
 
@@ -16,6 +17,9 @@ class Booking:
                  ):
         self.reservation_service = reservation_service
         # self.notify_service = notify_service
+
+    async def list(self, db, user_id: int, query_dto: ReservationQueryDTO) -> ReservationInfoListVO:
+        return await self.reservation_service.get_reservations(db, user_id, query_dto)
 
     # 聚合根 => 原子性的完成
     async def create(self, db, 
