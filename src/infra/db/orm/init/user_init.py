@@ -138,15 +138,16 @@ class Reservation(Base):
     my_status = Column(
         ENUM(BookingStatus, name='booking_status', create_type=False))
     # my_role = Column( 
-    #     ENUM(RoleType, name='role_type', create_type=False))  # FIXME
+    #     ENUM(RoleType, name='role_type', create_type=False))  # FIXME: deprecated
     user_id = Column(BigInteger, nullable=True)     # nullable while updating
-    # id2 = Column(Integer)                           # FIXME: the id of the other user
+    # id2 = Column(Integer)                           # FIXME: deprecated: the id of the other user
     status = Column(
         ENUM(BookingStatus, name='booking_status', create_type=False))
     messages = Column(JSONB, default=[])
     previous_reserve = Column(JSONB, nullable=True) # nullable while updating
 
 
+# FIXME: deprecated
 # class ReservationMessage(Base):
 #     __tablename__ = 'reservation_messages'
 #     id = Column(Integer, primary_key=True)
