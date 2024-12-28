@@ -54,7 +54,7 @@ class ProfileService:
         if language is None:
             language = dto.language
         try:
-            industries: Coroutine[Any, Any, ProfessionVO] = \
+            industries: ProfessionListVO = \
                 await (self.__profession_service.
                     get_industries_by_subjects(db, dto.industries, dto.language))
 
@@ -78,9 +78,9 @@ class ProfileService:
             res: ProfileVO = ProfileVO.of(dto)
             res.industries = industries
             if all_interests:
-                res.interested_positions = all_interests[InterestCategory.INTERESTED_POSITION.value]
-                res.skills = all_interests[InterestCategory.SKILL.value]
-                res.topics  = all_interests[InterestCategory.TOPIC.value]
+                res.interested_positions = InterestListVO(interests=all_interests[InterestCategory.INTERESTED_POSITION.value])
+                res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])
+                res.topics  = InterestListVO(interests=all_interests[InterestCategory.TOPIC.value])
             return res
         except Exception as e:
             log.error(f'convert_to_profile_vo error: %s', str(e))
@@ -94,9 +94,9 @@ class ProfileService:
         if language is None:
             language = dto.language
         try:
-            industries: Coroutine[Any, Any, ProfessionVO] = \
+            industries: ProfessionListVO = \
                 await self.__profession_service.get_industries_by_subjects(db, dto.industries, language=language)
-            expertises: Coroutine[Any, Any, ProfessionListVO] = \
+            expertises: ProfessionListVO = \
                 await self.__profession_service.get_expertise_by_subjects(db, dto.expertises, language=language)
 
             # get all interests: interest_positions, skills, topics
@@ -120,9 +120,9 @@ class ProfileService:
             res.industries = industries
             res.expertises = expertises
             if all_interests:
-                res.interested_positions = all_interests[InterestCategory.INTERESTED_POSITION.value]
-                res.skills = all_interests[InterestCategory.SKILL.value]
-                res.topics  = all_interests[InterestCategory.TOPIC.value]
+                res.interested_positions = InterestListVO(interests=all_interests[InterestCategory.INTERESTED_POSITION.value])
+                res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])
+                res.topics  = InterestListVO(interests=all_interests[InterestCategory.TOPIC.value])
                 
             return res
 
