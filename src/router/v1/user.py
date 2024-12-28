@@ -15,11 +15,18 @@ from ...domain.user.model import (
     user_model as user,
     reservation_model as reservation,
 )
+from ...app.reservation.booking import Booking
 from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
 from ...infra.databse import get_db, db_session
-from ...infra.util.injection_util import get_interest_service, get_profession_service, get_profile_service
+from ...infra.util.injection_util import (
+    get_interest_service, 
+    get_profession_service, 
+    get_profile_service,
+    get_reservation_service,
+    get_booking_service,
+)
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -82,34 +89,79 @@ async def get_industries(
     return res_success(data=jsonable_encoder(res))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 @router.get('/{user_id}/reservations',
             responses=idempotent_response('reservation_list', reservation.ReservationListVO))
 async def reservation_list(
         user_id: int = Path(...),
         state: ReservationListState = Query(...),
-        batch: int = Query(...),
-        next_id: int = Query(None),
+        batch: int = Query(..., ge=1),
+        next_dtstart: int = Query(None),
+        db: AsyncSession = Depends(db_session),
 ):
     # TODO: implement
     return res_success(data=None)
 
 
+############################################################################################
+# NOTE: 如何改預約時段?? 重新建立後再 cancel 舊的。 (status_code: 201)
+# 用戶可能有很多memtor/memtee預約；為方便檢查時間衝突，要重新建立後再 cancel 舊的。
+# NOTE: ReservationDTO.previous_reserve 可紀錄
+# 前一次的[schedule_id, start_datetime]，以便找到同樣的討論串/變更原因歷史。
+# 如果 "previous_reserve" 不為空，則表示這是一次變更預約的操作 => 新增後，將舊的預約設為 cancel。
+############################################################################################
 @router.post('/{user_id}/reservations',
              responses=post_response('new_booking', reservation.ReservationVO))
 async def new_booking(
         user_id: int = Path(...),
         body: reservation.ReservationDTO = Body(...),
+        db: AsyncSession = Depends(db_session),
+        booking_service: Booking = Depends(get_booking_service),
 ):
-    # TODO: implement
-    return res_success(data=None)
+    body.my_user_id = user_id
+    body.my_status = BookingStatus.ACCEPT
+    res = await booking_service.accept(db, body)
+    return res_success(data=res)
+
+@router.put('/{user_id}/reservations',
+             responses=idempotent_response('rebook', reservation.ReservationVO))
+async def rebook(
+        user_id: int = Path(...),
+        body: reservation.ReservationDTO = Body(...),
+        db: AsyncSession = Depends(db_session),
+        booking_service: Booking = Depends(get_booking_service),
+):
+    body.my_user_id = user_id
+    body.my_status = BookingStatus.ACCEPT
+    res = await booking_service.accept(db, body)
+    return res_success(data=res)
 
 
 @router.put('/{user_id}/reservations/{reservation_id}',
-            responses=idempotent_response('update_or_delete_booking', reservation.ReservationVO))
-async def update_or_delete_booking(
+            responses=idempotent_response('reject', reservation.ReservationVO))
+async def reject(
         user_id: int = Path(...),
         reservation_id: int = Path(...),
         body: reservation.ReservationDTO = Body(...),
+        # msg: str = Body(None, embed=True),
+        db: AsyncSession = Depends(db_session),
+        booking_service: Booking = Depends(get_booking_service),
+        
 ):
-    # TODO: implement
-    return res_success(data=None)
+    body.id = reservation_id
+    body.my_user_id = user_id
+    body.my_status = BookingStatus.REJECT
+    res = await booking_service.reject(db, body)
+    return res_success(data=res)
