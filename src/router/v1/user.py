@@ -103,16 +103,15 @@ async def get_industries(
 
 
 @router.get('/{user_id}/reservations',
-            responses=idempotent_response('reservation_list', reservation.ReservationListVO))
+            responses=idempotent_response('reservation_list', reservation.ReservationInfoListVO))
 async def reservation_list(
         user_id: int = Path(...),
-        state: ReservationListState = Query(...),
-        batch: int = Query(..., ge=1),
-        next_dtstart: int = Query(None),
+        query: reservation.ReservationQueryDTO = Query(...),
         db: AsyncSession = Depends(db_session),
+        booking_service: Booking = Depends(get_booking_service),
 ):
-    # TODO: implement
-    return res_success(data=None)
+    res = await booking_service.list(db, user_id, query)
+    return res_success(data=jsonable_encoder(res))
 
 
 ############################################################################################

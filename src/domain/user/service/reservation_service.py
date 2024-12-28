@@ -16,17 +16,22 @@ class ReservationService:
         self.user_repo = None
 
     async def get_reservations(self, db: AsyncSession,
-                               query_dto: ReservationQueryDTO) -> Optional[ReservationListVO]:
+                               user_id: int, 
+                               query_dto: ReservationQueryDTO) -> Optional[ReservationInfoListVO]:
         try:
-            res: ReservationListVO = ReservationListVO()
-
-            query = query_dto.model_dump()
-            next_dtstart = query.pop('next_dtstart', None)
-            batch = query.pop('batch', BATCH)
-            reservations: List[ReservationDTO] = \
-                await self.reservation_repo.get_user_reservations(db, query, batch, next_dtstart)
-
-            res.reservations = reservations
+            res: ReservationInfoListVO = ReservationInfoListVO()
+            limit = query_dto.batch + 1
+            reservations: List[ReservationInfoVO] = \
+                await self.reservation_repo.get_user_reservations(db,
+                                                                  user_id,
+                                                                  query_dto.state,
+                                                                  limit,
+                                                                  query_dto.next_dtend)
+            if len(reservations) < limit:
+                res.reservations = reservations
+            else:
+                res.reservations = reservations[:-1]
+                res.next_dtend = reservations[-1].dtend
             return res
         except Exception as e:
             log.error('get reservations failed: %s', str(e))

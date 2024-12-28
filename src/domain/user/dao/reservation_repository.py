@@ -28,6 +28,8 @@ class ReservationRepository:
             return None
         return ReservationVO.model_validate(reservation)
 
+
+
     async def find_one(self, db: AsyncSession,
                        query: Dict) -> Optional[ReservationVO]:
         stmt: Select = select(Reservation).filter_by(**query)
@@ -35,6 +37,8 @@ class ReservationRepository:
         if not reservation:
             return None
         return ReservationVO.model_validate(reservation)
+
+
 
     async def find_all(self, db: AsyncSession,
                        query: Dict,
@@ -48,6 +52,8 @@ class ReservationRepository:
 
         reservations = await get_all_template(db, stmt)
         return [ReservationVO.model_validate(reservation) for reservation in reservations]
+
+
 
     async def save(self, db: AsyncSession, reservation: Reservation):
         if reservation.id:
@@ -79,10 +85,13 @@ class ReservationRepository:
         result = await db.execute(stmt)
         await db.commit()
 
+
+
     async def get_user_reservations(self, db: AsyncSession,
-                                    query: Dict,
+                                    user_id: int,
+                                    list_state: ReservationListState,
                                     limit: int = BATCH,
-                                    next_dtstart: int = None) -> Optional[List[ReservationDTO]]:
+                                    next_dtend: int = None) -> Optional[List[ReservationDTO]]:
         stmt = select(
             Reservation.id,
             Reservation.schedule_id,
@@ -94,29 +103,41 @@ class ReservationRepository:
             Reservation.status,
             Reservation.messages,
             Reservation.previous_reserve,
-            Profile.id.label('user_id'),
+            Profile.user_id.label('user_id'),
             Profile.name,
             Profile.avatar,
             Profile.job_title,
             Profile.years_of_experience,
         ).select_from(
-            join(Reservation, Profile, (Reservation.my_user_id == Profile.user_id) | (
-                Reservation.user_id == Profile.user_id))
+            join(Reservation, Profile, (Reservation.user_id == Profile.user_id))
         )
-        # .where(
-        #     Reservation.my_user_id == query['my_user_id'] &
-        #     Reservation.my_status == query['my_status']  &
-        #     Reservation.status == query['status'] &
-        #     Reservation.dtstart >= dtstart
-        # ).limit(limit)
-        for key, value in query.items():
-            stmt = stmt.where(getattr(Reservation, key) == value)
+        # for key, value in query.items():
+        #     stmt = stmt.where(getattr(Reservation, key) == value)
+        stmt = stmt.where(Reservation.my_user_id == user_id)
+        if list_state == ReservationListState.UPCOMING:
+            stmt = stmt.where(
+                (Reservation.my_status == BookingStatus.ACCEPT) &
+                (Reservation.status == BookingStatus.ACCEPT) &
+                (Reservation.dtend >= func.now())
+            )
+        elif list_state == ReservationListState.PENDING:
+            stmt = stmt.where(
+                ((Reservation.my_status == BookingStatus.PENDING) |
+                (Reservation.status == BookingStatus.PENDING)) &
+                (Reservation.dtend >= func.now())
+            )
+        elif list_state == ReservationListState.HISTORY:
+            stmt = stmt.where(
+                (Reservation.my_status == BookingStatus.REJECT) |
+                (Reservation.status == BookingStatus.REJECT) |
+                (Reservation.dtend < func.now())
+            )
 
-        if next_dtstart:
-            stmt = stmt.where(Reservation.dtstart >= next_dtstart)
+        if next_dtend:
+            stmt = stmt.where(Reservation.dtend >= next_dtend)
 
-        stmt = stmt.limit(limit)
+        stmt = stmt.order_by(Reservation.dtend.desc()).limit(limit)
         result = await db.execute(stmt)
         reservations = result.fetchall()
 
-        return [ReservationVO.from_sender_model(reservation) for reservation in reservations]
+        return [ReservationInfoVO.from_sender_model(reservation) for reservation in reservations]
