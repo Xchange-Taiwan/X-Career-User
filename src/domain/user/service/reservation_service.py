@@ -142,19 +142,19 @@ class ReservationService:
     '''
 
     # FIXME: function 改為 update_reservation_status, 有 id
-    async def update_reservation_status(self, db: AsyncSession, reserve_id: int, reservation_dto: ReservationDTO):
+    async def update_reservation_status(self, db: AsyncSession, reserve_id: int, update_dto: UpdateReservationDTO):
         try:
             SENDER_VO: ReservationVO = await self.get_sender_vo_by_id(db, 
                                                                       reserve_id, 
-                                                                      reservation_dto)
+                                                                      update_dto)
 
-            query = reservation_dto.participant_query()
+            query = update_dto.participant_query()
             participant_vo: ReservationVO = \
                 await self.reservation_repo.find_one(db, query)
             if not participant_vo:
                 raise ClientException(msg='participant reservation not found')
 
-            MY_STATUS = reservation_dto.my_status
+            MY_STATUS = update_dto.my_status
             sender: Reservation = \
                 SENDER_VO.sender_model(MY_STATUS, SENDER_VO.id)
             participant: Reservation = \
@@ -198,8 +198,8 @@ class ReservationService:
 
     async def get_sender_vo_by_id(self, db: AsyncSession, 
                                   reserve_id: int,
-                                  reservation_dto: ReservationDTO) -> Optional[ReservationVO]:
-        my_user_id = reservation_dto.my_user_id
+                                  update_dto: UpdateReservationDTO) -> Optional[ReservationVO]:
+        my_user_id = update_dto.my_user_id
         SENDER_VO: ReservationVO = \
             await self.reservation_repo.find_by_id(db, reserve_id, my_user_id)
         if not SENDER_VO:

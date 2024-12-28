@@ -141,7 +141,7 @@ async def new_booking(
 async def update_reservation_status(
         user_id: int = Path(...),
         reservation_id: int = Path(...),
-        body: reservation.ReservationDTO = Body(...),
+        body: reservation.UpdateReservationDTO = Body(...),
         # msg: str = Body(None, embed=True),
         db: AsyncSession = Depends(db_session),
         booking_service: Booking = Depends(get_booking_service),

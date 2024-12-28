@@ -15,7 +15,7 @@ from src.infra.db.orm.init.user_init import (
 log.basicConfig(filemode='w', level=log.INFO)
 
 
-# class RUserDTO(BaseModel):
+# class RUserDTO(BaseModel):    # FIXME: deprecated
 #     user_id: Optional[int] = Field(None, example=0)
 #     # role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
 #     #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
@@ -23,11 +23,29 @@ log.basicConfig(filemode='w', level=log.INFO)
 #     #                      pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
 
 
-# class ReservationStatusDTO(BaseModel):
+# class ReservationStatusDTO(BaseModel):    # FIXME: deprecated
 #     id: int = 0
 #     sender: RUserDTO
 #     message: Optional[str] = ''
 
+
+class UpdateReservationDTO(BaseModel):
+    my_user_id: int = 0
+    my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
+    user_id: int = 0
+    schedule_id: int = 0
+    dtstart: int = 0    # timestamp
+    dtend: int = 0      # timestamp
+    messages: Optional[List] = []
+
+    def participant_query(self) -> Dict:
+        return {
+            'my_user_id': self.user_id,
+            'schedule_id': self.schedule_id,
+            'dtstart': self.dtstart,
+            'dtend': self.dtend,
+            'user_id': self.my_user_id,
+        }
 
 '''
 讓後端實現「先建立再取消」:
@@ -37,23 +55,23 @@ log.basicConfig(filemode='w', level=log.INFO)
 '''
 
 
-class ReservationDTO(BaseModel):
-    # id: Optional[int] = None # FIXME id 放在 ReservationVO
-    # sender: RUserDTO    # sharding key: sneder.user_id
-    my_user_id: int = 0
-    my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
-    # my_status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-    #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-    # id2: Optional[int] = None
-    # participant: RUserDTO
-    user_id: int = 0
-    # status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
-    # status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-    #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-    schedule_id: int = 0
-    dtstart: int = 0    # timestamp
-    dtend: int = 0      # timestamp
-    messages: Optional[List] = []
+class ReservationDTO(UpdateReservationDTO):
+    # # id: Optional[int] = None # FIXME id 放在 ReservationVO
+    # # sender: RUserDTO    # sharding key: sneder.user_id
+    # my_user_id: int = 0
+    # my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
+    # # my_status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
+    # #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
+    # # id2: Optional[int] = None
+    # # participant: RUserDTO
+    # user_id: int = 0
+    # # status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
+    # # status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
+    # #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
+    # schedule_id: int = 0
+    # dtstart: int = 0    # timestamp
+    # dtend: int = 0      # timestamp
+    # messages: Optional[List] = []
     previous_reserve: Optional[Dict[str, Any]] = None # sender's previous reservation
 
     def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
@@ -98,14 +116,6 @@ class ReservationDTO(BaseModel):
             'user_id': self.user_id,
         }
 
-    def participant_query(self) -> Dict:
-        return {
-            'my_user_id': self.user_id,
-            'schedule_id': self.schedule_id,
-            'dtstart': self.dtstart,
-            'dtend': self.dtend,
-            'user_id': self.my_user_id,
-        }
 
     def previous_sender_query_by_id(self) -> Tuple[int, int]:
         if not self.previous_reserve or not 'reserve_id' in self.previous_reserve:
@@ -141,7 +151,7 @@ class ReservationDTO(BaseModel):
 
 
 
-# class ReservationMessageVO(BaseModel):
+# class ReservationMessageVO(BaseModel):    # FIXME: deprecated
 #     id: Optional[int]
 #     # msg's sharding key: schedule_id + dtstart(only YYmmdd?) for both sides
 #     # 如何改預約時段?? 新建立預約後再 cancel 舊的。也能保證找到同個時段的所有 message。

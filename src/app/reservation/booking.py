@@ -1,6 +1,7 @@
 from src.config.constant import BookingStatus
 from src.config.exception import ClientException
 from src.domain.user.model.reservation_model import (
+    UpdateReservationDTO,
     ReservationDTO,
 )
 from src.domain.user.service.reservation_service import ReservationService
@@ -28,7 +29,7 @@ class Booking:
     # 聚合根 => 原子性的完成
     async def update_reservation_status(self, db, 
                                         reservation_id: int, 
-                                        reservation_dto: ReservationDTO):
+                                        reservation_dto: UpdateReservationDTO):
         await self.reservation_service.update_reservation_status(db, 
                                                                  reservation_id, 
                                                                  reservation_dto)
