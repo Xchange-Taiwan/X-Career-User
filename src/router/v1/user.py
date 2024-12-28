@@ -132,26 +132,13 @@ async def new_booking(
 ):
     body.my_user_id = user_id
     body.my_status = BookingStatus.ACCEPT
-    res = await booking_service.accept(db, body)
-    return res_success(data=res)
-
-@router.put('/{user_id}/reservations',
-             responses=idempotent_response('rebook', reservation.ReservationVO))
-async def rebook(
-        user_id: int = Path(...),
-        body: reservation.ReservationDTO = Body(...),
-        db: AsyncSession = Depends(db_session),
-        booking_service: Booking = Depends(get_booking_service),
-):
-    body.my_user_id = user_id
-    body.my_status = BookingStatus.ACCEPT
-    res = await booking_service.accept(db, body)
+    res = await booking_service.create(db, body)
     return res_success(data=res)
 
 
 @router.put('/{user_id}/reservations/{reservation_id}',
-            responses=idempotent_response('reject', reservation.ReservationVO))
-async def reject(
+            responses=idempotent_response('update_reservation_status', reservation.ReservationVO))
+async def update_reservation_status(
         user_id: int = Path(...),
         reservation_id: int = Path(...),
         body: reservation.ReservationDTO = Body(...),
@@ -160,8 +147,6 @@ async def reject(
         booking_service: Booking = Depends(get_booking_service),
         
 ):
-    body.id = reservation_id
     body.my_user_id = user_id
-    body.my_status = BookingStatus.REJECT
-    res = await booking_service.reject(db, body)
+    res = await booking_service.update_reservation_status(db, reservation_id, body)
     return res_success(data=res)

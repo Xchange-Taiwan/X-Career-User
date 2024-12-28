@@ -15,18 +15,23 @@ class Booking:
         # self.notify_service = notify_service
 
     # 聚合根 => 原子性的完成
-    async def accept(self, db, reservation_dto: ReservationDTO):            
-        if reservation_dto.previous_reserve:
-            await self.reservation_service.accept_new_and_reject_previous(db, reservation_dto)
+    async def create(self, db, reservation_dto: ReservationDTO):  
+        previous_reserve = reservation_dto.previous_reserve          
+        if not previous_reserve or len(previous_reserve) == 0:
+            await self.reservation_service.create(db, reservation_dto)
         else:
-            await self.reservation_service.accept(db, reservation_dto)
+            await self.reservation_service.create_new_and_reject_previous(db, reservation_dto)
 
         # TODO: notify participant
         # notify_service.notify_participant(reservation_dto)
 
     # 聚合根 => 原子性的完成
-    async def reject(self, db, reservation_dto: ReservationDTO):
-        await self.reservation_service.reject(db, reservation_dto)
+    async def update_reservation_status(self, db, 
+                                        reservation_id: int, 
+                                        reservation_dto: ReservationDTO):
+        await self.reservation_service.update_reservation_status(db, 
+                                                                 reservation_id, 
+                                                                 reservation_dto)
 
         # TODO: notify participant
         # notify_service.notify_participant(reservation_dto)

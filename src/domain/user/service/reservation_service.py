@@ -43,19 +43,22 @@ class ReservationService:
     2. 新建/更新 sender 狀態
     3. 新建/更新 participant 狀態
     '''
-
-    async def accept(self, db: AsyncSession, reservation_dto: ReservationDTO):
+    async def create(self, db: AsyncSession, reservation_dto: ReservationDTO):
         try:
-            # TODO: check date conflict with both sender and participant
+            # NOTE: check date conflict with sender's reservations;
             # checking participant's reservations is not necessary,
             # the default status is 'PENDING'
-            if not reservation_dto.id:
-                await self.check_my_accepted_bookings(db, reservation_dto)
+            await self.check_my_accepted_bookings(db, reservation_dto)
 
+            # sender 這次的新預約
             sender: Reservation = \
                 reservation_dto.sender_model(BookingStatus.ACCEPT)
+            # sender.id = None
+
+            # participant 這次的新預約
             participant: Reservation = \
                 reservation_dto.participant_model(BookingStatus.ACCEPT)
+            # participant.id = None
 
             # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
             # await db.execute(text('BEGIN'))
@@ -68,6 +71,7 @@ class ReservationService:
             err_msg = getattr(e, 'msg', 'create reservation failed')
             raise_http_exception(e=e, msg=err_msg)
 
+
     '''
     - 和 accept 一樣，但多了一步: 拒絕前一次的預約
     - 前一次的預約是根據 reservation_dto 的 previous_reserve 來找到的
@@ -77,37 +81,44 @@ class ReservationService:
         - 先透過 previous_reserve 找到對應的 sender 上一次的預約
         - 再透過 sender 上一次的預約找到對應的 participant 上一次的預約
     '''
-
-    async def accept_new_and_reject_previous(self, db: AsyncSession, reservation_dto: ReservationDTO):
+    async def create_new_and_reject_previous(self, db: AsyncSession, reservation_dto: ReservationDTO):
         try:
-            # sender 上一次的預約
-            prev_sender_dto: ReservationDTO = \
-                await self.get_prev_sender_dto(db, reservation_dto)
-            prev_sender: Reservation = \
-                prev_sender_dto.sender_model(BookingStatus.REJECT)
-
-            # participant 上一次的預約
-            prev_participant_dto: ReservationDTO = \
-                await self.get_prev_participant_dto(db, prev_sender_dto)
-            prev_participant: Reservation = \
-                prev_sender_dto.participant_model(BookingStatus.REJECT,
-                                                  prev_participant_dto.id)
+            # NOTE: check date conflict with sender's reservations;
+            # checking participant's reservations is not necessary,
+            # the default status is 'PENDING'
+            await self.check_my_accepted_bookings(db, reservation_dto)
 
             # sender 這次的新預約
             sender: Reservation = \
                 reservation_dto.sender_model(BookingStatus.ACCEPT)
-            sender.id = None
+            # sender.id = None
 
             # participant 這次的新預約
             participant: Reservation = \
                 reservation_dto.participant_model(BookingStatus.ACCEPT)
+            # participant.id = None
+
+            # sender 的上一次預約
+            PREV_SENDER_VO: ReservationVO = \
+                await self.get_prev_sender_vo(db, reservation_dto)
+            prev_sender: Reservation = \
+                PREV_SENDER_VO.sender_model(BookingStatus.REJECT, 
+                                             PREV_SENDER_VO.id)
+
+            # participant 的上一次預約
+            prev_participant_vo: ReservationVO = \
+                await self.get_prev_participant_vo(db, PREV_SENDER_VO)
+            prev_participant: Reservation = \
+                PREV_SENDER_VO.participant_model(BookingStatus.REJECT,
+                                                  prev_participant_vo.id)
+
+            # NOTE: 紀錄 participant 的上一次預約!!!!!!!!
             participant.previous_reserve = {
                 'reserve_id': prev_participant.id,
             }
-            participant.id = None
 
-            # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
             # 一次完成4個操作: 新建 sender, participant; 更新 sender, participant
+            # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
             # await db.execute(text('BEGIN'))
             await self.reservation_repo.save(db, sender)
             await self.reservation_repo.save(db, participant)
@@ -130,24 +141,24 @@ class ReservationService:
     4. 若 participant 存在，則更新狀態
     '''
 
-    async def reject(self, db: AsyncSession, reservation_dto: ReservationDTO):
+    # FIXME: function 改為 update_reservation_status, 有 id
+    async def update_reservation_status(self, db: AsyncSession, reserve_id: int, reservation_dto: ReservationDTO):
         try:
-            reserve_id = reservation_dto.id
-            my_user_id = reservation_dto.my_user_id
-            sender_dto: ReservationDTO = \
-                await self.reservation_repo.find_by_id(db, reserve_id, my_user_id)
-            if not sender_dto:
-                raise ClientException(msg='sender reservation not found')
+            SENDER_VO: ReservationVO = await self.get_sender_vo_by_id(db, 
+                                                                      reserve_id, 
+                                                                      reservation_dto)
 
             query = reservation_dto.participant_query()
-            participant_dto: ReservationDTO = await self.reservation_repo.find_one(db, query)
-            if not participant_dto:
+            participant_vo: ReservationVO = \
+                await self.reservation_repo.find_one(db, query)
+            if not participant_vo:
                 raise ClientException(msg='participant reservation not found')
 
+            MY_STATUS = reservation_dto.my_status
             sender: Reservation = \
-                reservation_dto.sender_model(BookingStatus.REJECT)
+                SENDER_VO.sender_model(MY_STATUS, SENDER_VO.id)
             participant: Reservation = \
-                reservation_dto.participant_model(BookingStatus.REJECT, participant_dto.id)
+                SENDER_VO.participant_model(MY_STATUS, participant_vo.id)
 
             # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
             # await db.execute(text('BEGIN'))
@@ -184,28 +195,44 @@ class ReservationService:
         # checking participant's reservations is not necessary,
         # the default status is 'PENDING'
 
-    async def get_prev_sender_dto(self, db: AsyncSession, reservation_dto: ReservationDTO) -> Optional[ReservationDTO]:
+
+    async def get_sender_vo_by_id(self, db: AsyncSession, 
+                                  reserve_id: int,
+                                  reservation_dto: ReservationDTO) -> Optional[ReservationVO]:
+        my_user_id = reservation_dto.my_user_id
+        SENDER_VO: ReservationVO = \
+            await self.reservation_repo.find_by_id(db, reserve_id, my_user_id)
+        if not SENDER_VO:
+            raise ClientException(msg='sender reservation not found')
+        
+        return SENDER_VO
+
+    async def get_prev_sender_vo(self, db: AsyncSession, 
+                                 reservation_dto: ReservationDTO) -> Optional[ReservationVO]:
         # sender reserve_id 在 reservation_dto.previous_reserve 中
         (reserve_id, my_user_id) = reservation_dto.previous_sender_query_by_id()
-        prev_sender_dto: ReservationDTO = \
+        prev_sender_vo: ReservationVO = \
             await self.reservation_repo.find_by_id(db, reserve_id, my_user_id)
-        if not prev_sender_dto:
+
+        if not prev_sender_vo:
             log.error('previous sender reservation not found, \
                 reserve_id: %s', reserve_id)
             raise ClientException(msg='previous sender reservation not found')
 
-        return prev_sender_dto
+        return prev_sender_vo
 
-    async def get_prev_participant_dto(self, db: AsyncSession, prev_sender_dto: ReservationDTO) -> Optional[ReservationDTO]:
-        query = prev_sender_dto.participant_query()
-        prev_participant_dto: ReservationDTO = await self.reservation_repo.find_one(db, query)
-        if not prev_participant_dto:
+    async def get_prev_participant_vo(self, db: AsyncSession, 
+                                      prev_sender_vo: ReservationVO) -> Optional[ReservationVO]:
+        p_query = prev_sender_vo.participant_query()
+        prev_participant_vo: ReservationVO = \
+            await self.reservation_repo.find_one(db, p_query)
+
+        if not prev_participant_vo:
             log.error('previous participant reservation not found, \
                     query: %s', query)
-            raise ClientException(
-                msg='previous participant reservation not found')
+            raise ClientException(msg='previous participant reservation not found')
 
-        return prev_participant_dto
+        return prev_participant_vo
 
 
 class ScaleOutReservationService:
