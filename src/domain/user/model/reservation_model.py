@@ -38,7 +38,7 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class ReservationDTO(BaseModel):
-    id: Optional[int] = None
+    # id: Optional[int] = None # FIXME id 放在 ReservationVO
     # sender: RUserDTO    # sharding key: sneder.user_id
     my_user_id: int = 0
     my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
@@ -47,51 +47,18 @@ class ReservationDTO(BaseModel):
     # id2: Optional[int] = None
     # participant: RUserDTO
     user_id: int = 0
-    status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
+    # status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
     # status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
     #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-    
     schedule_id: int = 0
     dtstart: int = 0    # timestamp
     dtend: int = 0      # timestamp
     messages: Optional[List] = []
     previous_reserve: Optional[Dict[str, Any]] = None # sender's previous reservation
 
-    # class Config:
-    #     from_attributes = True
-
-    @staticmethod
-    def from_model(reservation: Reservation):
-        # sender_role = reservation.my_role
-        # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
-        return ReservationDTO(
-            id=reservation.id,
-            schedule_id=reservation.schedule_id,
-            dtstart=reservation.dtstart,
-            dtend=reservation.dtend,
-            
-            my_user_id=reservation.my_user_id,
-            my_status=reservation.my_status,
-            # sender=RUserDTO(
-            #         user_id=reservation.my_user_id,
-            #         # role=sender_role,
-            #         status=reservation.my_status,
-            #     ),
-            user_id=reservation.user_id,
-            status=reservation.status,
-            # participant=RUserDTO(
-            #         user_id=reservation.user_id,
-            #         # role=participant_role,
-            #         status=reservation.status,
-            #     ),
-            
-            previous_reserve=reservation.previous_reserve,
-            messages=reservation.messages
-        )
-    
-    def sender_model(self, my_status: BookingStatus) -> Reservation:
+    def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
         return Reservation(
-            id=self.id,
+            id=id,
             schedule_id=self.schedule_id,
             dtstart=self.dtstart,
             dtend=self.dtend,
@@ -101,7 +68,7 @@ class ReservationDTO(BaseModel):
             # my_role=sender.role,
 
             user_id=self.user_id,
-            status=self.status,
+            status=BookingStatus.PENDING, # participant's status, in ReservationVO
             messages=self.messages,
             previous_reserve=self.previous_reserve, # sender's previous reservation
         )
@@ -114,13 +81,22 @@ class ReservationDTO(BaseModel):
             dtend=self.dtend,
 
             my_user_id=self.user_id,
-            my_status=self.status,
+            my_status=BookingStatus.PENDING, # participant's status, in ReservationVO
             # my_role=participant.role,
 
             user_id=self.my_user_id,
             status=status,
             messages=self.messages,
         )
+
+    def sender_query(self) -> Dict:
+        return {
+            'my_user_id': self.my_user_id,
+            'schedule_id': self.schedule_id,
+            'dtstart': self.dtstart,
+            'dtend': self.dtend,
+            'user_id': self.user_id,
+        }
 
     def participant_query(self) -> Dict:
         return {
@@ -268,7 +244,68 @@ class ReservationMessageVO(BaseModel):
     message: str = Field(None, example='')
 
 
-class ReservationVO(BaseModel):
+class ReservationVO(ReservationDTO):
+    id: int
+    status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
+    
+    class Config:
+        from_attributes = True
+
+    # @staticmethod
+    # def from_model(reservation: Reservation):
+    #     # sender_role = reservation.my_role
+    #     # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
+    #     return ReservationDTO(
+    #         id=reservation.id,
+    #         # schedule
+    #         schedule_id=reservation.schedule_id,
+    #         dtstart=reservation.dtstart,
+    #         dtend=reservation.dtend,
+    #         # mine
+    #         my_user_id=reservation.my_user_id,
+    #         my_status=reservation.my_status,
+    #         # antoher side
+    #         user_id=reservation.user_id,
+    #         status=reservation.status,
+    #         # extra info
+    #         previous_reserve=reservation.previous_reserve,
+    #         messages=reservation.messages
+    #     )
+
+    def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        return Reservation(
+            id=id,
+            schedule_id=self.schedule_id,
+            dtstart=self.dtstart,
+            dtend=self.dtend,
+
+            my_user_id=self.my_user_id,
+            my_status=my_status,
+            # my_role=sender.role,
+
+            user_id=self.user_id,
+            status=self.status, # participant's status, in ReservationVO
+            messages=self.messages,
+            previous_reserve=self.previous_reserve, # sender's previous reservation
+        )
+    
+    def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        return Reservation(
+            id=id,
+            schedule_id=self.schedule_id,
+            dtstart=self.dtstart,
+            dtend=self.dtend,
+
+            my_user_id=self.user_id,
+            my_status=self.status, # participant's status, in ReservationVO
+            # my_role=participant.role,
+
+            user_id=self.my_user_id,
+            status=status,
+            messages=self.messages,
+        )
+
+class ReservationInfoVO(BaseModel):
     id: Optional[int] = None
     sender: RUserInfoVO    # sharding key: sneder.user_id
     # id2: Optional[int] = None
