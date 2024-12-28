@@ -133,7 +133,7 @@ async def new_booking(
     body.my_user_id = user_id
     body.my_status = BookingStatus.ACCEPT
     res = await booking_service.create(db, body)
-    return res_success(data=res)
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.put('/{user_id}/reservations/{reservation_id}',
@@ -149,4 +149,4 @@ async def update_reservation_status(
 ):
     body.my_user_id = user_id
     res = await booking_service.update_reservation_status(db, reservation_id, body)
-    return res_success(data=res)
+    return res_success(data=jsonable_encoder(res))

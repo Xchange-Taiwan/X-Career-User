@@ -1,8 +1,10 @@
+from typing import Optional
 from src.config.constant import BookingStatus
 from src.config.exception import ClientException
 from src.domain.user.model.reservation_model import (
     UpdateReservationDTO,
     ReservationDTO,
+    ReservationVO,
 )
 from src.domain.user.service.reservation_service import ReservationService
 
@@ -16,26 +18,33 @@ class Booking:
         # self.notify_service = notify_service
 
     # 聚合根 => 原子性的完成
-    async def create(self, db, reservation_dto: ReservationDTO):  
+    async def create(self, db, 
+                     reservation_dto: ReservationDTO
+                     ) -> Optional[ReservationVO]:
+        res: Optional[ReservationVO] = None
         previous_reserve = reservation_dto.previous_reserve          
         if not previous_reserve or len(previous_reserve) == 0:
-            await self.reservation_service.create(db, reservation_dto)
+            res = await self.reservation_service.create(db, reservation_dto)
         else:
-            await self.reservation_service.create_new_and_reject_previous(db, reservation_dto)
+            res = await self.reservation_service.create_new_and_reject_previous(db, reservation_dto)
 
         # TODO: notify participant
         # notify_service.notify_participant(reservation_dto)
+        return res
 
     # 聚合根 => 原子性的完成
     async def update_reservation_status(self, db, 
                                         reservation_id: int, 
-                                        reservation_dto: UpdateReservationDTO):
-        await self.reservation_service.update_reservation_status(db, 
+                                        reservation_dto: UpdateReservationDTO
+                                        ) -> Optional[ReservationVO]:
+        res: Optional[ReservationVO] = None
+        res = await self.reservation_service.update_reservation_status(db, 
                                                                  reservation_id, 
                                                                  reservation_dto)
 
         # TODO: notify participant
         # notify_service.notify_participant(reservation_dto)
+        return res
 
 
 '''

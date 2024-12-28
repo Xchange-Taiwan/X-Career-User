@@ -255,32 +255,32 @@ class ReservationMessageVO(BaseModel):
 
 
 class ReservationVO(ReservationDTO):
-    id: int
+    id: Optional[int] = None # id: int 因為沒有經過 await db.refresh()，所以不會有 id
     status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
     
     class Config:
         from_attributes = True
 
-    # @staticmethod
-    # def from_model(reservation: Reservation):
-    #     # sender_role = reservation.my_role
-    #     # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
-    #     return ReservationDTO(
-    #         id=reservation.id,
-    #         # schedule
-    #         schedule_id=reservation.schedule_id,
-    #         dtstart=reservation.dtstart,
-    #         dtend=reservation.dtend,
-    #         # mine
-    #         my_user_id=reservation.my_user_id,
-    #         my_status=reservation.my_status,
-    #         # antoher side
-    #         user_id=reservation.user_id,
-    #         status=reservation.status,
-    #         # extra info
-    #         previous_reserve=reservation.previous_reserve,
-    #         messages=reservation.messages
-    #     )
+    @staticmethod
+    def from_model(reservation: Reservation) -> 'ReservationVO':
+        # sender_role = reservation.my_role
+        # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
+        return ReservationVO(
+            id=reservation.id,
+            # schedule
+            schedule_id=reservation.schedule_id,
+            dtstart=reservation.dtstart,
+            dtend=reservation.dtend,
+            # mine
+            my_user_id=reservation.my_user_id,
+            my_status=reservation.my_status,
+            # antoher side
+            user_id=reservation.user_id,
+            status=reservation.status,
+            # extra info
+            previous_reserve=reservation.previous_reserve,
+            messages=reservation.messages
+        )
 
     def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
         return Reservation(

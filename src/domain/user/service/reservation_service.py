@@ -43,7 +43,10 @@ class ReservationService:
     2. 新建/更新 sender 狀態
     3. 新建/更新 participant 狀態
     '''
-    async def create(self, db: AsyncSession, reservation_dto: ReservationDTO):
+    async def create(self, 
+                     db: AsyncSession, 
+                     reservation_dto: ReservationDTO
+                     ) -> Optional[ReservationVO]:
         try:
             # NOTE: check date conflict with sender's reservations;
             # checking participant's reservations is not necessary,
@@ -65,6 +68,7 @@ class ReservationService:
             await self.reservation_repo.save(db, sender)
             await self.reservation_repo.save(db, participant)
             # await db.commit()
+            return ReservationVO.from_model(sender)
 
         except Exception as e:
             log.error('create reservation failed: %s', str(e))
@@ -81,7 +85,10 @@ class ReservationService:
         - 先透過 previous_reserve 找到對應的 sender 上一次的預約
         - 再透過 sender 上一次的預約找到對應的 participant 上一次的預約
     '''
-    async def create_new_and_reject_previous(self, db: AsyncSession, reservation_dto: ReservationDTO):
+    async def create_new_and_reject_previous(self, 
+                                             db: AsyncSession, 
+                                             reservation_dto: ReservationDTO
+                                             ) -> Optional[ReservationVO]:
         try:
             # NOTE: check date conflict with sender's reservations;
             # checking participant's reservations is not necessary,
@@ -125,6 +132,7 @@ class ReservationService:
             await self.reservation_repo.save(db, prev_sender)
             await self.reservation_repo.save(db, prev_participant)
             # await db.commit()
+            return ReservationVO.from_model(sender)
 
         except Exception as e:
             log.error('create_and_cancel reservation failed: %s', str(e))
@@ -142,7 +150,11 @@ class ReservationService:
     '''
 
     # FIXME: function 改為 update_reservation_status, 有 id
-    async def update_reservation_status(self, db: AsyncSession, reserve_id: int, update_dto: UpdateReservationDTO):
+    async def update_reservation_status(self, 
+                                        db: AsyncSession, 
+                                        reserve_id: int, 
+                                        update_dto: UpdateReservationDTO
+                                        ) -> Optional[ReservationVO]:
         try:
             SENDER_VO: ReservationVO = await self.get_sender_vo_by_id(db, 
                                                                       reserve_id, 
@@ -165,6 +177,7 @@ class ReservationService:
             await self.reservation_repo.save(db, sender)
             await self.reservation_repo.save(db, participant)
             # await db.commit()
+            return ReservationVO.from_model(sender)
 
         except Exception as e:
             log.error('update reservation status failed: %s', str(e))
