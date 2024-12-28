@@ -29,6 +29,14 @@ log.basicConfig(filemode='w', level=log.INFO)
 #     message: Optional[str] = ''
 
 
+class ReservationQueryDTO(BaseModel):
+    state: str = Field(None, example=ReservationListState.UPCOMING.value,
+                        pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
+    batch: int = Field(..., example=BATCH, ge=1)
+    next_dtend: Optional[int] = Field(None, example=1735398000)
+
+
+
 class UpdateReservationDTO(BaseModel):
     my_user_id: int = 0
     my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
@@ -36,7 +44,7 @@ class UpdateReservationDTO(BaseModel):
     schedule_id: int = 0
     dtstart: int = 0    # timestamp
     dtend: int = 0      # timestamp
-    messages: Optional[List] = []
+    messages: Optional[List[Dict[str, Any]]] = []
 
     def participant_query(self) -> Dict:
         return {
@@ -71,7 +79,6 @@ class ReservationDTO(UpdateReservationDTO):
     # schedule_id: int = 0
     # dtstart: int = 0    # timestamp
     # dtend: int = 0      # timestamp
-    # messages: Optional[List] = []
     previous_reserve: Optional[Dict[str, Any]] = None # sender's previous reservation
 
     def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
@@ -206,18 +213,7 @@ class RUserInfoVO(BaseModel):
 #     previous_reserve: Optional[Dict[str, Any]]
 
 
-class ReservationQueryDTO(BaseModel):
-    state: str = Field(None, example=ReservationListState.UPCOMING.value,
-                        pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
-    batch: int = Field(..., example=BATCH, ge=1)
-    next_dtend: Optional[int] = Field(None, example=1735398000)
 
-
-class ReservationMessageVO(BaseModel):
-    user_id: int = Field(None, example=0)
-    role: Optional[str] = Field(..., example=RoleType.MENTEE.value,
-                         pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
-    message: str = Field(None, example='')
 
 
 class ReservationVO(ReservationDTO):
@@ -281,6 +277,14 @@ class ReservationVO(ReservationDTO):
             messages=self.messages,
         )
 
+
+class ReservationMessageVO(BaseModel):
+    user_id: int = Field(None, example=0)
+    # role: Optional[str] = Field(..., example=RoleType.MENTEE.value,
+    #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
+    content: str = Field(None, example='')
+
+
 class ReservationInfoVO(BaseModel):
     id: Optional[int] = None
     sender: RUserInfoVO    # sharding key: sneder.user_id
@@ -289,7 +293,7 @@ class ReservationInfoVO(BaseModel):
     dtstart: int = 0    # timestamp
     dtend: int = 0      # timestamp
     previous_reserve: Optional[Dict[str, Any]] = None
-    messages: Optional[List[ReservationMessageVO]] = ''
+    messages: Optional[List[ReservationMessageVO]] = []
 
 
     @staticmethod

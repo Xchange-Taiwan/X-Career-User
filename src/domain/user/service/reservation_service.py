@@ -161,21 +161,23 @@ class ReservationService:
                                         update_dto: UpdateReservationDTO
                                         ) -> Optional[ReservationVO]:
         try:
-            SENDER_VO: ReservationVO = await self.get_sender_vo_by_id(db, 
-                                                                      reserve_id, 
-                                                                      update_dto)
-
-            query = update_dto.participant_query()
-            participant_vo: ReservationVO = \
-                await self.reservation_repo.find_one(db, query)
-            if not participant_vo:
-                raise ClientException(msg='participant reservation not found')
-
+            # 當 ACCEPT 時，檢查時間衝突
             MY_STATUS = update_dto.my_status
+            if MY_STATUS == BookingStatus.ACCEPT:
+                await self.check_my_accepted_bookings(db, update_dto)
+
+            SENDER_VO: ReservationVO = \
+                await self.get_sender_vo_by_id(db, reserve_id, update_dto)
+            participant_vo: ReservationVO = \
+                await self.get_participant_vo(db, update_dto)
+
             sender: Reservation = \
                 SENDER_VO.sender_model(MY_STATUS, SENDER_VO.id)
             participant: Reservation = \
                 SENDER_VO.participant_model(MY_STATUS, participant_vo.id)
+
+            # SENDER_VO 已經取得歷史訊息，可以直接 insert 新訊息，更新狀態
+            self.append_new_message(update_dto, sender)
 
             # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
             # await db.execute(text('BEGIN'))
@@ -188,6 +190,16 @@ class ReservationService:
             log.error('update reservation status failed: %s', str(e))
             err_msg = getattr(e, 'msg', 'update reservation status failed')
             raise_http_exception(e=e, msg=err_msg)
+
+    def append_new_message(self,
+                           update_dto: UpdateReservationDTO,
+                           sender: Reservation,
+                           ):
+        NEW_MESSAGES = update_dto.messages
+        if len(NEW_MESSAGES) and \
+            isinstance(NEW_MESSAGES[0], Dict) and \
+            isinstance(sender.messages, List):
+            sender.messages.insert(0, NEW_MESSAGES[0])
 
     '''
     Check my bookings with a status: "ACCEPT"
@@ -224,6 +236,16 @@ class ReservationService:
             raise ClientException(msg='sender reservation not found')
         
         return SENDER_VO
+
+    async def get_participant_vo(self, db: AsyncSession,
+                                 update_dto: UpdateReservationDTO) -> Optional[ReservationVO]:
+        query = update_dto.participant_query()
+        participant_vo: ReservationVO = \
+            await self.reservation_repo.find_one(db, query)
+        if not participant_vo:
+            raise ClientException(msg='participant reservation not found')
+
+        return participant_vo
 
     async def get_prev_sender_vo(self, db: AsyncSession, 
                                  reservation_dto: ReservationDTO) -> Optional[ReservationVO]:
