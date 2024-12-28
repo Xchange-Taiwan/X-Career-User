@@ -64,7 +64,7 @@ class ReservationRepository:
             ).values(
                 my_status=reservation.my_status,
                 status=reservation.status,
-                # messages=reservation.messages,
+                messages=reservation.messages,
             ).execution_options(synchronize_session="fetch")
 
         else:
