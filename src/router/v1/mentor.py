@@ -5,6 +5,7 @@ from fastapi import (
     APIRouter,
     Path, Body, Depends
 )
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.mentor.service.mentor_service import MentorService
@@ -43,7 +44,7 @@ async def upsert_mentor_profile(
 ):
     # TODO: implement
     res: mentor.MentorProfileVO = await mentor_service.upsert_mentor_profile(db, body)
-    return res_success(data=res.to_json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{user_id}/{language}/mentor_profile',
@@ -57,8 +58,8 @@ async def get_mentor_profile(
     # TODO: implement
     mentor_profile: MentorProfileVO = \
         await mentor_service.get_mentor_profile_by_id(db, user_id, language.value)
+    return res_success(data=jsonable_encoder(mentor_profile))
 
-    return res_success(data=mentor_profile.to_json())
 
 @router.get('/{user_id}/experiences',
             responses=idempotent_response('get_exp_by_user_id', experience.ExperienceListVO))
@@ -68,8 +69,7 @@ async def get_exp_by_user_id(
         exp_service: ExperienceService = Depends(get_experience_service)
 ):
     res: experience.ExperienceListVO = await exp_service.get_exp_by_user_id(db, user_id)
-    return res_success(data=res.to_json())
-
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
@@ -85,7 +85,7 @@ async def upsert_experience(
                                                                 experience_dto=body,
                                                                 user_id=user_id,
                                                                 exp_cate=experience_type)
-    return res_success(data=res.to_json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
@@ -99,7 +99,7 @@ async def delete_experience(
 ):
     res: bool = await exp_service.delete_exp_by_user_and_exp_id(db, user_id, experience_id, experience_type)
 
-    return res_success(data=res)
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{language}/expertises',
@@ -114,7 +114,7 @@ async def get_expertises(
         await profession_service.get_all_profession_by_category_and_language(db,
                                                                              ProfessionCategory.EXPERTISE,
                                                                              language)
-    return res_success(data=res.to_json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.put('/{user_id}/schedule',
