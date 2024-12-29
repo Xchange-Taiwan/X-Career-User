@@ -11,8 +11,8 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class ExperienceDTO(BaseModel):
-    exp_id: Optional[int] = None
-    user_id: Optional[int] = None
+    id: Optional[int] = None
+    category: ExperienceCategory = None
     mentor_experiences_metadata: Dict = {}
     order: int = 0
 
