@@ -1,7 +1,7 @@
 from typing import List, Optional
 from sqlalchemy import func, Integer, Select, select, update, insert, join, and_
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.config.conf import BATCH
+from src.config.conf import BATCH, RESERVATION_ISOLAION_LEVEL
 from src.domain.user.model.reservation_model import *
 from src.infra.db.orm.init.user_init import *
 from src.infra.util.convert_util import (
@@ -29,7 +29,6 @@ class ReservationRepository:
         return ReservationVO.model_validate(reservation)
 
 
-
     async def find_one(self, db: AsyncSession,
                        query: Dict) -> Optional[ReservationVO]:
         stmt: Select = select(Reservation).filter_by(**query)
@@ -37,7 +36,6 @@ class ReservationRepository:
         if not reservation:
             return None
         return ReservationVO.model_validate(reservation)
-
 
 
     async def find_all(self, db: AsyncSession,
@@ -53,6 +51,11 @@ class ReservationRepository:
         reservations = await get_all_template(db, stmt)
         return [ReservationVO.model_validate(reservation) for reservation in reservations]
 
+
+    async def save_all(self, db: AsyncSession, reservations: List[Reservation]):
+        for reservation in reservations:
+            await self.save(db, reservation)
+        await db.commit()
 
 
     async def save(self, db: AsyncSession, reservation: Reservation):
@@ -81,17 +84,15 @@ class ReservationRepository:
                 previous_reserve=reservation.previous_reserve,
             ).returning(Reservation.id)
 
-        # # 執行語句
         result = await db.execute(stmt)
-        await db.commit()
+        await db.flush()  # 將更改發送到數據庫，但不提交事務
+
 
 
 
     async def get_user_reservations(self, db: AsyncSession,
                                     user_id: int,
-                                    list_state: ReservationListState,
-                                    limit: int = BATCH,
-                                    next_dtend: int = None) -> Optional[List[ReservationDTO]]:
+                                    query: ReservationQueryDTO) -> Optional[List[ReservationDTO]]:
         stmt = select(
             Reservation.id,
             Reservation.schedule_id,
@@ -114,29 +115,30 @@ class ReservationRepository:
         # for key, value in query.items():
         #     stmt = stmt.where(getattr(Reservation, key) == value)
         stmt = stmt.where(Reservation.my_user_id == user_id)
-        if list_state == ReservationListState.UPCOMING:
+
+        if query.state == ReservationListState.UPCOMING:
             stmt = stmt.where(
                 (Reservation.my_status == BookingStatus.ACCEPT) &
                 (Reservation.status == BookingStatus.ACCEPT) &
                 (Reservation.dtend >= func.now())
             )
-        elif list_state == ReservationListState.PENDING:
+        elif query.state == ReservationListState.PENDING:
             stmt = stmt.where(
                 ((Reservation.my_status == BookingStatus.PENDING) |
                 (Reservation.status == BookingStatus.PENDING)) &
                 (Reservation.dtend >= func.now())
             )
-        elif list_state == ReservationListState.HISTORY:
+        elif query.state == ReservationListState.HISTORY:
             stmt = stmt.where(
                 (Reservation.my_status == BookingStatus.REJECT) |
                 (Reservation.status == BookingStatus.REJECT) |
                 (Reservation.dtend < func.now())
             )
 
-        if next_dtend:
-            stmt = stmt.where(Reservation.dtend >= next_dtend)
+        if query.next_dtend:
+            stmt = stmt.where(Reservation.dtend <= query.next_dtend)
 
-        stmt = stmt.order_by(Reservation.dtend.desc()).limit(limit)
+        stmt = stmt.order_by(Reservation.dtend.desc()).limit(query.batch)
         result = await db.execute(stmt)
         reservations = result.fetchall()
 

@@ -14,3 +14,5 @@ DB_USER = os.getenv('DB_USER', 'user_connection')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'pg_user_password')
 DB_NAME = os.getenv('DB_NAME', 'x-career')
 DB_SCHEMA = os.getenv('DB_SCHEMA', 'Xchange_local')
+
+RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE')

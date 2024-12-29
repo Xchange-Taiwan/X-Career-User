@@ -20,14 +20,12 @@ class ReservationService:
                                query_dto: ReservationQueryDTO) -> Optional[ReservationInfoListVO]:
         try:
             res: ReservationInfoListVO = ReservationInfoListVO()
-            limit = query_dto.batch + 1
+            query_dto.batch += 1
             reservations: List[ReservationInfoVO] = \
                 await self.reservation_repo.get_user_reservations(db,
                                                                   user_id,
-                                                                  query_dto.state,
-                                                                  limit,
-                                                                  query_dto.next_dtend)
-            if len(reservations) < limit:
+                                                                  query_dto)
+            if len(reservations) < query_dto.batch:
                 res.reservations = reservations
             else:
                 res.reservations = reservations[:-1]
@@ -68,11 +66,11 @@ class ReservationService:
                 reservation_dto.participant_model(BookingStatus.ACCEPT)
             # participant.id = None
 
-            # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
-            # await db.execute(text('BEGIN'))
-            await self.reservation_repo.save(db, sender)
-            await self.reservation_repo.save(db, participant)
-            # await db.commit()
+            await self.reservation_repo.save_all(db, [
+                sender,
+                participant,
+            ])
+
             return ReservationVO.from_model(sender)
 
         except Exception as e:
@@ -129,14 +127,13 @@ class ReservationService:
                 'reserve_id': prev_participant.id,
             }
 
-            # 一次完成4個操作: 新建 sender, participant; 更新 sender, participant
-            # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
-            # await db.execute(text('BEGIN'))
-            await self.reservation_repo.save(db, sender)
-            await self.reservation_repo.save(db, participant)
-            await self.reservation_repo.save(db, prev_sender)
-            await self.reservation_repo.save(db, prev_participant)
-            # await db.commit()
+            await self.reservation_repo.save_all(db, [
+                sender,
+                prev_sender,
+                participant,
+                prev_participant,
+            ])
+
             return ReservationVO.from_model(sender)
 
         except Exception as e:
@@ -178,12 +175,11 @@ class ReservationService:
 
             # SENDER_VO 已經取得歷史訊息，可以直接 insert 新訊息，更新狀態
             self.append_new_message(update_dto, sender)
+            await self.reservation_repo.save_all(db, [
+                sender,
+                participant,
+            ])
 
-            # TODO: 定義內層的 repository 來處理事務, ReservationRepository當作外層
-            # await db.execute(text('BEGIN'))
-            await self.reservation_repo.save(db, sender)
-            await self.reservation_repo.save(db, participant)
-            # await db.commit()
             return ReservationVO.from_model(sender)
 
         except Exception as e:
@@ -218,9 +214,9 @@ class ReservationService:
             await self.reservation_repo.find_all(db, query, dtstart, dtend)
 
         if len(sender_reserve_list) > 0:
-            sender_reserve_list = [jsonable_encoder(r) for r in sender_reserve_list]
+            sender_reserve_dict = {idx+1: jsonable_encoder(r) for idx, r in enumerate(sender_reserve_list)}
             raise ClientException(msg='reservation conflict',
-                                  data=sender_reserve_list)
+                                  data=sender_reserve_dict)
 
         # checking participant's reservations is not necessary,
         # the default status is 'PENDING'
