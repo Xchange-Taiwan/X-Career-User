@@ -233,16 +233,18 @@ class ReservationService:
         SENDER_VO: ReservationVO = \
             await self.reservation_repo.find_by_id(db, reserve_id, my_user_id)
         if not SENDER_VO:
+            log.error('sender reservation not found, reserve_id: %s', reserve_id)
             raise ClientException(msg='sender reservation not found')
         
         return SENDER_VO
 
     async def get_participant_vo(self, db: AsyncSession,
                                  update_dto: UpdateReservationDTO) -> Optional[ReservationVO]:
-        query = update_dto.participant_query()
+        p_query = update_dto.participant_query()
         participant_vo: ReservationVO = \
-            await self.reservation_repo.find_one(db, query)
+            await self.reservation_repo.find_one(db, p_query)
         if not participant_vo:
+            log.error('participant reservation not found, query: %s', p_query)
             raise ClientException(msg='participant reservation not found')
 
         return participant_vo
@@ -269,7 +271,7 @@ class ReservationService:
 
         if not prev_participant_vo:
             log.error('previous participant reservation not found, \
-                    query: %s', query)
+                    query: %s', p_query)
             raise ClientException(msg='previous participant reservation not found')
 
         return prev_participant_vo
