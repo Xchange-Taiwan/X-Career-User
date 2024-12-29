@@ -89,19 +89,6 @@ async def get_industries(
     return res_success(data=jsonable_encoder(res))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @router.get('/{user_id}/reservations',
             responses=idempotent_response('reservation_list', reservation.ReservationInfoListVO))
 async def reservation_list(
@@ -115,10 +102,9 @@ async def reservation_list(
 
 
 ############################################################################################
-# NOTE: 如何改預約時段?? 重新建立後再 cancel 舊的。 (status_code: 201)
+# NOTE: 如何改預約時段? 重新建立後再 cancel 舊的。 (status_code: 201)
 # 用戶可能有很多memtor/memtee預約；為方便檢查時間衝突，要重新建立後再 cancel 舊的。
-# NOTE: ReservationDTO.previous_reserve 可紀錄
-# 前一次的[schedule_id, start_datetime]，以便找到同樣的討論串/變更原因歷史。
+# ReservationDTO.previous_reserve 可紀錄前一次的[reserve_id]，以便找到同樣的討論串/變更原因歷史。
 # 如果 "previous_reserve" 不為空，則表示這是一次變更預約的操作 => 新增後，將舊的預約設為 cancel。
 ############################################################################################
 @router.post('/{user_id}/reservations',
@@ -141,10 +127,8 @@ async def update_reservation_status(
         user_id: int = Path(...),
         reservation_id: int = Path(...),
         body: reservation.UpdateReservationDTO = Body(...),
-        # msg: str = Body(None, embed=True),
         db: AsyncSession = Depends(db_session),
         booking_service: Booking = Depends(get_booking_service),
-        
 ):
     body.my_user_id = user_id
     res = await booking_service.update_reservation_status(db, reservation_id, body)

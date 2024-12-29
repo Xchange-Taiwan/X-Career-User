@@ -121,7 +121,6 @@ CREATE TABLE IF NOT EXISTS reservations (
     my_user_id BIGINT NOT NULL,    -- sharding key: my_user_id
     my_status BOOKING_STATUS NOT NULL,
     -- my_role ROLE_TYPE NOT NULL,  # FIXME: deprecated
-    -- id2 INT,-- FIXME: the id of the other user   # FIXME: deprecated
     user_id BIGINT NOT NULL,
     "status" BOOKING_STATUS NOT NULL,
     "messages" JSONB DEFAULT '[]'::jsonb,
@@ -136,22 +135,6 @@ CREATE INDEX idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
     ON reservations(my_user_id, my_status, dtstart, dtend);
-
-
--- CREATE TABLE IF NOT EXISTS reservation_messages (
---     "id" SERIAL PRIMARY KEY,
---     -- sharding key: [schedule_id + dtstart] for both side
---     schedule_id INT NOT NULL,   -- sharding key 1
---     dtstart BIGINT,             -- sharding key 2
---     user_id BIGINT NOT NULL,
---     "role" ROLE_TYPE
---     "message" TEXT,
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
---     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
--- );
-
--- CREATE INDEX idx_reservation_message_schedule_id_dtstart_created_at 
---     ON reservation_messages(schedule_id, dtstart, created_at);
 
 
 CREATE TABLE IF NOT EXISTS interests (
