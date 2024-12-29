@@ -5,7 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.mentor.model.mentor_model import MentorProfileDTO
 from src.infra.db.orm.init.user_init import Profile, MentorExperience
-from src.infra.util.convert_util import get_first_template, get_all_template
+from src.infra.util.convert_util import (
+    get_first_template, 
+    get_all_template,
+    convert_dto_to_model,
+)
 
 
 class MentorRepository:
@@ -14,13 +18,13 @@ class MentorRepository:
         stmt: Select = select(Profile).filter(Profile.user_id == mentor_id)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
-        return Profile.to_mentor_profile_dto(mentor)
+        return MentorProfileDTO.from_orm(mentor)
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
-        model: Profile = Profile.of_mentor_profile(mentor_profile_dto)
+        model: Profile = convert_dto_to_model(mentor_profile_dto, Profile)
 
         model = await db.merge(model)
-        res: MentorProfileDTO = Profile.to_mentor_profile_dto(model)
+        res: MentorProfileDTO = MentorProfileDTO.from_orm(model)
         await db.commit()
         return res
 

@@ -6,9 +6,6 @@ from typing_extensions import Optional
 from src.config.constant import ProfessionCategory, RoleType, InterestCategory, SchedulesType, BookingStatus, \
     ExperienceCategory
 from src.domain.mentor.enum.mentor_enums import SeniorityLevel
-from src.domain.mentor.model.mentor_model import MentorProfileDTO
-from src.domain.user.model.common_model import ProfessionVO
-from src.domain.user.model.user_model import ProfileDTO
 
 Base = declarative_base()
 
@@ -35,43 +32,6 @@ class Profile(Base):
     industries = Column(JSONB)
     expertises = Column(JSONB)
 
-    # static of function for get user profile
-    @staticmethod
-    def of(dto: ProfileDTO):
-        return Profile(**dto.__dict__)
-
-    @staticmethod
-    def of_mentor_profile(dto: MentorProfileDTO):
-        return Profile(**dto.__dict__)
-
-    @staticmethod
-    def to_dto(model) -> ProfileDTO:
-        return ProfileDTO(**model.__dict__)
-
-    @staticmethod
-    def to_mentor_profile_dto(model) -> Optional[MentorProfileDTO]:
-        if model is None:
-            return None
-        return MentorProfileDTO(
-            user_id=model.user_id,
-            name=model.name,
-            avatar=model.avatar,
-            region=model.region,
-            job_title=model.job_title,
-            company=model.company,
-            years_of_experience=model.years_of_experience,
-            linkedin_profile=model.linkedin_profile,
-            language=model.language,
-            personal_statement=model.personal_statement,
-            about=model.about,
-            seniority_level=model.seniority_level,
-            expertises=model.expertises,
-            interested_positions=model.interested_positions,
-            skills=model.skills,
-            topics=model.topics,
-            industries=model.industries
-        )
-
 
 class MentorExperience(Base):
     __tablename__ = 'mentor_experiences'
@@ -82,7 +42,6 @@ class MentorExperience(Base):
         nullable=False)
     order = Column(Integer, nullable=False)
     mentor_experiences_metadata = Column(JSONB)
-
 
 
 class Profession(Base):
@@ -96,9 +55,6 @@ class Profession(Base):
     profession_metadata = Column(JSONB)
     language = Column(String, nullable=False)
 
-    @staticmethod
-    def to_profession_vo(model: 'Profession') -> ProfessionVO:
-        return ProfessionVO(**model.__dict__)
 
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'

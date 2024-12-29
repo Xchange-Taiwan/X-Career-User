@@ -4,9 +4,11 @@ from typing import Optional, Coroutine, Any, Set, Dict, List, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import InterestCategory, ProfessionCategory
+from src.config.constant import InterestCategory, ExperienceCategory
 from src.config.exception import NotAcceptableException, NotFoundException, ServerException, raise_http_exception
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
+from src.domain.mentor.model.experience_model import ExperienceVO
+from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.model.common_model import ProfessionVO, InterestListVO, ProfessionListVO
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
@@ -19,10 +21,12 @@ log.basicConfig(filemode='w', level=log.INFO)
 class ProfileService:
     def __init__(self,
                  interest_service: InterestService,
-                 profile_repository: ProfileRepository,
-                 profession_service: ProfessionService):
+                 profession_service: ProfessionService,
+                 experience_service: ExperienceService,
+                 profile_repository: ProfileRepository):
         self.__interest_service: InterestService = interest_service
         self.__profession_service: ProfessionService = profession_service
+        self.__exp_service: ExperienceService = experience_service
         self.__profile_repository: ProfileRepository = profile_repository
 
     async def get_by_user_id(self, db: AsyncSession, user_id: int, language: Optional[str] = None) -> ProfileVO:
@@ -35,7 +39,7 @@ class ProfileService:
         except Exception as e:
             log.error(f'get_by_user_id error: %s', str(e))
             err_msg = getattr(e, 'msg', 'get profile response failed')
-            raise_http_exception(msg=err_msg)
+            raise_http_exception(e, msg=err_msg)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         try:
@@ -54,6 +58,9 @@ class ProfileService:
         if language is None:
             language = dto.language
         try:
+            user_id = dto.user_id
+            experiences: List[ExperienceVO] = \
+                await self.__exp_service.get_exp_list_by_user_id(db, user_id)
             industries: ProfessionListVO = \
                 await (self.__profession_service.
                     get_industries_by_subjects(db, dto.industries, dto.language))
@@ -81,6 +88,16 @@ class ProfileService:
                 res.interested_positions = InterestListVO(interests=all_interests[InterestCategory.INTERESTED_POSITION.value])
                 res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])
                 res.topics  = InterestListVO(interests=all_interests[InterestCategory.TOPIC.value])
+
+            # 是否為 Mentor, 透過是否有填寫經驗類別判斷
+            exp_categories = set()
+            for exp in experiences:
+                if exp.category:
+                    exp_categories.add(exp.category)
+
+            # 如果有填寫至少 2 種經驗類別, 則視為已完成 Onboarding
+            res.on_boarding = (len(exp_categories) == len(ExperienceCategory) - 1)
+
             return res
         except Exception as e:
             log.error(f'convert_to_profile_vo error: %s', str(e))
@@ -94,6 +111,9 @@ class ProfileService:
         if language is None:
             language = dto.language
         try:
+            user_id = dto.user_id
+            experiences: List[ExperienceVO] = \
+                await self.__exp_service.get_exp_list_by_user_id(db, user_id)
             industries: ProfessionListVO = \
                 await self.__profession_service.get_industries_by_subjects(db, dto.industries, language=language)
             expertises: ProfessionListVO = \
@@ -123,7 +143,9 @@ class ProfileService:
                 res.interested_positions = InterestListVO(interests=all_interests[InterestCategory.INTERESTED_POSITION.value])
                 res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])
                 res.topics  = InterestListVO(interests=all_interests[InterestCategory.TOPIC.value])
-                
+            
+            # mentor experiences
+            res.experiences = experiences
             return res
 
         except Exception as e:
