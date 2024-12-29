@@ -5,6 +5,7 @@ from fastapi import (
     Depends,
     Path, Query, Body
 )
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..res.response import *
@@ -29,7 +30,7 @@ router = APIRouter(
 )
 
 
-@router.put('/{user_id}/profile',
+@router.put('/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
         db: AsyncSession = Depends(db_session),
@@ -37,7 +38,7 @@ async def upsert_profile(
         profile_service: ProfileService = Depends(get_profile_service)
 ):
     res: user.ProfileVO = await profile_service.upsert_profile(db, body)
-    return res_success(data=res.model_dump())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{user_id}/{language}/profile',
@@ -49,7 +50,7 @@ async def get_profile(
         profile_service: ProfileService = Depends(get_profile_service)
 ):
     res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id, language.value)
-    return res_success(data=res.model_dump())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{language}/interests',
@@ -62,7 +63,7 @@ async def get_interests(
 ):
     # 需確認是不是返回全部還是可以查詢特定
     res: common.InterestListVO = await interest_service.get_all_interest(db, interest, language)
-    return res_success(data=res.to_json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{language}/industries',
@@ -78,7 +79,7 @@ async def get_industries(
         await profession_service.get_all_profession_by_category_and_language(db,
                                                                              ProfessionCategory.INDUSTRY,
                                                                              language)
-    return res_success(data=res.to_json())
+    return res_success(data=jsonable_encoder(res))
 
 
 @router.get('/{user_id}/reservations',

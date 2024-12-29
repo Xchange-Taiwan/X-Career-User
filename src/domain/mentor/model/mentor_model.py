@@ -5,6 +5,7 @@ from datetime import datetime
 from ..enum.mentor_enums import SeniorityLevel
 from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
+from .experience_model import ExperienceVO
 from ....config.conf import *
 from ....config.constant import *
 from ....config.exception import ClientException, UnprocessableClientException
@@ -36,6 +37,9 @@ class MentorProfileDTO(ProfileDTO):
     seniority_level: Optional[SeniorityLevel]
     expertises: Optional[List[str]]
 
+    class Config:
+        from_attributes = True # orm_mode = True
+
 
 class ProfessionDTO(BaseModel):
     professions_id: int
@@ -56,6 +60,7 @@ class MentorProfileVO(ProfileVO):
     about: Optional[str] = ''
     seniority_level: Optional[SeniorityLevel] = ''
     expertises: Optional[ProfessionListVO] = None
+    experiences: Optional[List[ExperienceVO]] = []
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -73,6 +78,10 @@ class MentorProfileVO(ProfileVO):
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level
         )
+
+    def to_json(self):
+        result = self.model_dump_json()
+        return json.loads(result)
 
 
 class TimeSlotDTO(BaseModel):
