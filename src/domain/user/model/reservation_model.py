@@ -3,7 +3,6 @@ import logging as log
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Tuple
-from .common_model import ProfessionVO
 from .user_model import *
 from ....config.constant import *
 from ....config.conf import BATCH
@@ -15,31 +14,17 @@ from src.infra.db.orm.init.user_init import (
 log.basicConfig(filemode='w', level=log.INFO)
 
 
-# class RUserDTO(BaseModel):    # FIXME: deprecated
-#     user_id: Optional[int] = Field(None, example=0)
-#     # role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
-#     #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
-#     # status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-#     #                      pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-
-
-# class ReservationStatusDTO(BaseModel):    # FIXME: deprecated
-#     id: int = 0
-#     sender: RUserDTO
-#     message: Optional[str] = ''
-
-
 class ReservationQueryDTO(BaseModel):
     state: str = Field(None, example=ReservationListState.UPCOMING.value,
-                        pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
+                       pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
     batch: int = Field(..., example=BATCH, ge=1)
     next_dtend: Optional[int] = Field(None, example=1735398000)
 
 
-
 class UpdateReservationDTO(BaseModel):
     my_user_id: int = 0
-    my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
+    my_status: Optional[BookingStatus] = Field(
+        None, example=BookingStatus.PENDING)
     user_id: int = 0
     schedule_id: int = 0
     dtstart: int = 0    # timestamp
@@ -55,31 +40,18 @@ class UpdateReservationDTO(BaseModel):
             'user_id': self.my_user_id,
         }
 
+
 '''
 讓後端實現「先建立再取消」:
-    1. 新建一筆預約，寫上新的 schedule_id, dtstart;
-        並在欄位"previous_reserve" 存儲前一次的[schedule_id, dtstart]，以便找到同樣的討論串
+    1. 新建一筆預約，寫上新的 reservation_id (reserve_id);
+        並在欄位"previous_reserve" 存儲前一次的[reserve_id]，以便找到同樣的討論串
     2. 將舊的預約設為 cancel
 '''
 
 
 class ReservationDTO(UpdateReservationDTO):
-    # # id: Optional[int] = None # FIXME id 放在 ReservationVO
-    # # sender: RUserDTO    # sharding key: sneder.user_id
-    # my_user_id: int = 0
-    # my_status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
-    # # my_status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-    # #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-    # # id2: Optional[int] = None
-    # # participant: RUserDTO
-    # user_id: int = 0
-    # # status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
-    # # status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-    # #                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
-    # schedule_id: int = 0
-    # dtstart: int = 0    # timestamp
-    # dtend: int = 0      # timestamp
-    previous_reserve: Optional[Dict[str, Any]] = None # sender's previous reservation
+    # sender's previous reservation
+    previous_reserve: Optional[Dict[str, Any]] = None
 
     def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
         return Reservation(
@@ -93,11 +65,11 @@ class ReservationDTO(UpdateReservationDTO):
             # my_role=sender.role,
 
             user_id=self.user_id,
-            status=BookingStatus.PENDING, # participant's status, in ReservationVO
+            status=BookingStatus.PENDING,  # participant's status, in ReservationVO
             messages=self.messages,
-            previous_reserve=self.previous_reserve, # sender's previous reservation
+            previous_reserve=self.previous_reserve,  # sender's previous reservation
         )
-    
+
     def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
         return Reservation(
             id=id,
@@ -106,7 +78,7 @@ class ReservationDTO(UpdateReservationDTO):
             dtend=self.dtend,
 
             my_user_id=self.user_id,
-            my_status=BookingStatus.PENDING, # participant's status, in ReservationVO
+            my_status=BookingStatus.PENDING,  # participant's status, in ReservationVO
             # my_role=participant.role,
 
             user_id=self.my_user_id,
@@ -122,7 +94,6 @@ class ReservationDTO(UpdateReservationDTO):
             'dtend': self.dtend,
             'user_id': self.user_id,
         }
-
 
     def previous_sender_query_by_id(self) -> Tuple[int, int]:
         if not self.previous_reserve or not 'reserve_id' in self.previous_reserve:
@@ -156,70 +127,23 @@ class ReservationDTO(UpdateReservationDTO):
                                   data={'conflicts': conflict_records})
 
 
-
-
-# class ReservationMessageVO(BaseModel):    # FIXME: deprecated
-#     id: Optional[int]
-#     # msg's sharding key: schedule_id + dtstart(only YYmmdd?) for both sides
-#     # 如何改預約時段?? 新建立預約後再 cancel 舊的。也能保證找到同個時段的所有 message。
-#     schedule_id: int
-#     dtstart: int
-#     message: str
-
-
 class RUserInfoVO(BaseModel):
     user_id: Optional[int] = Field(None, example=0)
     # role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
     #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
     status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
-                         pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
+                                  pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
     name: Optional[str] = ''
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     years_of_experience: Optional[int] = 0
 
 
-# class AsyncUserDataVO(RUserDTO):
-#     name: Optional[str]
-#     avatar: Optional[str]
-#     position: Optional[str]
-#     company: Optional[str]
-#     industry: Optional[ProfessionVO]
-#     status: BookingStatus
-
-
-# class ReservationVO(BaseModel):
-#     # reservation sharding key: user_id
-#     id: int
-#     # user_id: int # 同樣的 user_id 在 VO 可省略不顯示
-#     schedule_id: int
-#     participant: AsyncUserDataVO
-#     my_status: BookingStatus
-#     dtstart: int  # timestamp
-#     dtend: int   # timestamp
-#     # msg's sharding key: schedule_id + dtstart(only YYmmdd?) for both sides
-#     # NOTE: 需要一個獨立的 table 來存儲 message_log? 新建立和取消預約的 message 共兩筆，需視為同樣的討論串
-#     # message: Optional[str]
-#     message: Optional[ReservationMessageVO]
-
-#     # NOTE: 在 UI 上，若變更預約 又不想先建立再取消，則
-#     # 需在此處新增一個欄位來存儲前一次的[schedule_id, dtstart]，以便找到同樣的討論串
-#     '''
-#     讓後端實現「先建立再取消」:
-#         1. 新建一筆預約，寫上新的 schedule_id, dtstart;
-#             並在欄位"previous_reserve" 存儲前一次的[schedule_id, dtstart]，以便找到同樣的討論串
-#         2. 將舊的預約設為 cancel
-#     '''
-#     previous_reserve: Optional[Dict[str, Any]]
-
-
-
-
-
 class ReservationVO(ReservationDTO):
-    id: Optional[int] = None # id: int 因為沒有經過 await db.refresh()，所以不會有 id
-    status: Optional[BookingStatus] = Field(None, example=BookingStatus.PENDING)
-    
+    id: Optional[int] = None  # id: int 因為沒有經過 await db.refresh()，所以不會有 id
+    status: Optional[BookingStatus] = Field(
+        None, example=BookingStatus.PENDING)
+
     class Config:
         from_attributes = True
 
@@ -256,11 +180,11 @@ class ReservationVO(ReservationDTO):
             # my_role=sender.role,
 
             user_id=self.user_id,
-            status=self.status, # participant's status, in ReservationVO
+            status=self.status,  # participant's status, in ReservationVO
             messages=self.messages,
-            previous_reserve=self.previous_reserve, # sender's previous reservation
+            previous_reserve=self.previous_reserve,  # sender's previous reservation
         )
-    
+
     def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
         return Reservation(
             id=id,
@@ -269,7 +193,7 @@ class ReservationVO(ReservationDTO):
             dtend=self.dtend,
 
             my_user_id=self.user_id,
-            my_status=self.status, # participant's status, in ReservationVO
+            my_status=self.status,  # participant's status, in ReservationVO
             # my_role=participant.role,
 
             user_id=self.my_user_id,
@@ -295,7 +219,6 @@ class ReservationInfoVO(BaseModel):
     previous_reserve: Optional[Dict[str, Any]] = None
     messages: Optional[List[ReservationMessageVO]] = []
 
-
     @staticmethod
     def from_sender_model(reservation: Reservation):
         # sender_role = reservation.my_role
@@ -303,19 +226,19 @@ class ReservationInfoVO(BaseModel):
         return ReservationInfoVO(
             id=reservation.id,
             sender=RUserInfoVO(
-                    user_id=reservation.my_user_id,
-                    # role=sender_role,
-                    status=reservation.my_status,
-                ),
+                user_id=reservation.my_user_id,
+                # role=sender_role,
+                status=reservation.my_status,
+            ),
             participant=RUserInfoVO(
-                    user_id=reservation.user_id,
-                    # role=participant_role,
-                    status=reservation.status,
-                    name=reservation.name,
-                    avatar=reservation.avatar,
-                    job_title=reservation.job_title,
-                    years_of_experience=reservation.years_of_experience,
-                ),
+                user_id=reservation.user_id,
+                # role=participant_role,
+                status=reservation.status,
+                name=reservation.name,
+                avatar=reservation.avatar,
+                job_title=reservation.job_title,
+                years_of_experience=reservation.years_of_experience,
+            ),
             schedule_id=reservation.schedule_id,
             dtstart=reservation.dtstart,
             dtend=reservation.dtend,
@@ -323,30 +246,7 @@ class ReservationInfoVO(BaseModel):
             messages=reservation.messages
         )
 
+
 class ReservationInfoListVO(BaseModel):
     reservations: Optional[List[ReservationInfoVO]] = []
     next_dtend: Optional[int] = 0
-
-# class MentorScheduleDTO(BaseModel):
-#     mentor_schedules_id: int
-#     type: str
-#     year: int = -1
-#     month: int = -1
-#     day_of_month: int
-#     day_of_week: int
-#     start_time: int
-#     end_time: int
-#     cycle_start_date: Optional[int] = None
-#     cycle_end_date: Optional[int] = None
-#
-#
-# class ReservationDTO(BaseModel):
-#     reservations_id: int
-#     mentor_id: int
-#     mentee_id: int
-#     start_datetime: Optional[int] = None
-#     end_datetime: Optional[int] = None
-#     my_status: str = 'pending'
-#     status: str = 'pending'
-#     role: Optional[str] = None
-#     message_from_others: Optional[str] = ''
