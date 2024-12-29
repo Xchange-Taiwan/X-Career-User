@@ -30,7 +30,7 @@ router = APIRouter(
 )
 
 
-@router.put('/{user_id}/profile',
+@router.put('/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
         db: AsyncSession = Depends(db_session),

@@ -19,7 +19,7 @@ class InterestVO(BaseModel):
 class InterestListVO(BaseModel):
     interests: List[InterestVO] = []
     language: Optional[str] = None
-    
+
     def to_json(self):
         result = self.json()
         return json.loads(result)
@@ -36,6 +36,9 @@ class ProfessionVO(ProfessionDTO):
     subject: str = ''
     profession_metadata: Dict = {}
     language: Optional[str] = ''
+
+    class Config:
+        from_attributes = True # orm_mode = True
 
 
 class ProfessionListVO(BaseModel):

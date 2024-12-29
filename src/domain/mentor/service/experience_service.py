@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,10 +16,24 @@ class ExperienceService:
     def __init__(self, exp_dao: MentorExperienceRepository):
         self.__exp_dao = exp_dao
 
-    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int) -> ExperienceVO:
+    async def get_exp_list_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[List[ExperienceVO]]:
+        try:
+            mentor_exp: List[MentorExperience] = await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
+            if not mentor_exp:
+                return []
+            return [ExperienceVO.from_orm(exp) for exp in mentor_exp]
+        except Exception as e:
+            log.error(f'get_exp_list_by_user_id error: %s', str(e))
+            raise ServerException(msg='get experience list response failed')
+
+    # FIXME: 育志，為什麼透過u ser_id 去取得的經驗只會有一種？應該包含 學歷/經歷/LINK ... 多種經驗
+    # 我用 get_exp_list_by_user_id 實現的函數你可以參考一下
+    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[ExperienceVO]:
         try:
             mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_user_id(db, user_id)
-            return ExperienceVO.of(mentor_exp)
+            if not mentor_exp:
+                return None
+            return ExperienceVO.from_orm(mentor_exp)
         except Exception as e:
             log.error(f'get_exp_by_user_id error: %s', str(e))
             raise ServerException(msg='get experience response failed')
@@ -31,7 +45,7 @@ class ExperienceService:
                                                                                             mentor_exp_dto=experience_dto,
                                                                                             user_id=user_id,
                                                                                             exp_cate=exp_cate)
-            res: ExperienceVO = ExperienceVO.of(mentor_exp)
+            res: ExperienceVO = ExperienceVO.from_orm(mentor_exp)
 
             return res
         except Exception as e:
