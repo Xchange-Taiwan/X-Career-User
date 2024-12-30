@@ -1,7 +1,6 @@
 import json
 from typing import Dict
 
-from ..enum.mentor_enums import SeniorityLevel
 from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
