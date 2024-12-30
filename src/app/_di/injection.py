@@ -15,7 +15,9 @@ from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
+from src.app.mentor_profile.upsert import MentorProfile
 from src.infra.cache.local_cache import _local_cache
+from src.infra.client.async_service_api_adapter import _async_service_api_adapter
 
 
 def get_experience_dao() -> MentorExperienceRepository:
@@ -79,3 +81,13 @@ def get_mentor_service(mentor_repository: MentorRepository = Depends(get_mentor_
 
 def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
     return FileService(file_repository)
+
+def get_mentor_profile_app(
+        profile_service: ProfileService = Depends(get_profile_service),
+        mentor_service: MentorService = Depends(get_mentor_service),
+        experience_service: ExperienceService = Depends(get_experience_service)
+):
+    return MentorProfile(_async_service_api_adapter,
+                        profile_service, 
+                        mentor_service, 
+                        experience_service)
