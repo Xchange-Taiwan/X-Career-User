@@ -15,7 +15,7 @@ from ..res.response import *
 from ...domain.file.model.file_model import FileInfoDTO, FileInfoVO, FileInfoListVO
 from ...domain.file.service.file_service import FileService
 from ...infra.databse import get_db
-from ...infra.util.injection_util import get_file_service
+from ...app._di.injection import get_file_service
 
 log.basicConfig(filemode='w', level=log.INFO)
 

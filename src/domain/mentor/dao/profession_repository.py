@@ -41,9 +41,6 @@ class ProfessionRepository:
                                      category: ProfessionCategory,
                                      language: str
                                      ) -> List[Type[Profession]]:
-
-        if not subject_groups or not language:
-            return []
         stmt: Select = (select(Profession)
                         .filter(Profession.category == category)
                         .filter(Profession.language == language))
