@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.constant import ExperienceCategory
 from src.config.exception import NotFoundException, ServerException
-from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO
+from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO, ExperienceListVO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
 import logging as log
@@ -30,10 +30,13 @@ class ExperienceService:
     # 我用 get_exp_list_by_user_id 實現的函數你可以參考一下
     async def get_exp_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[ExperienceVO]:
         try:
-            mentor_exp: MentorExperience = await self.__exp_dao.get_mentor_exp_by_user_id(db, user_id)
-            if not mentor_exp:
-                return None
-            return ExperienceVO.from_orm(mentor_exp)
+            mentor_exp_list: List[MentorExperience] = \
+                await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
+            if not mentor_exp_list:
+                return []
+            
+            experiences = [ExperienceVO.model_validate(exp) for exp in mentor_exp_list]
+            return ExperienceListVO(experiences=experiences)
         except Exception as e:
             log.error(f'get_exp_by_user_id error: %s', str(e))
             raise ServerException(msg='get experience response failed')
