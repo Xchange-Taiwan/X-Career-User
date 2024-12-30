@@ -6,16 +6,8 @@ from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
 
-from src.config.constant import (
-    ProfessionCategory, 
-    RoleType, 
-    InterestCategory,
-    SchedulesType, 
-    BookingStatus,
-    ExperienceCategory,
-)
 from src.infra.util.time_util import current_seconds
-from src.domain.mentor.enum.mentor_enums import SeniorityLevel
+from src.config.constant import *
 
 Base = declarative_base()
 

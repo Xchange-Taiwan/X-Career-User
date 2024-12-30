@@ -2,7 +2,6 @@ from typing import Dict, Tuple
 from pydantic import Field
 from datetime import datetime
 
-from ..enum.mentor_enums import SeniorityLevel
 from ...user.model.common_model import ProfessionListVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
