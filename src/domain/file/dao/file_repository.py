@@ -24,19 +24,25 @@ class FileRepository:
             )
         )
         res: FileInfo = await get_first_template(session, stmt)
+
         if res is not None:
             res.file_size = file_info_dto.file_size
             res.update_time = datetime.now(timezone.utc)
             res.content_type = file_info_dto.content_type
             res.url = file_info_dto.url
-            res = await session.merge(res)
+            await session.merge(res)
             await session.commit()
+            # Refresh before returning to ensure it's attached
+            await session.refresh(res)
             return res
         else:
             model = FileInfo(**file_info_dto.__dict__)
             model.file_id = uuid.uuid4()
             session.add(model)
             await session.commit()
+            # Retrieve fresh state before returning
+            stmt = select(FileInfo).where(FileInfo.file_id == model.file_id)
+            model = (await session.execute(stmt)).scalar_one()
             return model
 
     async def get_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfo:
