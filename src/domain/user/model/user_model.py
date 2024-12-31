@@ -126,4 +126,11 @@ class ProfileVO(BaseModel):
     def to_dto_json(self):
         dto = self.from_dto()
         dto_dict = jsonable_encoder(dto)
+        dto_dict.update({
+            'personal_statement': None,
+            'about': None,
+            'seniority_level': None,
+            'expertises': [],
+            'experiences': [],
+        })
         return dto_dict
