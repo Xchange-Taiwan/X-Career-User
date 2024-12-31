@@ -23,4 +23,4 @@ DB_SCHEMA = os.getenv('DB_SCHEMA', 'x-career-dev')
 # default cache ttl: 5 minutes
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 
-SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'https://76mn9fb6r8.execute-api.ap-northeast-1.amazonaws.com/dev/search-service/api')
+SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api')

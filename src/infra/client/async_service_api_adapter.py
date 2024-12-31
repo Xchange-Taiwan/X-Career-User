@@ -43,9 +43,15 @@ def check_response_code(method: str, expected_code: int = 200):
             msg = res_body.get('msg', None)
             data = res_body.get('data', None)
 
+            if status_code == status.HTTP_422_UNPROCESSABLE_ENTITY:
+                msg = 'client input error (422: unprocessable client exception)'
+                data = res_body.get('detail', [])
+
             log.error(
-                f"service request fail, \n[%s]: %s, \nbody/params:%s, \nheaders:%s, \nstatus_code:%s, \nerr_msg: %s \n response:%s",
-                method, url, body or params, headers, status_code, msg, res_body)
+                f'service request fail,\n [%s]: %s;\n BODY: %s;\n PARAMS: %s;\n HEADERS: %s;\n \
+                STATUS_CODE: %s;\n RESP_BODY: %s;\n ERR_MSG: %s;\n  DATA/422_DETAIL: %s\n',
+                method, url, body, params, headers, 
+                status_code, res_body, msg, data)
             raise_http_exception_by_status_code(status_code, msg, data)
 
         return wrapper_check_response_code
