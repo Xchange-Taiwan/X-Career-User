@@ -88,6 +88,7 @@ async def upsert_experience(
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
     # TODO-EVENT: implement event
+    body.category = experience_type
     res: experience.ExperienceVO = \
         await mentor_profile_app.upsert_exp(db=db,
                                             experience_dto=body,

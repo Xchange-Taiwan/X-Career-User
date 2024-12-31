@@ -39,8 +39,8 @@ class MentorProfile:
         res: user.ProfileVO = \
             await self.profile_service.upsert_profile(db, dto)
         # 若為 onboarding 狀態，則需通知 Search Service
-        # if res.on_boarding:
-            # await self.service_api.post(POST_MENTOR_URL, jsonable_encoder(res))
+        if res.on_boarding:
+            await self.service_api.post(POST_MENTOR_URL, res.to_dto_json())
         return res
 
     async def upsert_mentor_profile(self, db: AsyncSession,
@@ -48,8 +48,8 @@ class MentorProfile:
         res: mentor.MentorProfileVO = \
             await self.mentor_service.upsert_mentor_profile(db, profile_dto)
         # 若為 onboarding 狀態，則需通知 Search Service
-        # if res.on_boarding:
-            # await self.service_api.post(POST_MENTOR_URL, jsonable_encoder(res))
+        if res.on_boarding:
+            await self.service_api.post(POST_MENTOR_URL, res.to_dto_json())
         return res
 
     async def upsert_exp(self, db,
@@ -69,7 +69,7 @@ class MentorProfile:
                 user_id=user_id,
                 experiences=experiences
             )
-            # await self.service_api.post(POST_MENTOR_URL, jsonable_encoder(mentor_profile))
+            await self.service_api.post(POST_MENTOR_URL, mentor_profile.to_dto_json())
         return res
 
     async def delete_experience(self, db,
@@ -90,5 +90,5 @@ class MentorProfile:
                 user_id=user_id,
                 experiences=experiences
             )
-            # await self.service_api.post(POST_MENTOR_URL, jsonable_encoder(mentor_profile))
+            await self.service_api.post(POST_MENTOR_URL, mentor_profile.to_dto_json())
         return res
