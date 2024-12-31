@@ -22,10 +22,10 @@ def check_response_code(method: str, expected_code: int = 200):
         async def wrapper_check_response_code(*args, **kwargs):
             # request params
             function_name: str = func.__name__
-            url = kwargs.get('url', None)
-            params = kwargs.get('params', None)
-            body = kwargs.get('json', None)
-            headers = kwargs.get('headers', None)
+            url = kwargs.get('url', args[1] if len(args) > 1 else None)
+            params = kwargs.get('params', args[2] if len(args) > 2 else None)
+            body = kwargs.get('json', args[2] if len(args) > 2 else None)
+            headers = kwargs.get('headers', args[3] if len(args) > 3 else None)
             
             # response params
             status_code: int = 0
@@ -44,8 +44,8 @@ def check_response_code(method: str, expected_code: int = 200):
             data = res_body.get('data', None)
 
             log.error(
-                f"service request fail, [%s]: %s, body:%s, params:%s, headers:%s, status_code:%s, err_msg: %s \n response:%s",
-                method, url, body, params, headers, status_code, msg, res_body)
+                f"service request fail, \n[%s]: %s, \nbody/params:%s, \nheaders:%s, \nstatus_code:%s, \nerr_msg: %s \n response:%s",
+                method, url, body or params, headers, status_code, msg, res_body)
             raise_http_exception_by_status_code(status_code, msg, data)
 
         return wrapper_check_response_code

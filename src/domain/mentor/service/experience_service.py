@@ -48,7 +48,7 @@ class ExperienceService:
                                                                                             mentor_exp_dto=experience_dto,
                                                                                             user_id=user_id,
                                                                                             exp_cate=exp_cate)
-            res: ExperienceVO = ExperienceVO.from_orm(mentor_exp)
+            res: ExperienceVO = ExperienceVO.model_validate(mentor_exp)
 
             return res
         except Exception as e:
@@ -57,10 +57,13 @@ class ExperienceService:
 
     async def delete_exp_by_user_and_exp_id(self, db: AsyncSession, user_id: int, exp_id: int, exp_cate: ExperienceCategory) -> bool:
         try:
-            await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, exp_id, exp_cate)
-            return True
-        except NotFoundException:
-            return False
+            res: bool = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, exp_id, exp_cate)
+            if not res:
+                log.info('user_id: %s No such experience with id: %s', user_id, exp_id)
+            return res
+        except Exception as e:
+            log.error(f'delete_exp_by_user_and_exp_id error: %s', str(e))
+            raise ServerException(msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}')
 
 
     # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
