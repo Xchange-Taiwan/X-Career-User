@@ -69,6 +69,7 @@ class ReservationRepository:
                 status=reservation.status,
                 messages=reservation.messages,
             ).execution_options(synchronize_session="fetch")
+            await db.execute(stmt)  # 1次 IO：更新操作
 
         else:
             # 構建插入語句
@@ -83,11 +84,11 @@ class ReservationRepository:
                 messages=reservation.messages,
                 previous_reserve=reservation.previous_reserve,
             ).returning(Reservation.id)
+            result = await db.execute(stmt)  # 1次 IO：插入操作
+            new_id = result.scalar_one()  # 從返回結果中獲取 id
+            reservation.id = new_id  # 更新對象的 id
 
-        result = await db.execute(stmt)
         await db.flush()  # 將更改發送到數據庫，但不提交事務
-
-
 
 
     async def get_user_reservations(self, db: AsyncSession,
