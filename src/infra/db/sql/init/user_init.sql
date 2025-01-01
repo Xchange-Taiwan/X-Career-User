@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS professions (
 CREATE TABLE IF NOT EXISTS mentor_schedules (
     id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,    -- user ID, used to distinguish users
-    dt_type VARCHAR(20) NOT NULL CHECK (dt_type IN ('AVAILABLE', 'UNAVAILABLE')), -- event type
+    dt_type VARCHAR(20) NOT NULL CHECK (dt_type IN ('ALLOW', 'FORBIDDEN')), -- event type
     dt_year INT NOT NULL,       -- dt_year of the event
     dt_month INT NOT NULL,      -- dt_month of the event
     dtstart BIGINT NOT NULL,    -- start timestamp of the event
