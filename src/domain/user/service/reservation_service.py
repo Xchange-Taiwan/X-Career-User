@@ -255,7 +255,7 @@ class ReservationService:
         if not prev_sender_vo:
             log.error('previous sender reservation not found, \
                 reserve_id: %s', reserve_id)
-            raise ClientException(msg='previous sender reservation not found')
+            raise ClientException(msg=f'previous sender reservation not found: {reserve_id}')
 
         return prev_sender_vo
 
