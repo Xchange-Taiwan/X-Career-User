@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import func, Integer, Select, select, update, insert, join, and_
+from sqlalchemy import func, Integer, Select, select, update, insert, join, and_, bindparam
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.conf import BATCH, RESERVATION_ISOLAION_LEVEL
 from src.domain.user.model.reservation_model import *
@@ -53,9 +53,56 @@ class ReservationRepository:
 
 
     async def save_all(self, db: AsyncSession, reservations: List[Reservation]):
-        for reservation in reservations:
-            await self.save(db, reservation)
-        await db.commit()
+        # 分離更新和插入操作
+        updates = [r for r in reservations if r.id]
+        inserts = [r for r in reservations if not r.id]
+        
+        if updates:
+            # 批量更新
+            stmt = update(Reservation).where(
+                and_(
+                    Reservation.id == bindparam('b_id'),
+                    Reservation.my_user_id == bindparam('b_my_user_id')
+                )
+            ).values({
+                'my_status': bindparam('b_my_status'),
+                'status': bindparam('b_status'),
+                'messages': bindparam('b_messages'),
+            })
+            
+            for i, r in enumerate(updates):
+                await db.execute(stmt, {
+                    'b_id': r.id,
+                    'b_my_user_id': r.my_user_id,
+                    'b_my_status': r.my_status,
+                    'b_status': r.status,
+                    'b_messages': r.messages,
+                })  # N次 IO：多次更新
+        
+        if inserts:
+            # 批量插入
+            stmt = insert(Reservation).returning(Reservation.id)
+            result = await db.execute(
+                stmt,
+                [{
+                    'schedule_id': r.schedule_id,
+                    'dtstart': r.dtstart,
+                    'dtend': r.dtend,
+                    'my_user_id': r.my_user_id,
+                    'my_status': r.my_status,
+                    'user_id': r.user_id,
+                    'status': r.status,
+                    'messages': r.messages,
+                    'previous_reserve': r.previous_reserve,
+                } for r in inserts]
+            )  # 1次 IO：批量插入
+            
+            # 更新新插入記錄的 id
+            new_ids = result.scalars().all()
+            for r, new_id in zip(inserts, new_ids):
+                r.id = new_id
+        
+        await db.commit()  # 1次 IO：提交事務
 
 
     async def save(self, db: AsyncSession, reservation: Reservation):
