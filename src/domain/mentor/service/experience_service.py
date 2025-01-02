@@ -41,13 +41,13 @@ class ExperienceService:
             log.error(f'get_exp_by_user_id error: %s', str(e))
             raise ServerException(msg='get experience response failed')
 
-    async def upsert_exp(self, db: AsyncSession, experience_dto: ExperienceDTO, user_id: int,
-                         exp_cate: ExperienceCategory) -> ExperienceVO:
+    async def upsert_exp(self, db: AsyncSession, 
+                         user_id: int,
+                         experience_dto: ExperienceDTO) -> ExperienceVO:
         try:
             mentor_exp: MentorExperience = await self.__exp_dao.upsert_mentor_exp_by_user_id(db=db,
-                                                                                            mentor_exp_dto=experience_dto,
                                                                                             user_id=user_id,
-                                                                                            exp_cate=exp_cate)
+                                                                                            mentor_exp_dto=experience_dto)
             res: ExperienceVO = ExperienceVO.model_validate(mentor_exp)
 
             return res
@@ -55,10 +55,13 @@ class ExperienceService:
             log.error(f'upsert_exp error: %s', str(e))
             raise ServerException(msg='upsert experience response failed')
 
-    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession, user_id: int, exp_id: int, exp_cate: ExperienceCategory) -> bool:
+    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession, 
+                                            user_id: int, 
+                                            experience_dto: ExperienceDTO) -> bool:
         try:
-            res: bool = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, exp_id, exp_cate)
+            res: bool = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, experience_dto)
             if not res:
+                exp_id = experience_dto.id
                 log.info('user_id: %s No such experience with id: %s', user_id, exp_id)
             return res
         except Exception as e:

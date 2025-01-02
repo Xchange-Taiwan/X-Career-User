@@ -62,7 +62,7 @@ class ProfileService:
                 await self.__exp_service.get_exp_list_by_user_id(db, user_id)
             industries: ProfessionListVO = \
                 await (self.__profession_service.
-                    get_industries_by_subjects(db, dto.industries, dto.language))
+                    get_industries_by_subjects(db, [dto.industry], dto.language))
 
             # get all interests: interest_positions, skills, topics
             all_interests: Dict = await self.get_all_interests(db, dto, language)
@@ -82,7 +82,8 @@ class ProfileService:
             # )
 
             res: ProfileVO = ProfileVO.of(dto)
-            res.industries = industries
+            if len(industries.professions) > 0:
+                res.industry = industries.professions[0]
             if all_interests:
                 res.interested_positions = InterestListVO(interests=all_interests[InterestCategory.INTERESTED_POSITION.value])
                 res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])
@@ -108,7 +109,7 @@ class ProfileService:
             experiences: List[ExperienceVO] = \
                 await self.__exp_service.get_exp_list_by_user_id(db, user_id)
             industries: ProfessionListVO = \
-                await self.__profession_service.get_industries_by_subjects(db, dto.industries, language=language)
+                await self.__profession_service.get_industries_by_subjects(db, [dto.industry], language=language)
             expertises: ProfessionListVO = \
                 await self.__profession_service.get_expertise_by_subjects(db, dto.expertises, language=language)
 
@@ -130,8 +131,10 @@ class ProfileService:
             # )
 
             res: MentorProfileVO = MentorProfileVO.of(dto)
-            res.industries = industries
             res.expertises = expertises
+
+            if len(industries.professions) > 0:
+                res.industry = industries.professions[0]
             if all_interests:
                 res.interested_positions = InterestListVO(interests=all_interests[InterestCategory.INTERESTED_POSITION.value])
                 res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])

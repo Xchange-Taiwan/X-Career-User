@@ -1,4 +1,3 @@
-import sys
 from fastapi import Request, Path, Body
 from typing import Dict, List
 from src.config.exception import ClientException
@@ -7,6 +6,8 @@ from src.config.conf import (
     MAX_PERIOD_SECS,
 )
 from src.domain.mentor.model.mentor_model import MentorScheduleDTO
+from src.domain.mentor.model.experience_model import ExperienceDTO
+from src.config.constant import ExperienceCategory
 
 
 def upsert_mentor_schedule_check(
@@ -43,3 +44,13 @@ def upsert_mentor_schedule_check(
         MentorScheduleDTO.opverlapping_interval_check(timeslots, schedule_dto.until)
 
     return schedule_dto
+
+
+def delete_experience_check(
+    experience_id: int = Path(...),
+    experience_type: ExperienceCategory = Path(...),
+) -> (ExperienceDTO):
+    return ExperienceDTO(
+        id=experience_id,
+        category=experience_type,
+    )

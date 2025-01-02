@@ -10,11 +10,13 @@ from src.infra.util.convert_util import get_first_template, get_all_template
 
 
 class MentorExperienceRepository:
-    async def upsert_mentor_exp_by_user_id(self, db: AsyncSession, mentor_exp_dto: ExperienceDTO,
-                                           user_id: int, exp_cate: ExperienceCategory) -> MentorExperience:
+    async def upsert_mentor_exp_by_user_id(self, db: AsyncSession, 
+                                           user_id: int,
+                                           mentor_exp_dto: ExperienceDTO,
+                                          ) -> MentorExperience:
         mentor_exp: MentorExperience = MentorExperience(id=mentor_exp_dto.id,
                                                         user_id=user_id,
-                                                        category=exp_cate,
+                                                        category=mentor_exp_dto.category,
                                                         order=mentor_exp_dto.order,
                                                         mentor_experiences_metadata = mentor_exp_dto.mentor_experiences_metadata
                                                         )
@@ -46,8 +48,9 @@ class MentorExperienceRepository:
 
     async def delete_mentor_exp_by_id(self, db: AsyncSession, 
                                       user_id: int, 
-                                      exp_id: int, 
-                                      exp_cate: ExperienceCategory) -> bool:
+                                      experience_dto: ExperienceDTO) -> bool:
+        exp_id = experience_dto.id
+        exp_cate = experience_dto.category
         stmt: Select = \
             select(MentorExperience).where(and_(
                                                 MentorExperience.user_id == user_id,
