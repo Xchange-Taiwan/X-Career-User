@@ -5,7 +5,9 @@ from fastapi.encoders import jsonable_encoder
 
 from pydantic import BaseModel
 from src.config.constant import InterestCategory
-from .common_model import InterestListVO, ProfessionListVO
+from .common_model import (
+    InterestListVO, ProfessionListVO, ProfessionVO,
+)
 import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
@@ -23,7 +25,7 @@ class ProfileDTO(BaseModel):
     interested_positions: Optional[List[Union[str]]] = []
     skills: Optional[List[Union[str]]] = []
     topics: Optional[List[Union[str]]] = []
-    industries: Optional[List[Union[str]]] = []
+    industry: Optional[str] = ''
     language: Optional[str] = 'zh_TW'
     
     class Config:
@@ -73,7 +75,7 @@ class ProfileVO(BaseModel):
     interested_positions: Optional[InterestListVO] = None
     skills: Optional[InterestListVO] = None
     topics: Optional[InterestListVO] = None
-    industries: Optional[ProfessionListVO] = None
+    industry: Optional[ProfessionVO] = None
     on_boarding: Optional[bool] = False
     language: Optional[str] = 'zh_TW'
 
@@ -119,7 +121,7 @@ class ProfileVO(BaseModel):
     #         topics=self.i_to_subject_groups(self.topics),
 
     #         # TODO: use 'industry' instead of ARRAY
-    #         industries=self.p_to_subject_groups(self.industries),
+    #         industry=self.industry.subject_group,
     #         language=self.language,
     #     )
 

@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     company TEXT DEFAULT '',
     seniority_level SENIORITY_LEVEL,
     years_of_experience INT DEFAULT 0,
-	industries JSONB,
+	industry JSONB,
     interested_positions JSONB,
     skills JSONB,
     topics JSONB,
