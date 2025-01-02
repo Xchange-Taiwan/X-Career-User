@@ -20,3 +20,5 @@ typing_extensions==4.12.2
 uvicorn==0.32.1
 icalendar==6.1.0
 recurring-ical-events==3.3.4
+httpx~=0.27.2
+aioboto3==13.3.0

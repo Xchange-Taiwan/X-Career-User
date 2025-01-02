@@ -15,30 +15,38 @@ from src.infra.util.convert_util import get_all_template, get_first_template
 
 class FileRepository:
     async def upsert(self, session: AsyncSession, file_info_dto: FileInfoDTO) -> FileInfo:
-        # query by user_id and file_name
-        stmt: Select = select(FileInfo).where(
+        # Query by user_id and file_name
+        stmt = select(FileInfo).where(
             and_(
                 FileInfo.create_user_id == file_info_dto.create_user_id,
                 FileInfo.file_name == file_info_dto.file_name,
                 ~FileInfo.is_deleted
             )
         )
-        res: FileInfo = await get_first_template(session, stmt)
-        if res is not None:
+        res = await get_first_template(session, stmt)
+
+        if res:
+            # Update fields
             res.file_size = file_info_dto.file_size
             res.update_time = datetime.now(timezone.utc)
             res.content_type = file_info_dto.content_type
             res.url = file_info_dto.url
-            res = await session.merge(res)
-            await session.commit()
-            return res
+            res.update_time = datetime.now(timezone.utc)
         else:
-            model = FileInfo(**file_info_dto.__dict__)
-            model.file_id = uuid.uuid4()
-            session.add(model)
-            await session.commit()
-            return model
+            # Insert new record
+            res = FileInfo(
+                **file_info_dto.__dict__,
+            )
+            res.update_time = datetime.now(timezone.utc)
+            res.file_id = uuid.uuid4()  # Generate unique file_id
+            session.add(res)
 
+        # Commit changes
+        await session.commit()
+
+        # Ensure the result is attached to the session
+        await session.refresh(res)
+        return res
     async def get_file_info_by_id(self, session: AsyncSession, user_id: int, file_id: str) -> FileInfo:
         stmt: Select = select(FileInfo).where(
             and_(

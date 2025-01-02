@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from fastapi import FastAPI, HTTPException, \
     APIRouter
@@ -11,6 +12,7 @@ from src.router.v1 import (
     user,
     mentor, file_controller,
 )
+from src.infra.resource.manager import resource_manager
 
 STAGE = os.environ.get('STAGE')
 root_path = '/' if not STAGE else f'/{STAGE}'
@@ -23,6 +25,18 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+@app.on_event('startup')
+async def startup_event():
+    # init global connection pool
+    await resource_manager.initial()
+    asyncio.create_task(resource_manager.keeping_probe())
+
+
+@app.on_event('shutdown')
+async def shutdown_event():
+    # close connection pool
+    await resource_manager.close()
 
 router_v1 = APIRouter(prefix='/user-service/api/v1')
 router_v1.include_router(user.router)

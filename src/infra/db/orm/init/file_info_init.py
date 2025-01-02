@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, DateTime, Boolean, UUID, String, text
+from sqlalchemy import Column, Integer, DateTime, Boolean, UUID, String, text, BigInteger
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -14,7 +14,7 @@ class FileInfo(Base):
     file_size = Column(Integer, nullable=False)
     content_type = Column(String(255))
     url = Column(String)
-    create_user_id = Column(Integer, nullable=False)
+    create_user_id = Column(BigInteger, nullable=False)
     create_time = Column(
         DateTime(timezone=True),
         nullable=False,

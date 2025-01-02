@@ -119,19 +119,27 @@ CREATE TABLE IF NOT EXISTS canned_messages (
 
 CREATE TABLE IF NOT EXISTS reservations (
     "id" SERIAL PRIMARY KEY,
+    schedule_id INT NOT NULL,
+    dtstart BIGINT NOT NULL,
+    dtend BIGINT NOT NULL,
+    my_user_id BIGINT NOT NULL,    -- sharding key: my_user_id
+    my_status BOOKING_STATUS NOT NULL,
+    -- my_role ROLE_TYPE NOT NULL,  # FIXME: deprecated
     user_id BIGINT NOT NULL,
-    mentor_schedules_id INT NOT NULL,
-    start_datetime BIGINT,
-    end_datetime BIGINT,
-    my_status BOOKING_STATUS ,
-    status BOOKING_STATUS,
-    "role" ROLE_TYPE,
-    message_from_others TEXT DEFAULT ''
-    --,CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id),
-    --CONSTRAINT fk_mentor_schedules_id FOREIGN KEY (mentor_schedules_id) REFERENCES mentor_schedules("id")
+    "status" BOOKING_STATUS NOT NULL,
+    "messages" JSONB DEFAULT '[]'::jsonb,
+    previous_reserve JSONB,  -- previous [schedule_id + dtstart],
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX reservations_index ON reservations(user_id, start_datetime, end_datetime);
+CREATE UNIQUE INDEX uidx_reservation_user_dtstart_dtend_schedule_id_user_id
+    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id);
+CREATE INDEX idx_reservation_user_my_status_status_dtend
+    ON reservations(my_user_id, my_status, "status", dtend);
+CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
+    ON reservations(my_user_id, my_status, dtstart, dtend);
+
 
 CREATE TABLE IF NOT EXISTS interests (
     "id" SERIAL PRIMARY KEY,

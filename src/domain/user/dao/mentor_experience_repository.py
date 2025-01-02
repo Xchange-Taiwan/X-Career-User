@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import Select, select
+from sqlalchemy import Select, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.constant import ExperienceCategory
@@ -44,18 +44,23 @@ class MentorExperienceRepository:
 
         return mentor_exp
 
-    async def delete_mentor_exp_by_id(self, db: AsyncSession, user_id: int, exp_id: int, exp_cate: ExperienceCategory) \
-            -> None:
-        stmt: Select = (
-            select(MentorExperience).filter(MentorExperience.user_id == user_id
-                                            and MentorExperience.id == exp_id
+    async def delete_mentor_exp_by_id(self, db: AsyncSession, 
+                                      user_id: int, 
+                                      exp_id: int, 
+                                      exp_cate: ExperienceCategory) -> bool:
+        stmt: Select = \
+            select(MentorExperience).where(and_(
+                                                MentorExperience.user_id == user_id,
+                                                MentorExperience.id == exp_id,
+                                                MentorExperience.category == exp_cate,
                                             )
-                        )
+                                        )
+                        
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
         if mentor_exp is not None:
             await db.delete(mentor_exp)
             await db.commit()
+            return True
 
-        else:
-            raise NotFoundException(msg=f"user_id: {user_id} No such experience with id: {exp_id}")
+        return False
 
