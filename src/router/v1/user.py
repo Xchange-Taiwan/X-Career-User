@@ -19,7 +19,13 @@ from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
 from ...infra.databse import get_db, db_session
-from ...app._di.injection import get_interest_service, get_profession_service, get_profile_service
+from ...app.mentor_profile.upsert import MentorProfile
+from ...app._di.injection import (
+    get_interest_service,
+    get_profession_service,
+    get_profile_service,
+    get_mentor_profile_app,
+)
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -35,9 +41,10 @@ router = APIRouter(
 async def upsert_profile(
         db: AsyncSession = Depends(db_session),
         body: user.ProfileDTO = Body(...),
-        profile_service: ProfileService = Depends(get_profile_service)
+        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
-    res: user.ProfileVO = await profile_service.upsert_profile(db, body)
+    # TODO-EVENT: implement event
+    res: user.ProfileVO = await mentor_profile_app.upsert_profile(db, body)
     return res_success(data=jsonable_encoder(res))
 
 

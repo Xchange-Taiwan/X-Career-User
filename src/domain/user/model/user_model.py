@@ -1,5 +1,7 @@
 import json
+from enum import Enum
 from typing import List, Optional, Union, Dict, Set
+from fastapi.encoders import jsonable_encoder
 
 from pydantic import BaseModel
 from src.config.constant import InterestCategory
@@ -88,6 +90,47 @@ class ProfileVO(BaseModel):
             linkedin_profile=model.linkedin_profile
         )
 
+    def i_to_subject_groups(self, interest_list: InterestListVO):
+        if not interest_list:
+            return []
+        return [interest.subject_group for interest in interest_list.interests]
+
+    def p_to_subject_groups(self, profession_list: ProfessionListVO):
+        if not profession_list:
+            return []
+        return [profession.subject_group for profession in profession_list.professions]
+
     def to_json(self):
         result = self.model_dump_json()
         return json.loads(result)
+
+    def from_dto(self):
+        return ProfileDTO(
+            user_id=self.user_id,
+            name=self.name,
+            avatar=self.avatar,
+            job_title=self.job_title,
+            company=self.company,
+            years_of_experience=self.years_of_experience,
+            region=self.region,
+            linkedin_profile=self.linkedin_profile,
+            interested_positions=self.i_to_subject_groups(self.interested_positions),
+            skills=self.i_to_subject_groups(self.skills),
+            topics=self.i_to_subject_groups(self.topics),
+
+            # TODO: use 'industry' instead of ARRAY
+            industries=self.p_to_subject_groups(self.industries),
+            language=self.language,
+        )
+
+    def to_dto_json(self):
+        dto = self.from_dto()
+        dto_dict = jsonable_encoder(dto)
+        dto_dict.update({
+            'personal_statement': None,
+            'about': None,
+            'seniority_level': None,
+            'expertises': [],
+            'experiences': [],
+        })
+        return dto_dict

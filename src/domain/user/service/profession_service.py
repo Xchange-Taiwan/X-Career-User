@@ -52,9 +52,9 @@ class ProfessionService:
                 return self.filter_by_subject_group(cache_res, subject_groups)
 
             res: List[Type[Profession]] = \
-                await self.__profession_repository.get_profession_by_lang(db,
-                                                                          ProfessionCategory.INDUSTRY,
-                                                                          language)
+                await self.__profession_repository.get_all_profession(db,
+                                                                      ProfessionCategory.INDUSTRY,
+                                                                      language)
             professions: List[ProfessionVO] = [
                 self.convert_to_profession_vo(p) for p in res]
             profession_list_vo: ProfessionListVO = ProfessionListVO(professions=professions)
@@ -77,9 +77,9 @@ class ProfessionService:
                 return self.filter_by_subject_group(cache_res, subject_groups)
 
             res: List[Type[Profession]] = \
-                await self.__profession_repository.get_profession_by_lang(db,
-                                                                          ProfessionCategory.EXPERTISE,
-                                                                          language)
+                await self.__profession_repository.get_all_profession(db,
+                                                                      ProfessionCategory.EXPERTISE,
+                                                                      language)
             professions: List[ProfessionVO] = [
                 self.convert_to_profession_vo(p) for p in res]
             profession_list_vo: ProfessionListVO = ProfessionListVO(professions=professions)

@@ -34,8 +34,8 @@ class ProfileService:
             if user_id is None:
                 raise NotAcceptableException(msg="No user interest_id is provided")
 
-            return await self.convert_to_profile_vo(db, await self.__profile_repository.get_by_user_id(db, user_id),
-                                                    language=language)
+            dto: ProfileDTO = await self.__profile_repository.get_by_user_id(db, user_id)
+            return await self.convert_to_profile_vo(db, dto, language=language)
         except Exception as e:
             log.error(f'get_by_user_id error: %s', str(e))
             err_msg = getattr(e, 'msg', 'get profile response failed')
@@ -44,7 +44,6 @@ class ProfileService:
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         try:
             res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(db, dto)
-
             return await self.convert_to_profile_vo(db, res)
         except Exception as e:
             log.error(f'upsert_profile error: %s', str(e))
@@ -89,14 +88,8 @@ class ProfileService:
                 res.skills = InterestListVO(interests=all_interests[InterestCategory.SKILL.value])
                 res.topics  = InterestListVO(interests=all_interests[InterestCategory.TOPIC.value])
 
-            # 是否為 Mentor, 透過是否有填寫經驗類別判斷
-            exp_categories = set()
-            for exp in experiences:
-                if exp.category:
-                    exp_categories.add(exp.category)
-
-            # 如果有填寫至少 2 種經驗類別, 則視為已完成 Onboarding
-            res.on_boarding = (len(exp_categories) == len(ExperienceCategory) - 1)
+            # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
+            res.on_boarding = ExperienceService.is_onboarding(experiences)
 
             return res
         except Exception as e:
@@ -146,6 +139,9 @@ class ProfileService:
             
             # mentor experiences
             res.experiences = experiences
+            # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
+            res.on_boarding = ExperienceService.is_onboarding(experiences)
+
             return res
 
         except Exception as e:
