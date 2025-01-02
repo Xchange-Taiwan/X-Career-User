@@ -17,6 +17,10 @@ from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
 from src.app.mentor_profile.upsert import MentorProfile
 from src.infra.cache.local_cache import _local_cache
+
+from src.domain.user.dao.reservation_repository import ReservationRepository
+from src.domain.user.service.reservation_service import ReservationService
+from src.app.reservation.booking import Booking
 from src.infra.resource.manager import resource_manager
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.infra.client.async_service_api_adapter import _async_service_api_adapter
@@ -44,6 +48,9 @@ def get_profession_dao() -> ProfessionRepository:
 
 def get_file_dao() -> FileRepository:
     return FileRepository()
+
+def get_resevation_dao() -> ReservationRepository:
+    return ReservationRepository()
 
 
 def get_sqs_mq_adapter() -> SqsMqAdapter:
@@ -89,6 +96,13 @@ def get_mentor_service(mentor_repository: MentorRepository = Depends(get_mentor_
 def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
     return FileService(file_repository)
 
+
+def get_reservation_service(reservation_repository: ReservationRepository = Depends(get_resevation_dao)):
+    return ReservationService(reservation_repository)
+
+def get_booking_service(reservation_service: ReservationService = Depends(get_reservation_service)):
+    return Booking(reservation_service)
+
 def get_mentor_profile_app(
         profile_service: ProfileService = Depends(get_profile_service),
         mentor_service: MentorService = Depends(get_mentor_service),
@@ -100,3 +114,4 @@ def get_mentor_profile_app(
                         mentor_service, 
                         experience_service,
                         mq_adapter)
+

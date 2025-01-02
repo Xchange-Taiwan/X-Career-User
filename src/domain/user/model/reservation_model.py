@@ -1,104 +1,252 @@
 import logging as log
 
-from sqlalchemy import Column, Integer, BigInteger, Text
-from sqlalchemy import types
-from sqlalchemy.ext.declarative import declarative_base
-
-from .common_model import ProfessionVO
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Tuple
 from .user_model import *
 from ....config.constant import *
+from ....config.conf import BATCH
+from ....config.exception import ClientException
+from src.infra.db.orm.init.user_init import (
+    Reservation,
+)
 
 log.basicConfig(filemode='w', level=log.INFO)
 
-Base = declarative_base()
+
+class ReservationQueryDTO(BaseModel):
+    state: str = Field(None, example=ReservationListState.UPCOMING.value,
+                       pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
+    batch: int = Field(..., example=BATCH, ge=1)
+    next_dtend: Optional[int] = Field(None, example=1735398000)
 
 
-class MentorSchedules(Base):
-    __tablename__ = 'mentor_schedules'
+class UpdateReservationDTO(BaseModel):
+    my_user_id: int = 0
+    my_status: Optional[BookingStatus] = Field(
+        None, example=BookingStatus.PENDING)
+    user_id: int = 0
+    schedule_id: int = 0
+    dtstart: int = 0    # timestamp
+    dtend: int = 0      # timestamp
+    messages: Optional[List[Dict[str, Any]]] = []
 
-    mentor_schedules_id = Column(Integer, primary_key=True)
-    type = Column(types.Enum(ScheduleType), default=ScheduleType.ALLOW)
-    year = Column(Integer, default=-1)
-    month = Column(Integer, default=-1)
-    day_of_month = Column(Integer, nullable=False)
-    day_of_week = Column(Integer, nullable=False)
-    start_time = Column(Integer, nullable=False)
-    end_time = Column(Integer, nullable=False)
-    cycle_start_date = Column(BigInteger)
-    cycle_end_date = Column(BigInteger)
-
-
-class Reservations(Base):
-    __tablename__ = 'reservations'
-
-    reservations_id = Column(Integer, primary_key=True)
-    mentor_id = Column(Integer, nullable=False)
-    mentee_id = Column(Integer, nullable=False)
-    start_datetime = Column(BigInteger)
-    end_datetime = Column(BigInteger)
-    my_status = Column(types.Enum(BookingStatus), nullable=False, default=BookingStatus.PENDING)
-    status = Column(types.Enum(BookingStatus), nullable=False, default=BookingStatus.PENDING)
-    role = Column(types.Enum(RoleType))
-    message_from_others = Column(Text, default='')
+    def participant_query(self) -> Dict:
+        return {
+            'my_user_id': self.user_id,
+            'schedule_id': self.schedule_id,
+            'dtstart': self.dtstart,
+            'dtend': self.dtend,
+            'user_id': self.my_user_id,
+        }
 
 
-class UserDTO(BaseModel):
-    user_id: int
-    role: RoleType
+'''
+讓後端實現「先建立再取消」:
+    1. 新建一筆預約，寫上新的 reservation_id (reserve_id);
+        並在欄位"previous_reserve" 存儲前一次的[reserve_id]，以便找到同樣的討論串
+    2. 將舊的預約設為 cancel
+'''
 
 
-class ReservationDTO(BaseModel):
-    schedule_id: int
-    participant: UserDTO
-    my_status: BookingStatus
-    start_datetime: int
-    end_datetime: int
-    message: Optional[str]
+class ReservationDTO(UpdateReservationDTO):
+    # sender's previous reservation
+    previous_reserve: Optional[Dict[str, Any]] = None
+
+    def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        return Reservation(
+            id=id,
+            schedule_id=self.schedule_id,
+            dtstart=self.dtstart,
+            dtend=self.dtend,
+
+            my_user_id=self.my_user_id,
+            my_status=my_status,
+            # my_role=sender.role,
+
+            user_id=self.user_id,
+            status=BookingStatus.PENDING,  # participant's status, in ReservationVO
+            messages=self.messages,
+            previous_reserve=self.previous_reserve,  # sender's previous reservation
+        )
+
+    def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        return Reservation(
+            id=id,
+            schedule_id=self.schedule_id,
+            dtstart=self.dtstart,
+            dtend=self.dtend,
+
+            my_user_id=self.user_id,
+            my_status=BookingStatus.PENDING,  # participant's status, in ReservationVO
+            # my_role=participant.role,
+
+            user_id=self.my_user_id,
+            status=status,
+            messages=self.messages,
+        )
+
+    def sender_query(self) -> Dict:
+        return {
+            'my_user_id': self.my_user_id,
+            'schedule_id': self.schedule_id,
+            'dtstart': self.dtstart,
+            'dtend': self.dtend,
+            'user_id': self.user_id,
+        }
+
+    def previous_sender_query_by_id(self) -> Tuple[int, int]:
+        if not self.previous_reserve or not 'reserve_id' in self.previous_reserve:
+            raise ClientException(msg='previous reserve_id not found')
+
+        return (
+            self.previous_reserve.get('reserve_id'),
+            self.my_user_id,
+        )
+
+    @staticmethod
+    def overlapping_interval_check(reservations: List['ReservationDTO']):
+        reservations.sort(key=lambda reserve: reserve.dtend)
+        conflict_records: Dict = {}
+
+        conflicts = 0
+        prev_reserve = reservations[0]
+        for reserve in reservations[1:]:
+            if prev_reserve.dtend > reserve.dtstart:
+                conflicts += 1
+                conflict_records.update({
+                    conflicts: jsonable_encoder(prev_reserve)
+                })
+            else:
+                prev_reserve = reserve
+
+        if conflicts > 0:
+            be = 'is' if conflicts == 1 else 'are'
+            noun = 'conflict' if conflicts == 1 else 'conflicts'
+            raise ClientException(msg=f'There {be} {conflicts} {noun}',
+                                  data={'conflicts': conflict_records})
 
 
-class AsyncUserDataVO(UserDTO):
-    name: Optional[str]
-    avatar: Optional[str]
-    position: Optional[str]
-    company: Optional[str]
-    industry: Optional[ProfessionVO]
-    status: BookingStatus
+class RUserInfoVO(BaseModel):
+    user_id: Optional[int] = Field(None, example=0)
+    # role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
+    #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
+    status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
+                                  pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
+    name: Optional[str] = ''
+    avatar: Optional[str] = ''
+    job_title: Optional[str] = ''
+    years_of_experience: Optional[int] = 0
 
 
-class ReservationVO(BaseModel):
-    id: int
-    schedule_id: int
-    participant: AsyncUserDataVO
-    my_status: BookingStatus
-    start_datetime: int
-    end_datetime: int
-    message: Optional[str]
+class ReservationVO(ReservationDTO):
+    id: Optional[int] = None  # id: int 因為沒有經過 await db.refresh()，所以不會有 id
+    status: Optional[BookingStatus] = Field(
+        None, example=BookingStatus.PENDING)
+
+    class Config:
+        from_attributes = True
+
+    @staticmethod
+    def from_model(reservation: Reservation) -> 'ReservationVO':
+        # sender_role = reservation.my_role
+        # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
+        return ReservationVO(
+            id=reservation.id,
+            # schedule
+            schedule_id=reservation.schedule_id,
+            dtstart=reservation.dtstart,
+            dtend=reservation.dtend,
+            # mine
+            my_user_id=reservation.my_user_id,
+            my_status=reservation.my_status,
+            # antoher side
+            user_id=reservation.user_id,
+            status=reservation.status,
+            # extra info
+            previous_reserve=reservation.previous_reserve,
+            messages=reservation.messages
+        )
+
+    def sender_model(self, my_status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        return Reservation(
+            id=id,
+            schedule_id=self.schedule_id,
+            dtstart=self.dtstart,
+            dtend=self.dtend,
+
+            my_user_id=self.my_user_id,
+            my_status=my_status,
+            # my_role=sender.role,
+
+            user_id=self.user_id,
+            status=self.status,  # participant's status, in ReservationVO
+            messages=self.messages,
+            previous_reserve=self.previous_reserve,  # sender's previous reservation
+        )
+
+    def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        return Reservation(
+            id=id,
+            schedule_id=self.schedule_id,
+            dtstart=self.dtstart,
+            dtend=self.dtend,
+
+            my_user_id=self.user_id,
+            my_status=self.status,  # participant's status, in ReservationVO
+            # my_role=participant.role,
+
+            user_id=self.my_user_id,
+            status=status,
+            messages=self.messages,
+        )
 
 
-class ReservationListVO(BaseModel):
-    reservations: List[ReservationVO]
-    next_id: Optional[int]
+class ReservationMessageVO(BaseModel):
+    user_id: int = Field(None, example=0)
+    # role: Optional[str] = Field(..., example=RoleType.MENTEE.value,
+    #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
+    content: str = Field(None, example='')
 
-# class MentorScheduleDTO(BaseModel):
-#     mentor_schedules_id: int
-#     type: str
-#     year: int = -1
-#     month: int = -1
-#     day_of_month: int
-#     day_of_week: int
-#     start_time: int
-#     end_time: int
-#     cycle_start_date: Optional[int] = None
-#     cycle_end_date: Optional[int] = None
-#
-#
-# class ReservationDTO(BaseModel):
-#     reservations_id: int
-#     mentor_id: int
-#     mentee_id: int
-#     start_datetime: Optional[int] = None
-#     end_datetime: Optional[int] = None
-#     my_status: str = 'pending'
-#     status: str = 'pending'
-#     role: Optional[str] = None
-#     message_from_others: Optional[str] = ''
+
+class ReservationInfoVO(BaseModel):
+    id: Optional[int] = None
+    sender: RUserInfoVO    # sharding key: sneder.user_id
+    participant: RUserInfoVO
+    schedule_id: int = 0
+    dtstart: int = 0    # timestamp
+    dtend: int = 0      # timestamp
+    previous_reserve: Optional[Dict[str, Any]] = None
+    messages: Optional[List[ReservationMessageVO]] = []
+
+    @staticmethod
+    def from_sender_model(reservation: Reservation):
+        # sender_role = reservation.my_role
+        # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
+        return ReservationInfoVO(
+            id=reservation.id,
+            sender=RUserInfoVO(
+                user_id=reservation.my_user_id,
+                # role=sender_role,
+                status=reservation.my_status,
+            ),
+            participant=RUserInfoVO(
+                user_id=reservation.user_id,
+                # role=participant_role,
+                status=reservation.status,
+                name=reservation.name,
+                avatar=reservation.avatar,
+                job_title=reservation.job_title,
+                years_of_experience=reservation.years_of_experience,
+            ),
+            schedule_id=reservation.schedule_id,
+            dtstart=reservation.dtstart,
+            dtend=reservation.dtend,
+            previous_reserve=reservation.previous_reserve,
+            messages=reservation.messages
+        )
+
+
+class ReservationInfoListVO(BaseModel):
+    reservations: Optional[List[ReservationInfoVO]] = []
+    next_dtend: Optional[int] = 0

@@ -20,6 +20,11 @@ async def get_all_template(db: AsyncSession, stmt: Select) -> Optional[Any]:
     res: coroutine = query.scalars().all()
     return res
 
+async def fetch_all_template(db: AsyncSession, stmt: Select) -> Optional[Any]:
+    query = await db.execute(stmt)
+    res: coroutine = query.fetchall()
+    return res
+
 
 async def get_first_template(db: AsyncSession, stmt: Select) -> Optional[Any]:
     result = await db.execute(stmt)

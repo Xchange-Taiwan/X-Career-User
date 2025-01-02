@@ -85,19 +85,19 @@ class CannedMessage(Base):
 class Reservation(Base):
     __tablename__ = 'reservations'
     id = Column(Integer, primary_key=True)
-    user_id = Column(BigInteger, nullable=False)
-    mentor_schedules_id = Column(Integer, nullable=False)
-    start_datetime = Column(Integer)
-    end_datetime = Column(Integer)
+    schedule_id = Column(Integer, nullable=False)
+    dtstart = Column(Integer, nullable=False)
+    dtend = Column(Integer, nullable=False)
+    my_user_id = Column(BigInteger, nullable=True)  # nullable while updating
     my_status = Column(
-        ENUM(BookingStatus, name="my_status", create_type=False))
+        ENUM(BookingStatus, name='booking_status', create_type=False))
+    # my_role = Column( 
+    #     ENUM(RoleType, name='role_type', create_type=False))  # FIXME: deprecated
+    user_id = Column(BigInteger, nullable=True)     # nullable while updating
     status = Column(
-        ENUM(BookingStatus, name="status", create_type=False))
-    role = Column(
-        ENUM(RoleType, name="role_type", create_type=False))
-    message_from_others = Column(String, default='')
-    # profile = relationship("Profile", backref="reservations")
-    # mentor_schedule = relationship("MentorSchedule", backref="reservations")
+        ENUM(BookingStatus, name='booking_status', create_type=False))
+    messages = Column(JSONB, default=[])
+    previous_reserve = Column(JSONB, nullable=True) # nullable while updating
 
 
 class Interest(Base):
