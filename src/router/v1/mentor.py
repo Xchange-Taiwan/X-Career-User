@@ -23,7 +23,13 @@ from ...domain.user.model import (
 from ...domain.user.model.common_model import ProfessionListVO
 from ...domain.user.service.profession_service import ProfessionService
 from ...infra.databse import get_db, db_session
-from ...app._di.injection import get_mentor_service, get_experience_service, get_profession_service
+from ...app.mentor_profile.upsert import MentorProfile
+from ...app._di.injection import (
+    get_mentor_service, 
+    get_experience_service, 
+    get_profession_service,
+    get_mentor_profile_app,
+)
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -39,11 +45,11 @@ router = APIRouter(
 async def upsert_mentor_profile(
         db: AsyncSession = Depends(get_db),
         body: mentor.MentorProfileDTO = Body(...),
-        mentor_service: MentorService = Depends(get_mentor_service)
-
+        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
-    # TODO: implement
-    res: mentor.MentorProfileVO = await mentor_service.upsert_mentor_profile(db, body)
+    # TODO-EVENT: implement event
+    res: mentor.MentorProfileVO = \
+        await mentor_profile_app.upsert_mentor_profile(db, body)
     return res_success(data=jsonable_encoder(res))
 
 
@@ -79,12 +85,15 @@ async def upsert_experience(
         user_id: int = Path(...),
         experience_type: ExperienceCategory = Path(...),
         body: experience.ExperienceDTO = Body(...),
-        exp_service: ExperienceService = Depends(get_experience_service)
+        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
-    res: experience.ExperienceVO = await exp_service.upsert_exp(db=db,
-                                                                experience_dto=body,
-                                                                user_id=user_id,
-                                                                exp_cate=experience_type)
+    # TODO-EVENT: implement event
+    body.category = experience_type
+    res: experience.ExperienceVO = \
+        await mentor_profile_app.upsert_exp(db=db,
+                                            experience_dto=body,
+                                            user_id=user_id,
+                                            experience_type=experience_type)
     return res_success(data=jsonable_encoder(res))
 
 
@@ -95,11 +104,14 @@ async def delete_experience(
         user_id: int = Path(...),
         experience_id: int = Path(...),
         experience_type: ExperienceCategory = Path(...),
-        exp_service: ExperienceService = Depends(get_experience_service)
+        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
-    res: bool = await exp_service.delete_exp_by_user_and_exp_id(db, user_id, experience_id, experience_type)
-
-    return res_success(data=jsonable_encoder(res))
+    # TODO-EVENT: implement event
+    res: bool = await mentor_profile_app.delete_experience(db, 
+                                                           user_id, 
+                                                           experience_id,
+                                                           experience_type)
+    return res_success(data=res)
 
 
 @router.get('/{language}/expertises',
