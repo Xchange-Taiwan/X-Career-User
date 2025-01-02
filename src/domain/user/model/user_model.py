@@ -104,33 +104,33 @@ class ProfileVO(BaseModel):
         result = self.model_dump_json()
         return json.loads(result)
 
-    def from_dto(self):
-        return ProfileDTO(
-            user_id=self.user_id,
-            name=self.name,
-            avatar=self.avatar,
-            job_title=self.job_title,
-            company=self.company,
-            years_of_experience=self.years_of_experience,
-            region=self.region,
-            linkedin_profile=self.linkedin_profile,
-            interested_positions=self.i_to_subject_groups(self.interested_positions),
-            skills=self.i_to_subject_groups(self.skills),
-            topics=self.i_to_subject_groups(self.topics),
+    # def from_dto(self):
+    #     return ProfileDTO(
+    #         user_id=self.user_id,
+    #         name=self.name,
+    #         avatar=self.avatar,
+    #         job_title=self.job_title,
+    #         company=self.company,
+    #         years_of_experience=self.years_of_experience,
+    #         region=self.region,
+    #         linkedin_profile=self.linkedin_profile,
+    #         interested_positions=self.i_to_subject_groups(self.interested_positions),
+    #         skills=self.i_to_subject_groups(self.skills),
+    #         topics=self.i_to_subject_groups(self.topics),
 
-            # TODO: use 'industry' instead of ARRAY
-            industries=self.p_to_subject_groups(self.industries),
-            language=self.language,
-        )
+    #         # TODO: use 'industry' instead of ARRAY
+    #         industries=self.p_to_subject_groups(self.industries),
+    #         language=self.language,
+    #     )
 
-    def to_dto_json(self):
-        dto = self.from_dto()
-        dto_dict = jsonable_encoder(dto)
-        dto_dict.update({
-            'personal_statement': None,
-            'about': None,
-            'seniority_level': None,
-            'expertises': [],
-            'experiences': [],
-        })
-        return dto_dict
+    # def to_dto_json(self):
+    #     dto = self.from_dto()
+    #     dto_dict = jsonable_encoder(dto)
+    #     dto_dict.update({
+    #         'personal_statement': None,
+    #         'about': None,
+    #         'seniority_level': None,
+    #         'expertises': [],
+    #         'experiences': [],
+    #     })
+    #     return dto_dict

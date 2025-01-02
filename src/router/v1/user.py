@@ -3,7 +3,7 @@ import logging as log
 from fastapi import (
     APIRouter,
     Depends,
-    Path, Query, Body
+    Path, Query, Body, BackgroundTasks
 )
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,12 +49,15 @@ router = APIRouter(
 @router.put('/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
+        background_tasks: BackgroundTasks, 
         db: AsyncSession = Depends(db_session),
         body: user.ProfileDTO = Body(...),
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
     # TODO-EVENT: implement event
-    res: user.ProfileVO = await mentor_profile_app.upsert_profile(db, body)
+    res: user.ProfileVO = await mentor_profile_app.upsert_profile(
+        db, body, background_tasks
+    )
     return res_success(data=jsonable_encoder(res))
 
 
