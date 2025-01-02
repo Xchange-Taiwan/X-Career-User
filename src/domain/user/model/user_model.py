@@ -121,7 +121,7 @@ class ProfileVO(BaseModel):
     #         topics=self.i_to_subject_groups(self.topics),
 
     #         # TODO: use 'industry' instead of ARRAY
-    #         industry=self.industry.subject_group,
+    #         industry=getattr(self.industry, 'subject_group', None),
     #         language=self.language,
     #     )
 

@@ -93,7 +93,7 @@ class MentorProfileVO(ProfileVO):
             skills=self.i_to_subject_groups(self.skills),
             topics=self.i_to_subject_groups(self.topics),
             # TODO: use 'industry' instead of ARRAY
-            industry=self.industry.subject_group,
+            industry=getattr(self.industry, 'subject_group', None),
             language=self.language,
             personal_statement=self.personal_statement,
             about=self.about,

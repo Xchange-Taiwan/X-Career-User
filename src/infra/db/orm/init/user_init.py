@@ -31,7 +31,7 @@ class Profile(Base):
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
     topics = Column(JSONB)
-    industry = Column(JSONB)
+    industry = Column(String)
     expertises = Column(JSONB)
 
 
