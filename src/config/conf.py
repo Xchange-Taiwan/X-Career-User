@@ -24,3 +24,14 @@ DB_SCHEMA = os.getenv('DB_SCHEMA', 'x-career-dev')
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 
 SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api')
+# resource probe cycle secs
+PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
+
+# sqs/event bus conf
+MQ_CONNECT_TIMEOUT = int(os.getenv("MQ_CONNECT_TIMEOUT", 10))
+MQ_READ_TIMEOUT = int(os.getenv("MQ_READ_TIMEOUT", 10))
+MQ_MAX_ATTEMPTS = int(os.getenv("MQ_MAX_ATTEMPTS", 3))
+
+# sqs
+# for retry failed pub events
+SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL', 'https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/{QUEUE_NAME}')

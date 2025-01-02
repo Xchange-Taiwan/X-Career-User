@@ -17,6 +17,8 @@ from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
 from src.app.mentor_profile.upsert import MentorProfile
 from src.infra.cache.local_cache import _local_cache
+from src.infra.resource.manager import resource_manager
+from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.infra.client.async_service_api_adapter import _async_service_api_adapter
 
 
@@ -42,6 +44,11 @@ def get_profession_dao() -> ProfessionRepository:
 
 def get_file_dao() -> FileRepository:
     return FileRepository()
+
+
+def get_sqs_mq_adapter() -> SqsMqAdapter:
+    sqs_rsc = resource_manager.get('sqs_rsc')
+    return SqsMqAdapter(sqs_rsc=sqs_rsc)
 
 
 def get_interest_service(interest_repo: InterestRepository = Depends(get_interest_dao)) -> InterestService:
@@ -85,9 +92,11 @@ def get_file_service(file_repository: FileRepository = Depends(get_file_dao)):
 def get_mentor_profile_app(
         profile_service: ProfileService = Depends(get_profile_service),
         mentor_service: MentorService = Depends(get_mentor_service),
-        experience_service: ExperienceService = Depends(get_experience_service)
+        experience_service: ExperienceService = Depends(get_experience_service),
+        mq_adapter: SqsMqAdapter = Depends(get_sqs_mq_adapter)
 ):
     return MentorProfile(_async_service_api_adapter,
                         profile_service, 
                         mentor_service, 
-                        experience_service)
+                        experience_service,
+                        mq_adapter)

@@ -2,6 +2,7 @@ from typing import List
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.infra.template.service_api import IServiceApi
+from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.model import user_model as user
 from src.domain.mentor.service.mentor_service import MentorService
@@ -28,12 +29,14 @@ class MentorProfile:
                  service_api: IServiceApi,
                  profile_service: ProfileService,
                  mentor_service: MentorService,
-                 experience_service: ExperienceService
+                 experience_service: ExperienceService,
+                 mq_adapter: SqsMqAdapter,
                  ):
         self.service_api: IServiceApi = service_api
         self.profile_service: ProfileService = profile_service
         self.mentor_service: MentorService = mentor_service
         self.exp_service: ExperienceService = experience_service
+        self.mq_adapter: SqsMqAdapter = mq_adapter
 
     async def upsert_profile(self, db: AsyncSession, dto: user.ProfileDTO):
         res: user.ProfileVO = \
@@ -41,6 +44,7 @@ class MentorProfile:
         # 若為 onboarding 狀態，則需通知 Search Service
         if res.on_boarding:
             await self.service_api.post(POST_MENTOR_URL, res.to_dto_json())
+            # await self.mq_adapter.publish_message(res.to_dto_json())
         return res
 
     async def upsert_mentor_profile(self, db: AsyncSession,
@@ -50,6 +54,7 @@ class MentorProfile:
         # 若為 onboarding 狀態，則需通知 Search Service
         if res.on_boarding:
             await self.service_api.post(POST_MENTOR_URL, res.to_dto_json())
+            # await self.mq_adapter.publish_message(res.to_dto_json())
         return res
 
     async def upsert_exp(self, db,
@@ -70,6 +75,7 @@ class MentorProfile:
                 experiences=experiences
             )
             await self.service_api.post(POST_MENTOR_URL, mentor_profile.to_dto_json())
+            # await self.mq_adapter.publish_message(mentor_profile.to_dto_json())
         return res
 
     async def delete_experience(self, db,
@@ -90,5 +96,6 @@ class MentorProfile:
                 user_id=user_id,
                 experiences=experiences
             )
-            await self.service_api.post(POST_MENTOR_URL, mentor_profile.to_dto_json())
+            # await self.service_api.post(POST_MENTOR_URL, mentor_profile.to_dto_json())
+            await self.mq_adapter.publish_message(mentor_profile.to_dto_json())
         return res
