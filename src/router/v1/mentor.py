@@ -23,7 +23,7 @@ from ...domain.user.model import (
 from ...domain.user.model.common_model import ProfessionListVO
 from ...domain.user.service.profession_service import ProfessionService
 from ...infra.databse import get_db, db_session
-from ...infra.util.injection_util import get_mentor_service, get_experience_service, get_profession_service
+from ...app._di.injection import get_mentor_service, get_experience_service, get_profession_service
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -58,8 +58,8 @@ async def get_mentor_profile(
     # TODO: implement
     mentor_profile: MentorProfileVO = \
         await mentor_service.get_mentor_profile_by_id(db, user_id, language.value)
-
     return res_success(data=jsonable_encoder(mentor_profile))
+
 
 @router.get('/{user_id}/experiences',
             responses=idempotent_response('get_exp_by_user_id', experience.ExperienceListVO))
@@ -70,7 +70,6 @@ async def get_exp_by_user_id(
 ):
     res: experience.ExperienceListVO = await exp_service.get_exp_by_user_id(db, user_id)
     return res_success(data=jsonable_encoder(res))
-
 
 
 @router.put('/{user_id}/experiences/{experience_type}',
@@ -87,6 +86,7 @@ async def upsert_experience(
                                                                 user_id=user_id,
                                                                 exp_cate=experience_type)
     return res_success(data=jsonable_encoder(res))
+
 
 @router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
                responses=idempotent_response('delete_experience', bool))

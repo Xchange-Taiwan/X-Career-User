@@ -19,7 +19,7 @@ from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
 from ...infra.databse import get_db, db_session
-from ...infra.util.injection_util import get_interest_service, get_profession_service, get_profile_service
+from ...app._di.injection import get_interest_service, get_profession_service, get_profile_service
 
 log.basicConfig(filemode='w', level=log.INFO)
 
@@ -30,7 +30,7 @@ router = APIRouter(
 )
 
 
-@router.put('/{user_id}/profile',
+@router.put('/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
         db: AsyncSession = Depends(db_session),
