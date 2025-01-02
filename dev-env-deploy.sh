@@ -4,6 +4,7 @@ aws lambda update-function-configuration --function-name x-career-user-dev-app -
 STAGE=dev,
 TESTING=dev,
 XC_BUCKET=x-career-bff-dev-serverlessdeploymentbucket-zndkgowobwsz,
+XC_USER_BUCKET=x-career-user-dev-serverlessdeploymentbucket-bmz2uc2exezm,
 BATCH=10,
 SCHEDULE_YEAR=-1,
 SCHEDULE_MONTH=-1,

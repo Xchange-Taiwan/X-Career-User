@@ -34,3 +34,5 @@ venv
 !.env.example
 
 test2
+.DS_Store
+*.iml
