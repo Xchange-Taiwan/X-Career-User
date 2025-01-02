@@ -62,8 +62,3 @@ class SortingBy(Enum):
 class Sorting(Enum):
     ASC = 1
     DESC = -1
-
-
-class SchedulesType(Enum):
-    ALLOW = "ALLOW"
-    FORBIDDEN = "FORBIDDEN"

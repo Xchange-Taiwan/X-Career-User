@@ -88,22 +88,26 @@ CREATE TABLE IF NOT EXISTS professions (
     profession_metadata JSONB
 );
 
+
 CREATE TABLE IF NOT EXISTS mentor_schedules (
-    "id" SERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    "type" SCHEDULE_TYPE DEFAULT 'ALLOW',
-    "year" INT DEFAULT -1,
-    "month" INT DEFAULT -1,
-    day_of_month INT NOT NULL,
-    day_of_week INT NOT NULL,
-    start_time INT NOT NULL,
-    end_time INT NOT NULL,
-    cycle_start_date BIGINT,
-    cycle_end_date BIGINT
-    --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,    -- user ID, used to distinguish users
+    dt_type VARCHAR(20) NOT NULL CHECK (dt_type IN ('ALLOW', 'FORBIDDEN')), -- event type
+    dt_year INT NOT NULL,       -- dt_year of the event
+    dt_month INT NOT NULL,      -- dt_month of the event
+    dtstart BIGINT NOT NULL,    -- start timestamp of the event
+    dtend BIGINT NOT NULL,      -- end timestamp of the event
+    timezone VARCHAR(50) NOT NULL DEFAULT 'UTC', -- timezone, for example: 'America/New_York'
+    rrule TEXT,                 -- rule for repeating events, for example: 'FREQ=WEEKLY;COUNT=4'
+    exdate JSONB DEFAULT '[]'::jsonb,   -- list of excluded dates/timestamps (ISO format)
+    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
+    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
-CREATE INDEX mentor_schedule_index ON mentor_schedules("year", "month", day_of_month, day_of_week, start_time, end_time);
+CREATE INDEX idx_mentor_schedules_user_id ON mentor_schedules(user_id);
+CREATE INDEX idx_mentor_schedules_user_event_time ON mentor_schedules(user_id, dtstart, dtend);
+CREATE INDEX idx_montor_schedules_user_year_month ON mentor_schedules(user_id, dt_year, dt_month);
+
 
 CREATE TABLE IF NOT EXISTS canned_messages (
     "id" SERIAL PRIMARY KEY,
