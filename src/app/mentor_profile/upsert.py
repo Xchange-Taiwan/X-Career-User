@@ -49,7 +49,7 @@ class MentorProfile:
     ):
         res: user.ProfileVO = await self.profile_service.upsert_profile(db, dto)
         # 若為 onboarding 狀態，則需通知 Search Service
-        if res.on_boarding:
+        if res.onboarding:
             background_tasks.add_task(
                 self.notify_service.updated_user_profile, db=db, user_id=res.user_id
             )
@@ -66,7 +66,7 @@ class MentorProfile:
             db, profile_dto
         )
         # 若為 onboarding 狀態，則需通知 Search Service
-        if res.on_boarding:
+        if res.onboarding:
             background_tasks.add_task(
                 self.notify_service.updated_mentor_profile, mentor_profile=res
             )

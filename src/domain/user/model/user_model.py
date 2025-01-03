@@ -5,6 +5,7 @@ from fastapi.encoders import jsonable_encoder
 
 from pydantic import BaseModel
 from src.config.constant import InterestCategory
+from src.config.conf import DEFAULT_LANGUAGE
 from .common_model import (
     InterestListVO, ProfessionListVO, ProfessionVO,
 )
@@ -19,14 +20,14 @@ class ProfileDTO(BaseModel):
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     company: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
-    region: Optional[str] = ''
+    years_of_experience: Optional[str] = '0'
+    location: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
     interested_positions: Optional[List[Union[str]]] = []
     skills: Optional[List[Union[str]]] = []
     topics: Optional[List[Union[str]]] = []
     industry: Optional[str] = ''
-    language: Optional[str] = 'zh_TW'
+    language: Optional[str] = DEFAULT_LANGUAGE
     
     class Config:
         from_attributes = True # orm_mode = True
@@ -69,15 +70,15 @@ class ProfileVO(BaseModel):
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     company: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
-    region: Optional[str] = ''
+    years_of_experience: Optional[str] = '0'
+    location: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
     interested_positions: Optional[InterestListVO] = None
     skills: Optional[InterestListVO] = None
     topics: Optional[InterestListVO] = None
     industry: Optional[ProfessionVO] = None
-    on_boarding: Optional[bool] = False
-    language: Optional[str] = 'zh_TW'
+    onboarding: Optional[bool] = False
+    language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
     def of(model: ProfileDTO) -> 'ProfileVO':
@@ -88,7 +89,7 @@ class ProfileVO(BaseModel):
             job_title=model.job_title,
             company=model.company,
             years_of_experience=model.years_of_experience,
-            region=model.region,
+            location=model.location,
             linkedin_profile=model.linkedin_profile
         )
 
@@ -114,14 +115,14 @@ class ProfileVO(BaseModel):
     #         job_title=self.job_title,
     #         company=self.company,
     #         years_of_experience=self.years_of_experience,
-    #         region=self.region,
+    #         location=self.location,
     #         linkedin_profile=self.linkedin_profile,
     #         interested_positions=self.i_to_subject_groups(self.interested_positions),
     #         skills=self.i_to_subject_groups(self.skills),
     #         topics=self.i_to_subject_groups(self.topics),
 
     #         # TODO: use 'industry' instead of ARRAY
-    #         industry=self.industry.subject_group,
+    #         industry=getattr(self.industry, 'subject_group', None),
     #         language=self.language,
     #     )
 

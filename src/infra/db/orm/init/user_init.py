@@ -15,24 +15,24 @@ Base = declarative_base()
 class Profile(Base):
     __tablename__ = 'profiles'
     user_id = Column(BigInteger, primary_key=True)
-    name = Column(String, nullable=False)
-    avatar = Column(String, default='')
-    job_title = Column(String, default='')
-    linkedin_profile = Column(String, default='')
+    name = Column(String(255), nullable=False)
+    avatar = Column(String(255), default='')
+    location = Column(String(100), default='')
+    job_title = Column(String(255), default='')
+    linkedin_profile = Column(String(255), default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
-    company = Column(String, default='')
+    company = Column(String(255), default='')
     seniority_level = Column(
         ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
 
-    years_of_experience = Column(Integer, default=0)
-    region = Column(String, default='')
-    language = Column(String, default='')
+    years_of_experience = Column(String(100), default='0')
+    industry = Column(String(255))
     interested_positions = Column(JSONB)
     skills = Column(JSONB)
     topics = Column(JSONB)
-    industry = Column(JSONB)
     expertises = Column(JSONB)
+    language = Column(String(10), default='')
 
 
 class MentorExperience(Base):

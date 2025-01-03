@@ -4,12 +4,9 @@ import os
 BATCH = int(os.getenv('BATCH', 20))
 MAX_PERIOD_SECS = int(os.getenv('MAX_PERIOD_SECS', 86400 * 31))
 DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y%m%dT%H%M%S%z')
-
-
-BATCH = int(os.getenv('BATCH', 20))
-MAX_PERIOD_SECS = int(os.getenv('MAX_PERIOD_SECS', 86400 * 31))
-DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y%m%dT%H%M%S%z')
 DEFAULT_LANGUAGE = os.getenv('DEFAULT_LANGUAGE', 'zh_TW')
+# resource probe cycle secs
+PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
 
 # default cache ttl: 5 minutes
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
@@ -21,14 +18,10 @@ DB_USER = os.getenv('DB_USER', 'user_connection')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'pg_user_password')
 DB_NAME = os.getenv('DB_NAME', 'x-career')
 DB_SCHEMA = os.getenv('DB_SCHEMA', 'Xchange_local')
-
 RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE')
-# default cache ttl: 5 minutes
-CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 
 SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api')
-# resource probe cycle secs
-PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
+
 
 # sqs/event bus conf
 MQ_CONNECT_TIMEOUT = int(os.getenv("MQ_CONNECT_TIMEOUT", 10))
