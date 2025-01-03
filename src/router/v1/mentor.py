@@ -3,8 +3,13 @@ import logging as log
 from typing import List
 
 from fastapi import (
-    APIRouter,
-    Path, Body, Depends, Query
+    APIRouter, 
+    Header, 
+    Path,
+    Query,
+    Body, 
+    Depends, 
+    BackgroundTasks,
 )
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,13 +52,14 @@ router = APIRouter(
 @router.put('/mentor_profile',
             responses=idempotent_response('upsert_mentor_profile', mentor.MentorProfileVO))
 async def upsert_mentor_profile(
+        background_tasks: BackgroundTasks, 
         db: AsyncSession = Depends(get_db),
         body: mentor.MentorProfileDTO = Body(...),
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
     # TODO-EVENT: implement event
     res: mentor.MentorProfileVO = \
-        await mentor_profile_app.upsert_mentor_profile(db, body)
+        await mentor_profile_app.upsert_mentor_profile(db, body, background_tasks)
     return res_success(data=jsonable_encoder(res))
 
 
@@ -85,7 +91,9 @@ async def get_exp_by_user_id(
 @router.put('/{user_id}/experiences/{experience_type}',
             responses=idempotent_response('upsert_exp', experience.ExperienceVO))
 async def upsert_experience(
+        background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),
+        onboarding: bool = Header(None),
         user_id: int = Path(...),
         experience_type: ExperienceCategory = Path(...),
         body: experience.ExperienceDTO = Body(...),
@@ -95,26 +103,29 @@ async def upsert_experience(
     body.category = experience_type
     res: experience.ExperienceVO = \
         await mentor_profile_app.upsert_exp(db=db,
-                                            experience_dto=body,
                                             user_id=user_id,
-                                            experience_type=experience_type)
+                                            experience_dto=body,
+                                            background_tasks=background_tasks,
+                                            onboarding=onboarding,)
     return res_success(data=jsonable_encoder(res))
 
 
 @router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
                responses=idempotent_response('delete_experience', bool))
 async def delete_experience(
+        background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),
+        onboarding: bool = Header(None),
         user_id: int = Path(...),
-        experience_id: int = Path(...),
-        experience_type: ExperienceCategory = Path(...),
+        data: experience.ExperienceDTO = Depends(delete_experience_check),
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
 ):
     # TODO-EVENT: implement event
-    res: bool = await mentor_profile_app.delete_experience(db, 
-                                                           user_id, 
-                                                           experience_id,
-                                                           experience_type)
+    res: bool = await mentor_profile_app.delete_experience(db,
+                                                           user_id=user_id,
+                                                           experience_dto=data,
+                                                           background_tasks=background_tasks,
+                                                           onboarding=onboarding,)
     return res_success(data=res)
 
 

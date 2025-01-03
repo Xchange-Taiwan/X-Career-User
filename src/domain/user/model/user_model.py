@@ -5,7 +5,10 @@ from fastapi.encoders import jsonable_encoder
 
 from pydantic import BaseModel
 from src.config.constant import InterestCategory
-from .common_model import InterestListVO, ProfessionListVO
+from src.config.conf import DEFAULT_LANGUAGE
+from .common_model import (
+    InterestListVO, ProfessionListVO, ProfessionVO,
+)
 import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
@@ -17,14 +20,14 @@ class ProfileDTO(BaseModel):
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     company: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
-    region: Optional[str] = ''
+    years_of_experience: Optional[str] = '0'
+    location: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
     interested_positions: Optional[List[Union[str]]] = []
     skills: Optional[List[Union[str]]] = []
     topics: Optional[List[Union[str]]] = []
-    industries: Optional[List[Union[str]]] = []
-    language: Optional[str] = 'zh_TW'
+    industry: Optional[str] = ''
+    language: Optional[str] = DEFAULT_LANGUAGE
     
     class Config:
         from_attributes = True # orm_mode = True
@@ -67,15 +70,15 @@ class ProfileVO(BaseModel):
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     company: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
-    region: Optional[str] = ''
+    years_of_experience: Optional[str] = '0'
+    location: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
     interested_positions: Optional[InterestListVO] = None
     skills: Optional[InterestListVO] = None
     topics: Optional[InterestListVO] = None
-    industries: Optional[ProfessionListVO] = None
-    on_boarding: Optional[bool] = False
-    language: Optional[str] = 'zh_TW'
+    industry: Optional[ProfessionVO] = None
+    onboarding: Optional[bool] = False
+    language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
     def of(model: ProfileDTO) -> 'ProfileVO':
@@ -86,7 +89,7 @@ class ProfileVO(BaseModel):
             job_title=model.job_title,
             company=model.company,
             years_of_experience=model.years_of_experience,
-            region=model.region,
+            location=model.location,
             linkedin_profile=model.linkedin_profile
         )
 
@@ -104,33 +107,33 @@ class ProfileVO(BaseModel):
         result = self.model_dump_json()
         return json.loads(result)
 
-    def from_dto(self):
-        return ProfileDTO(
-            user_id=self.user_id,
-            name=self.name,
-            avatar=self.avatar,
-            job_title=self.job_title,
-            company=self.company,
-            years_of_experience=self.years_of_experience,
-            region=self.region,
-            linkedin_profile=self.linkedin_profile,
-            interested_positions=self.i_to_subject_groups(self.interested_positions),
-            skills=self.i_to_subject_groups(self.skills),
-            topics=self.i_to_subject_groups(self.topics),
+    # def from_dto(self):
+    #     return ProfileDTO(
+    #         user_id=self.user_id,
+    #         name=self.name,
+    #         avatar=self.avatar,
+    #         job_title=self.job_title,
+    #         company=self.company,
+    #         years_of_experience=self.years_of_experience,
+    #         location=self.location,
+    #         linkedin_profile=self.linkedin_profile,
+    #         interested_positions=self.i_to_subject_groups(self.interested_positions),
+    #         skills=self.i_to_subject_groups(self.skills),
+    #         topics=self.i_to_subject_groups(self.topics),
 
-            # TODO: use 'industry' instead of ARRAY
-            industries=self.p_to_subject_groups(self.industries),
-            language=self.language,
-        )
+    #         # TODO: use 'industry' instead of ARRAY
+    #         industry=getattr(self.industry, 'subject_group', None),
+    #         language=self.language,
+    #     )
 
-    def to_dto_json(self):
-        dto = self.from_dto()
-        dto_dict = jsonable_encoder(dto)
-        dto_dict.update({
-            'personal_statement': None,
-            'about': None,
-            'seniority_level': None,
-            'expertises': [],
-            'experiences': [],
-        })
-        return dto_dict
+    # def to_dto_json(self):
+    #     dto = self.from_dto()
+    #     dto_dict = jsonable_encoder(dto)
+    #     dto_dict.update({
+    #         'personal_statement': None,
+    #         'about': None,
+    #         'seniority_level': None,
+    #         'expertises': [],
+    #         'experiences': [],
+    #     })
+    #     return dto_dict

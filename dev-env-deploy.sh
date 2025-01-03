@@ -1,6 +1,7 @@
 #!/bin/bash
 
 aws lambda update-function-configuration --function-name x-career-user-dev-app --environment --profile xc "Variables={
+DEFAULT_LANGUAGE=zh_TW,
 STAGE=dev,
 TESTING=dev,
 XC_BUCKET=x-career-bff-dev-serverlessdeploymentbucket-zndkgowobwsz,

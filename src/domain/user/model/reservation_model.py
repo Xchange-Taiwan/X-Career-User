@@ -136,7 +136,7 @@ class RUserInfoVO(BaseModel):
     name: Optional[str] = ''
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
+    years_of_experience: Optional[str] = '0'
 
 
 class ReservationVO(ReservationDTO):

@@ -43,24 +43,24 @@ CREATE TABLE IF NOT EXISTS accounts (
     user_id BIGINT UNIQUE DEFAULT nextval('user_id_seq'),       -- Integer is fine for user IDs, keeping the UNIQUE constraint
     account_type ACCOUNT_TYPE,          -- Assuming 'account_type' is an ENUM or a custom type
     is_active BOOLEAN DEFAULT TRUE,     -- BOOLEAN is a more appropriate type for true/false values
-    region VARCHAR(50),                 -- Regions are typically short strings, so VARCHAR(50) should suffice
+    "region" VARCHAR(50),                 -- Regions are typically short strings, so VARCHAR(50) should suffice
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
 CREATE TABLE IF NOT EXISTS profiles (
     user_id BIGSERIAL PRIMARY KEY,
-    "name" TEXT NOT NULL,
-    avatar TEXT DEFAULT '',
-    "region" TEXT DEFAULT '',
-    "job_title" TEXT DEFAULT '',
-    linkedin_profile TEXT DEFAULT '',
+    "name" VARCHAR(255) NOT NULL,
+    avatar VARCHAR(255) DEFAULT '',
+    "location" VARCHAR(100) DEFAULT '',
+    "job_title" VARCHAR(255) DEFAULT '',
+    linkedin_profile VARCHAR(255) DEFAULT '',
     personal_statement TEXT DEFAULT '',
     about TEXT DEFAULT '',
-    company TEXT DEFAULT '',
+    company VARCHAR(255) DEFAULT '',
     seniority_level SENIORITY_LEVEL,
-    years_of_experience INT DEFAULT 0,
-	industries JSONB,
+    years_of_experience VARCHAR(100) DEFAULT 0,
+	industry VARCHAR(255),
     interested_positions JSONB,
     skills JSONB,
     topics JSONB,
