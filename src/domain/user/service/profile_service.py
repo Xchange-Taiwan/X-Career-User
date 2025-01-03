@@ -67,19 +67,6 @@ class ProfileService:
             # get all interests: interest_positions, skills, topics
             all_interests: Dict = await self.get_all_interests(db, dto, language)
 
-            # interested_positions_task: Coroutine[Any, Any, InterestListVO] = \
-            #     (self.__interest_service.
-            #         get_by_subject_group_and_language(db, dto.interested_positions, language))
-            # skills_task: Coroutine[Any, Any, InterestListVO] = \
-            #     (self.__interest_service.
-            #         get_by_subject_group_and_language(db, dto.skills, language))
-            # topics_task: Coroutine[Any, Any, InterestListVO] = \
-            #     (self.__interest_service.
-            #         get_by_subject_group_and_language(db, dto.topics, language))
-            # # NOTE: "await asyncio.gather() 不如預期的那樣運作"
-            # industries, interested_positions, skills, topics = await asyncio.gather(
-            #     industry_task, interested_positions_task, skills_task, topics_task
-            # )
 
             res: ProfileVO = ProfileVO.of(dto)
             if len(industries.professions) > 0:
@@ -115,20 +102,6 @@ class ProfileService:
 
             # get all interests: interest_positions, skills, topics
             all_interests: Dict = await self.get_all_interests(db, dto, language)
-
-            # interested_positions_task: Coroutine[Any, Any, InterestListVO] = \
-            #     (self.__interest_service.
-            #             get_by_subject_group_and_language(db, dto.interested_positions, language=language))
-            # skills_task: Coroutine[Any, Any, InterestListVO] = \
-            #     (self.__interest_service.
-            #             get_by_subject_group_and_language(db, dto.skills, language=language))
-            # topics_task: Coroutine[Any, Any, InterestListVO] = \
-            #     (self.__interest_service.
-            #             get_by_subject_group_and_language(db, dto.topics, language=language))
-            # # NOTE: "await asyncio.gather() 不如預期的那樣運作"
-            # industries, interested_positions, skills, topics, expertises = await asyncio.gather(
-            #     industry_task, interested_positions_task, skills_task, topics_task, expertises_task
-            # )
 
             res: MentorProfileVO = MentorProfileVO.of(dto)
             res.expertises = expertises

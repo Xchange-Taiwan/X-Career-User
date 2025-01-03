@@ -19,8 +19,8 @@ class ProfileDTO(BaseModel):
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     company: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
-    region: Optional[str] = ''
+    years_of_experience: Optional[str] = '0'
+    location: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
     interested_positions: Optional[List[Union[str]]] = []
     skills: Optional[List[Union[str]]] = []
@@ -69,8 +69,8 @@ class ProfileVO(BaseModel):
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
     company: Optional[str] = ''
-    years_of_experience: Optional[int] = 0
-    region: Optional[str] = ''
+    years_of_experience: Optional[str] = '0'
+    location: Optional[str] = ''
     linkedin_profile: Optional[str] = ''
     interested_positions: Optional[InterestListVO] = None
     skills: Optional[InterestListVO] = None
@@ -88,7 +88,7 @@ class ProfileVO(BaseModel):
             job_title=model.job_title,
             company=model.company,
             years_of_experience=model.years_of_experience,
-            region=model.region,
+            location=model.location,
             linkedin_profile=model.linkedin_profile
         )
 
@@ -114,7 +114,7 @@ class ProfileVO(BaseModel):
     #         job_title=self.job_title,
     #         company=self.company,
     #         years_of_experience=self.years_of_experience,
-    #         region=self.region,
+    #         location=self.location,
     #         linkedin_profile=self.linkedin_profile,
     #         interested_positions=self.i_to_subject_groups(self.interested_positions),
     #         skills=self.i_to_subject_groups(self.skills),
