@@ -2,7 +2,7 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing_extensions import Type
 
-from src.config.conf import CACHE_TTL
+from src.config.conf import CACHE_TTL, DEFAULT_LANGUAGE
 from src.config.constant import InterestCategory, Language
 from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.user.model.common_model import InterestListVO, InterestVO
@@ -72,7 +72,7 @@ class InterestService:
 
     async def get_by_subject_group_and_language(self, db: AsyncSession,
                                                 subject_groups: List[str],
-                                                language: str = 'zh_TW') -> Optional[InterestListVO]:
+                                                language: str = DEFAULT_LANGUAGE) -> Optional[InterestListVO]:
         try:
             cache_key = self.cache_key('all_interest', language)
             cache_res: InterestListVO = await self.cache.get(cache_key)

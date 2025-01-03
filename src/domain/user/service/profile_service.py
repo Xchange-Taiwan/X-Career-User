@@ -62,7 +62,7 @@ class ProfileService:
                 await self.__exp_service.get_exp_list_by_user_id(db, user_id)
             industries: ProfessionListVO = \
                 await (self.__profession_service.
-                    get_industries_by_subjects(db, [dto.industry], dto.language))
+                    get_industries_by_subjects(db, [dto.industry], language))
 
             # get all interests: interest_positions, skills, topics
             all_interests: Dict = await self.get_all_interests(db, dto, language)

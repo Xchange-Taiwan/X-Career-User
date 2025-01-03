@@ -5,6 +5,7 @@ from fastapi.encoders import jsonable_encoder
 
 from pydantic import BaseModel
 from src.config.constant import InterestCategory
+from src.config.conf import DEFAULT_LANGUAGE
 from .common_model import (
     InterestListVO, ProfessionListVO, ProfessionVO,
 )
@@ -26,7 +27,7 @@ class ProfileDTO(BaseModel):
     skills: Optional[List[Union[str]]] = []
     topics: Optional[List[Union[str]]] = []
     industry: Optional[str] = ''
-    language: Optional[str] = 'zh_TW'
+    language: Optional[str] = DEFAULT_LANGUAGE
     
     class Config:
         from_attributes = True # orm_mode = True
@@ -77,7 +78,7 @@ class ProfileVO(BaseModel):
     topics: Optional[InterestListVO] = None
     industry: Optional[ProfessionVO] = None
     on_boarding: Optional[bool] = False
-    language: Optional[str] = 'zh_TW'
+    language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
     def of(model: ProfileDTO) -> 'ProfileVO':
