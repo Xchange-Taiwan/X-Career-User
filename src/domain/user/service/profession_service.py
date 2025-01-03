@@ -48,41 +48,33 @@ class ProfessionService:
     async def get_industries_by_subjects(
         self, db: AsyncSession, subject_groups: List[str], language: str
     ) -> ProfessionListVO:
-        try:
-            cache_key = self.cache_key(ProfessionCategory.INDUSTRY, language)
-            cache_res: ProfessionListVO = await self.cache.get(cache_key)
-            if cache_res:
-                return self.filter_by_subject_group(cache_res, subject_groups)
-
-            res: List[Type[Profession]] = (
-                await self.__profession_repository.get_all_profession(
-                    db, ProfessionCategory.INDUSTRY, language
-                )
-            )
-            professions: List[ProfessionVO] = [
-                self.convert_to_profession_vo(p) for p in res
-            ]
-            all_list_vo: ProfessionListVO = ProfessionListVO(professions=professions)
-            # set local cache
-            await self.cache.set(cache_key, all_list_vo, CACHE_TTL)
-            sub_list_vo = self.filter_by_subject_group(all_list_vo, subject_groups)
-            return sub_list_vo
-        except Exception as e:
-            log.error("get_industries_by_subjects error: %s", str(e))
-            raise_http_exception(e, msg="Internal Server Error")
+        return await self.get_professions_by_subject_groups(
+            db, ProfessionCategory.INDUSTRY, subject_groups, language
+        )
 
     async def get_expertise_by_subjects(
         self, db: AsyncSession, subject_groups: List[str], language: str
     ) -> ProfessionListVO:
+        return await self.get_professions_by_subject_groups(
+            db, ProfessionCategory.EXPERTISE, subject_groups, language
+        )
+
+    async def get_professions_by_subject_groups(
+        self,
+        db: AsyncSession,
+        profession_category: ProfessionCategory,
+        subject_groups: List[str],
+        language: str,
+    ) -> ProfessionListVO:
         try:
-            cache_key = self.cache_key(ProfessionCategory.EXPERTISE, language)
+            cache_key = self.cache_key(profession_category, language)
             cache_res: ProfessionListVO = await self.cache.get(cache_key)
             if cache_res:
                 return self.filter_by_subject_group(cache_res, subject_groups)
 
             res: List[Type[Profession]] = (
                 await self.__profession_repository.get_all_profession(
-                    db, ProfessionCategory.EXPERTISE, language
+                    db, profession_category, language
                 )
             )
             professions: List[ProfessionVO] = [
@@ -94,7 +86,11 @@ class ProfessionService:
             sub_list_vo = self.filter_by_subject_group(all_list_vo, subject_groups)
             return sub_list_vo
         except Exception as e:
-            log.error("get_expertise_by_subjects error: %s", str(e))
+            log.error(
+                "[%s] get_professions_by_subject_groups error: %s",
+                profession_category.value,
+                str(e),
+            )
             raise_http_exception(e, msg="Internal Server Error")
 
     def convert_to_profession_vo(
