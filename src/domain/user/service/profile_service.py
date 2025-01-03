@@ -77,7 +77,7 @@ class ProfileService:
                 res.topics  = InterestListVO(interests=all_interests[InterestCategory.TOPIC.value])
 
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
-            res.on_boarding = ExperienceService.is_onboarding(experiences)
+            res.onboarding = ExperienceService.is_onboarding(experiences)
 
             return res
         except Exception as e:
@@ -116,7 +116,7 @@ class ProfileService:
             # mentor experiences
             res.experiences = experiences
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
-            res.on_boarding = ExperienceService.is_onboarding(experiences)
+            res.onboarding = ExperienceService.is_onboarding(experiences)
 
             return res
 

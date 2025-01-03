@@ -77,7 +77,7 @@ class ProfileVO(BaseModel):
     skills: Optional[InterestListVO] = None
     topics: Optional[InterestListVO] = None
     industry: Optional[ProfessionVO] = None
-    on_boarding: Optional[bool] = False
+    onboarding: Optional[bool] = False
     language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
