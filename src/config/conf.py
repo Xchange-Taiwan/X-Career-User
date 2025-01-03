@@ -9,7 +9,7 @@ DEFAULT_LANGUAGE = os.getenv('DEFAULT_LANGUAGE', 'zh_TW')
 PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
 
 # default cache ttl: 5 minutes
-CACHE_TTL = int(os.getenv('CACHE_TTL', 10))
+CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 
 # db config params
 DB_HOST = os.getenv('DB_HOST', 'localhost')
