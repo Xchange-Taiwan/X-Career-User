@@ -56,6 +56,7 @@ class ProfileService:
             raise NotFoundException(msg="no data found")
         if language is None:
             language = dto.language
+
         try:
             user_id = dto.user_id
             experiences: List[ExperienceVO] = \
@@ -78,8 +79,9 @@ class ProfileService:
 
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
             res.onboarding = ExperienceService.is_onboarding(experiences)
-
+            res.language = language
             return res
+
         except Exception as e:
             log.error(f'convert_to_profile_vo error: %s', str(e))
             err_msg = getattr(e, 'msg', 'profile response failed')
@@ -91,6 +93,7 @@ class ProfileService:
             raise NotFoundException(msg="no data found")
         if language is None:
             language = dto.language
+
         try:
             user_id = dto.user_id
             experiences: List[ExperienceVO] = \
@@ -117,7 +120,7 @@ class ProfileService:
             res.experiences = experiences
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
             res.onboarding = ExperienceService.is_onboarding(experiences)
-
+            res.language = language
             return res
 
         except Exception as e:

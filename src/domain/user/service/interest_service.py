@@ -35,10 +35,10 @@ class InterestService:
                                                                                             language.value)
 
             interests: List[InterestVO] = [self.convert_to_interest_vo(interest) for interest in query]
-            res = InterestListVO(interests=interests)
+            all_list_vo = InterestListVO(interests=interests)
             # set local cache
-            await self.cache.set(cache_key, res, CACHE_TTL)
-            return res
+            await self.cache.set(cache_key, all_list_vo, CACHE_TTL)
+            return all_list_vo
         except Exception as e:
             log.error('get_all_interest error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
@@ -81,11 +81,11 @@ class InterestService:
 
             interest_list: Optional[List[Type[Interest]]] =\
                 await self.__interest_repository.get_interests_by_lang(db, language)
-            res: InterestListVO = self.convert_to_interest_list_vo(interest_list)
+            all_list_vo: InterestListVO = self.convert_to_interest_list_vo(interest_list)
             # set local cache
-            await self.cache.set(cache_key, res, CACHE_TTL)
-            res = self.filter_by_subject_group(res, subject_groups)
-            return res
+            await self.cache.set(cache_key, all_list_vo, CACHE_TTL)
+            sub_list_vo = self.filter_by_subject_group(all_list_vo, subject_groups)
+            return sub_list_vo
         except Exception as e:
             log.error('get_by_subject_group_and_language error: %s', str(e))
             raise_http_exception(e, msg='Internal Server Error')
@@ -106,6 +106,10 @@ class InterestService:
 
     def filter_by_subject_group(self, list_vo: InterestListVO, 
                                 subject_groups: List[str]) -> InterestListVO:
-        list_vo.interests = [i for i in list_vo.interests 
+        sub_list_vo = InterestListVO(
+            interests=[],
+            language=list_vo.language,
+        )
+        sub_list_vo.interests = [i for i in list_vo.interests 
                              if i.subject_group in subject_groups]
-        return list_vo
+        return sub_list_vo
