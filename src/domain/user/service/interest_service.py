@@ -120,13 +120,13 @@ class InterestService:
         return res
 
     def convert_to_interest_list_vo(
-        self, dto: Optional[List[Type[Interest]]]
+        self, interest_list: Optional[List[Type[Interest]]]
     ) -> InterestListVO:
 
         res = InterestListVO(
             interests=(
-                [self.convert_to_interest_vo(dto) for dto in dto]
-                if dto is not None
+                [self.convert_to_interest_vo(interest) for interest in interest_list]
+                if interest_list is not None
                 else []
             )
         )

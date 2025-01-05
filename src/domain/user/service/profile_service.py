@@ -17,6 +17,7 @@ from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.model.common_model import (
     ProfessionVO,
+    InterestVO,
     InterestListVO,
     ProfessionListVO,
 )
@@ -87,7 +88,9 @@ class ProfileService:
             )
 
             # get all interests: interest_positions, skills, topics
-            all_interests: Dict = await self.get_all_interests(db, dto, language)
+            all_interests: Optional[Dict[str, List[InterestVO]]] = (
+                await self.get_all_interests(db, dto, language)
+            )
 
             res: ProfileVO = ProfileVO.of(dto)
             if len(industries.professions) > 0:
@@ -103,8 +106,10 @@ class ProfileService:
                     interests=all_interests[InterestCategory.TOPIC.value]
                 )
 
+            # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
+            res.onboarding = ExperienceService.is_onboarding(all_interests)
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
-            res.onboarding = ExperienceService.is_onboarding(experiences)
+            res.is_mentor = ExperienceService.is_mentor(experiences)
             res.language = language
             return res
 
@@ -138,7 +143,9 @@ class ProfileService:
             )
 
             # get all interests: interest_positions, skills, topics
-            all_interests: Dict = await self.get_all_interests(db, dto, language)
+            all_interests: Optional[Dict[str, List[InterestVO]]] = (
+                await self.get_all_interests(db, dto, language)
+            )
 
             res: MentorProfileVO = MentorProfileVO.of(dto)
             res.expertises = expertises
@@ -158,8 +165,10 @@ class ProfileService:
 
             # mentor experiences
             res.experiences = experiences
+            # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
+            res.onboarding = ExperienceService.is_onboarding(all_interests)
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
-            res.onboarding = ExperienceService.is_onboarding(experiences)
+            res.is_mentor = ExperienceService.is_mentor(experiences)
             res.language = language
             return res
 
@@ -170,7 +179,7 @@ class ProfileService:
 
     async def get_all_interests(
         self, db: AsyncSession, dto: ProfileDTO, language: str
-    ) -> Dict:
+    ) -> Optional[Dict[str, List[InterestVO]]]:
         all_subject_groups: List = dto.get_all_subject_groups()
         # don't need to query DB if there is no subject group
         if not all_subject_groups:
@@ -182,7 +191,7 @@ class ProfileService:
             )
         )
         # don't need to convert if there is no interest
-        if not all_interests:
+        if not all_interests.interests:
             return None
 
         return dto.get_all_interest_details(all_interests)

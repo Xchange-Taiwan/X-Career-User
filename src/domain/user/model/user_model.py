@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from src.config.constant import InterestCategory
 from src.config.conf import DEFAULT_LANGUAGE
 from .common_model import (
-    InterestListVO, ProfessionListVO, ProfessionVO,
+    InterestVO, InterestListVO, ProfessionListVO, ProfessionVO,
 )
 import logging as log
 
@@ -42,7 +42,7 @@ class ProfileDTO(BaseModel):
             all += self.topics
         return all
 
-    def get_all_interest_details(self, all_interests: InterestListVO) -> Dict:
+    def get_all_interest_details(self, all_interests: InterestListVO) -> Dict[str, List[InterestVO]]:
         interest_set: Set = { subject_group for subject_group in self.interested_positions }
         skill_set: Set = { subject_group for subject_group in self.skills }
         topic_set: Set = { subject_group for subject_group in self.topics }
@@ -78,6 +78,7 @@ class ProfileVO(BaseModel):
     topics: Optional[InterestListVO] = None
     industry: Optional[ProfessionVO] = None
     onboarding: Optional[bool] = False
+    is_mentor: Optional[bool] = False
     language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
