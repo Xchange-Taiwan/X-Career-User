@@ -17,5 +17,5 @@ DB_NAME=postgres,
 DB_SCHEMA=x-career-dev,
 CACHE_TTL=300,
 SEARCH_SERVICE_URL=https://76mn9fb6r8.execute-api.ap-northeast-1.amazonaws.com/dev/search-service/api,
-SQS_QUEUE_URL=https://sqs.ap-northeast-1.amazonaws.com/991681440467/USER_DUPLICATE_QUEUE,
+SQS_QUEUE_URL=https://sqs.ap-northeast-1.amazonaws.com/991681440467/X_CAREER_USER_DUPLICATE_QUEUE.fifo,
 }"

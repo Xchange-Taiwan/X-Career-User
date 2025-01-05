@@ -43,7 +43,10 @@ class NotifyService:
                     db, user_id, DEFAULT_LANGUAGE
                 )
             )
-            await self.mq_adapter.publish_message(mentor_profile.to_dto_json())
+            await self.mq_adapter.publish_message(
+                mentor_profile.to_dto_json(),
+                group_id=str(user_id / 1000),
+            )
 
         except Exception as e:
             log.error(f"Failed to notify search service: {str(e)}")
@@ -51,7 +54,11 @@ class NotifyService:
     # 更新 user 的 profile
     async def updated_mentor_profile(self, mentor_profile: mentor.MentorProfileVO):
         try:
-            await self.mq_adapter.publish_message(mentor_profile.to_dto_json())
+            user_id = mentor_profile.user_id
+            await self.mq_adapter.publish_message(
+                mentor_profile.to_dto_json(),
+                group_id=str(user_id / 1000),
+            )
         except Exception as e:
             log.error(f"Failed to notify search service: {str(e)}")
 
@@ -72,7 +79,10 @@ class NotifyService:
                 mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
                     user_id=user_id, experiences=experiences
                 )
-                await self.mq_adapter.publish_message(mentor_profile.to_dto_json())
+                await self.mq_adapter.publish_message(
+                    mentor_profile.to_dto_json(),
+                    group_id=str(user_id / 1000),
+                )
 
         except Exception as e:
             log.error(f"Failed to notify search service: {str(e)}")
