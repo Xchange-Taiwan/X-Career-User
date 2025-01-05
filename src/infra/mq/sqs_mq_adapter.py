@@ -15,13 +15,14 @@ class SqsMqAdapter:
         self.sqs_rsc = sqs_rsc
         self.sqs_label = self.sqs_rsc.label
 
-    async def publish_message(self, event: Dict):
+    async def publish_message(self, event: Dict, group_id: str):
         try:
             sqs_client = await self.sqs_rsc.access()
             message_body = json.dumps(event)
             response = await sqs_client.send_message(
                 QueueUrl=self.sqs_rsc.queue_url,
-                MessageBody=message_body
+                MessageBody=message_body,
+                MessageGroupId=group_id,
             )
 
             log.info('SQS[%s]: msg is sent. msg ID: %s',

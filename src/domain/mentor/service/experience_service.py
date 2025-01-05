@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.constant import ExperienceCategory
 from src.config.exception import NotFoundException, ServerException
 from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO, ExperienceListVO
+from src.domain.user.model.common_model import InterestVO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
 import logging as log
@@ -69,13 +70,26 @@ class ExperienceService:
             raise ServerException(msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}')
 
 
+    # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
+    @staticmethod
+    def is_onboarding(all_interests: Optional[Dict[str, List[InterestVO]]]) -> bool:
+        if all_interests is None:
+            return False
+        
+        for interest_category, interests in all_interests.items():
+            if len(interests) == 0:
+                log.info(f'{interest_category} is not filled')
+                return False
+        
+        return True
+
     # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
     @staticmethod
-    def is_onboarding(experiences: List[ExperienceVO]) -> bool:
+    def is_mentor(experiences: List[ExperienceVO]) -> bool:
         exp_categories = set()
         for exp in experiences:
             if exp.category:
                 exp_categories.add(exp.category)
 
-        # 如果有填寫至少 2 種經驗類別, 則視為已完成 Onboarding
+        # 如果有填寫至少 2 種經驗類別, 則視為已完成 Mentor
         return (len(exp_categories) == len(ExperienceCategory) - 1)
