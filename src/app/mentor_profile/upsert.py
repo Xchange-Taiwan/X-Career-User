@@ -48,11 +48,12 @@ class MentorProfile:
         self, db: AsyncSession, dto: user.ProfileDTO, background_tasks: BackgroundTasks
     ):
         res: user.ProfileVO = await self.profile_service.upsert_profile(db, dto)
-        # 若為 onboarding 狀態，則需通知 Search Service
-        if res.onboarding:
-            background_tasks.add_task(
-                self.notify_service.updated_user_profile, db=db, user_id=res.user_id
-            )
+        # 若為 is_mentor 狀態，則需通知 Search Service
+        if res.is_mentor:
+            # NOTE: 試試不用 background_tasks
+            # background_tasks.add_task(
+            await self.notify_service.updated_user_profile(db=db, user_id=res.user_id)
+            # )
         return res
 
 
@@ -65,8 +66,8 @@ class MentorProfile:
         res: mentor.MentorProfileVO = await self.mentor_service.upsert_mentor_profile(
             db, profile_dto
         )
-        # 若為 onboarding 狀態，則需通知 Search Service
-        if res.onboarding:
+        # 若為 is_mentor 狀態，則需通知 Search Service
+        if res.is_mentor:
             background_tasks.add_task(
                 self.notify_service.updated_mentor_profile, mentor_profile=res
             )
@@ -78,7 +79,7 @@ class MentorProfile:
         user_id: int,
         experience_dto: exp.ExperienceDTO,
         background_tasks: BackgroundTasks,
-        onboarding: Optional[bool] = None,
+        is_mentor: Optional[bool] = None,
     ):
         res: exp.ExperienceVO = await self.exp_service.upsert_exp(
             db=db,
@@ -89,7 +90,7 @@ class MentorProfile:
             self.notify_service.notify_updated_user_experiences,
             db=db, 
             user_id=user_id, 
-            onboarding=onboarding,
+            is_mentor=is_mentor,
         )
         return res
 
@@ -99,7 +100,7 @@ class MentorProfile:
         user_id: int,
         experience_dto: exp.ExperienceDTO,
         background_tasks: BackgroundTasks,
-        onboarding: Optional[bool] = None,
+        is_mentor: Optional[bool] = None,
     ):
         res: bool = await self.exp_service.delete_exp_by_user_and_exp_id(
             db=db, user_id=user_id, experience_dto=experience_dto,
@@ -108,6 +109,6 @@ class MentorProfile:
             self.notify_service.notify_updated_user_experiences,
             db=db, 
             user_id=user_id, 
-            onboarding=onboarding,
+            is_mentor=is_mentor,
         )
         return res

@@ -93,7 +93,7 @@ async def get_exp_by_user_id(
 async def upsert_experience(
         background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),
-        onboarding: bool = Header(None),
+        is_mentor: bool = Header(None),
         user_id: int = Path(...),
         experience_type: ExperienceCategory = Path(...),
         body: experience.ExperienceDTO = Body(...),
@@ -106,7 +106,7 @@ async def upsert_experience(
                                             user_id=user_id,
                                             experience_dto=body,
                                             background_tasks=background_tasks,
-                                            onboarding=onboarding,)
+                                            is_mentor=is_mentor,)
     return res_success(data=jsonable_encoder(res))
 
 
@@ -115,7 +115,7 @@ async def upsert_experience(
 async def delete_experience(
         background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),
-        onboarding: bool = Header(None),
+        is_mentor: bool = Header(None),
         user_id: int = Path(...),
         data: experience.ExperienceDTO = Depends(delete_experience_check),
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
@@ -125,7 +125,7 @@ async def delete_experience(
                                                            user_id=user_id,
                                                            experience_dto=data,
                                                            background_tasks=background_tasks,
-                                                           onboarding=onboarding,)
+                                                           is_mentor=is_mentor,)
     return res_success(data=res)
 
 

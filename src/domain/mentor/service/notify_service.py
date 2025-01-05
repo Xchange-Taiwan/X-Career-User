@@ -57,18 +57,18 @@ class NotifyService:
 
     # 更新 user 的 experience
     async def notify_updated_user_experiences(
-        self, db: AsyncSession, user_id: str, onboarding: Optional[bool] = None
+        self, db: AsyncSession, user_id: str, is_mentor: Optional[bool] = None
     ):
         try:
-            if onboarding is False:
+            if is_mentor is False:
                 experiences = []
             else:
                 experiences: List[exp.ExperienceVO] = (
                     await self.exp_service.get_exp_list_by_user_id(db, user_id)
                 )
 
-            # 若為 onboarding 狀態，則需通知 Search Service
-            if ExperienceService.is_onboarding(experiences):
+            # 若為 is_mentor 狀態，則需通知 Search Service
+            if ExperienceService.is_mentor(experiences):
                 mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
                     user_id=user_id, experiences=experiences
                 )

@@ -52,5 +52,5 @@ class ResourceManager:
 
 session = aioboto3.Session()
 resource_manager = ResourceManager({
-    'sqs_rsc': SQSResourceHandler(session=session, label='failed pub events DLQ', queue_url=SQS_QUEUE_URL),
+    'sqs_rsc': SQSResourceHandler(session=session, label='publish mentor update to search service', queue_url=SQS_QUEUE_URL),
 })
