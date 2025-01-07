@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.constant import ExperienceCategory
 from src.config.exception import NotFoundException, ServerException
 from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO, ExperienceListVO
+from src.domain.user.model.user_model import ProfileDTO
 from src.domain.user.model.common_model import InterestVO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
@@ -72,7 +73,17 @@ class ExperienceService:
 
     # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
     @staticmethod
-    def is_onboarding(all_interests: Optional[Dict[str, List[InterestVO]]]) -> bool:
+    def is_onboarding(dto: ProfileDTO, all_interests: Optional[Dict[str, List[InterestVO]]]) -> bool:
+        basic_info_filled = ''
+        if dto.name:
+            basic_info_filled += dto.name
+        if dto.location:
+            basic_info_filled += dto.location
+        if dto.years_of_experience:
+            basic_info_filled += dto.years_of_experience
+        if len(basic_info_filled) < 5:
+            return False
+
         if all_interests is None:
             return False
         

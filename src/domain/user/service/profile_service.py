@@ -107,7 +107,7 @@ class ProfileService:
                 )
 
             # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
-            res.onboarding = ExperienceService.is_onboarding(all_interests)
+            res.onboarding = ExperienceService.is_onboarding(dto, all_interests)
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
             res.is_mentor = ExperienceService.is_mentor(experiences)
             res.language = language
@@ -166,7 +166,7 @@ class ProfileService:
             # mentor experiences
             res.experiences = experiences
             # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
-            res.onboarding = ExperienceService.is_onboarding(all_interests)
+            res.onboarding = ExperienceService.is_onboarding(dto, all_interests)
             # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
             res.is_mentor = ExperienceService.is_mentor(experiences)
             res.language = language
