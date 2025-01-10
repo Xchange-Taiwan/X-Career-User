@@ -3,7 +3,7 @@ from typing import List, Type, Optional, Dict
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.conf import CACHE_TTL
+from src.config.conf import CACHE_TTL, DEFAULT_LANGUAGE
 from src.config.constant import ProfessionCategory, Language
 from src.config.exception import raise_http_exception
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
@@ -67,6 +67,11 @@ class ProfessionService:
         language: str,
     ) -> ProfessionListVO:
         try:
+            if subject_groups is None:
+                return ProfessionListVO(professions=[])
+            if language is None:
+                language = DEFAULT_LANGUAGE
+
             cache_key = self.cache_key(profession_category, language)
             cache_res: ProfessionListVO = await self.cache.get(cache_key)
             if cache_res:
