@@ -54,7 +54,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     avatar VARCHAR(255) DEFAULT '',
     "location" VARCHAR(100) DEFAULT '',
     "job_title" VARCHAR(255) DEFAULT '',
-    linkedin_profile VARCHAR(255) DEFAULT '',
     personal_statement TEXT DEFAULT '',
     about TEXT DEFAULT '',
     company VARCHAR(255) DEFAULT '',
@@ -65,6 +64,9 @@ CREATE TABLE IF NOT EXISTS profiles (
     skills JSONB,
     topics JSONB,
     expertises JSONB,
+    personal_links JSONB,
+    education JSONB,
+    work_experience JSONB,
     "language" VARCHAR(10)
 );
 
