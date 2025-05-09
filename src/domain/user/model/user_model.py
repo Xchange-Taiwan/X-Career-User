@@ -27,9 +27,9 @@ class ProfileDTO(BaseModel):
     topics: Optional[List[Union[str]]] = []
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
-    personal_links = Optional[List[Union[str]]] = []
-    education = Optional[List[Union[str]]] = []
-    work_experience = Optional[List[Union[str]]] = []
+    personal_links = Optional[List[Union[Dict]]] = []
+    education = Optional[List[Union[Dict]]] = []
+    work_experience = Optional[List[Union[Dict]]] = []
     
     class Config:
         from_attributes = True # orm_mode = True
@@ -80,9 +80,9 @@ class ProfileVO(BaseModel):
     industry: Optional[ProfessionVO] = None
     onboarding: Optional[bool] = False
     is_mentor: Optional[bool] = False
-    personal_links = Optional[List[Union[str]]] = []
-    education = Optional[List[Union[str]]] = []
-    work_experience = Optional[List[Union[str]]] = []
+    personal_links = Optional[List[Union[Dict]]] = []
+    education = Optional[List[Union[Dict]]] = []
+    work_experience = Optional[List[Union[Dict]]] = []
     language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
