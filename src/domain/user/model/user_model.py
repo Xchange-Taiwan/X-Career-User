@@ -22,12 +22,14 @@ class ProfileDTO(BaseModel):
     company: Optional[str] = ''
     years_of_experience: Optional[str] = '0'
     location: Optional[str] = ''
-    linkedin_profile: Optional[str] = ''
     interested_positions: Optional[List[Union[str]]] = []
     skills: Optional[List[Union[str]]] = []
     topics: Optional[List[Union[str]]] = []
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
+    personal_links = Optional[List[Union[Dict]]] = []
+    education = Optional[List[Union[Dict]]] = []
+    work_experience = Optional[List[Union[Dict]]] = []
     
     class Config:
         from_attributes = True # orm_mode = True
@@ -72,13 +74,15 @@ class ProfileVO(BaseModel):
     company: Optional[str] = ''
     years_of_experience: Optional[str] = '0'
     location: Optional[str] = ''
-    linkedin_profile: Optional[str] = ''
     interested_positions: Optional[InterestListVO] = None
     skills: Optional[InterestListVO] = None
     topics: Optional[InterestListVO] = None
     industry: Optional[ProfessionVO] = None
     onboarding: Optional[bool] = False
     is_mentor: Optional[bool] = False
+    personal_links = Optional[List[Union[Dict]]] = []
+    education = Optional[List[Union[Dict]]] = []
+    work_experience = Optional[List[Union[Dict]]] = []
     language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
@@ -91,7 +95,10 @@ class ProfileVO(BaseModel):
             company=model.company,
             years_of_experience=model.years_of_experience,
             location=model.location,
-            linkedin_profile=model.linkedin_profile
+            personal_links=model.personal_links,
+            education=model.education,
+            work_experience=model.work_experience,
+            
         )
 
     def i_to_subject_groups(self, interest_list: InterestListVO):

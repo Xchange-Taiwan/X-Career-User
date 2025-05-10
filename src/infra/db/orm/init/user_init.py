@@ -19,7 +19,6 @@ class Profile(Base):
     avatar = Column(String(255), default='')
     location = Column(String(100), default='')
     job_title = Column(String(255), default='')
-    linkedin_profile = Column(String(255), default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
     company = Column(String(255), default='')
@@ -32,6 +31,9 @@ class Profile(Base):
     skills = Column(JSONB)
     topics = Column(JSONB)
     expertises = Column(JSONB)
+    personal_links = Column(JSONB)
+    education = Column(JSONB)
+    work_experience = Column(JSONB)
     language = Column(String(10), default='')
 
 

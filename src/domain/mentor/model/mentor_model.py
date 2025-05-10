@@ -72,11 +72,13 @@ class MentorProfileVO(ProfileVO):
             job_title=mentor_profile_dto.job_title,
             company=mentor_profile_dto.company,
             years_of_experience=mentor_profile_dto.years_of_experience,
-            linkedin_profile=mentor_profile_dto.linkedin_profile,
             language=mentor_profile_dto.language,
             personal_statement=mentor_profile_dto.personal_statement,
             about=mentor_profile_dto.about,
-            seniority_level=mentor_profile_dto.seniority_level
+            seniority_level=mentor_profile_dto.seniority_level,
+            personal_links=mentor_profile_dto.personal_links,
+            education = mentor_profile_dto.education,
+            work_experience = mentor_profile_dto.work_experience,
         )
 
     def from_dto(self):
@@ -88,7 +90,6 @@ class MentorProfileVO(ProfileVO):
             company=self.company,
             years_of_experience=self.years_of_experience,
             location=self.location,
-            linkedin_profile=self.linkedin_profile,
             interested_positions=self.i_to_subject_groups(self.interested_positions),
             skills=self.i_to_subject_groups(self.skills),
             topics=self.i_to_subject_groups(self.topics),
@@ -99,6 +100,9 @@ class MentorProfileVO(ProfileVO):
             about=self.about,
             seniority_level=self.seniority_level,
             expertises=self.p_to_subject_groups(self.expertises),
+            personal_links=self.personal_links,
+            education = self.education,
+            work_experience = self.work_experience,
         )
 
     def to_dto_json(self):
