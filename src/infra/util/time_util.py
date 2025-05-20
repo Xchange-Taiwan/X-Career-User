@@ -1,8 +1,9 @@
-from typing import List, Dict, Optional
-from icalendar import Calendar, Event
-import recurring_ical_events
-from datetime import datetime
 import time
+from datetime import datetime
+from typing import Optional
+
+import recurring_ical_events
+from icalendar import Calendar, Event
 
 
 def shift_decimal(number, places):

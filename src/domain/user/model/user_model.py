@@ -1,15 +1,14 @@
 import json
-from enum import Enum
-from typing import List, Optional, Union, Dict, Set
-from fastapi.encoders import jsonable_encoder
+import logging as log
 
-from pydantic import BaseModel
-from src.config.constant import InterestCategory
+from typing import List, Optional, Union, Dict, Set
+
+from pydantic import BaseModel, Field
 from src.config.conf import DEFAULT_LANGUAGE
+from src.config.constant import InterestCategory
 from .common_model import (
     InterestVO, InterestListVO, ProfessionListVO, ProfessionVO,
 )
-import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
 
