@@ -60,7 +60,7 @@ class MentorProfileVO(ProfileVO):
     about: Optional[str] = ""
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
     expertises: Optional[ProfessionListVO] = None
-    experiences: Optional[List[ExperienceVO]] = []
+    experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -76,9 +76,6 @@ class MentorProfileVO(ProfileVO):
             personal_statement=mentor_profile_dto.personal_statement,
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level,
-            personal_links=mentor_profile_dto.personal_links,
-            education = mentor_profile_dto.education,
-            work_experience = mentor_profile_dto.work_experience,
         )
 
     def from_dto(self):
