@@ -26,8 +26,9 @@ class ExperienceVO(BaseModel):
     mentor_experiences_metadata: Dict = {}
     order: int = 0
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
     def to_json(self):
         result = self.model_dump_json()

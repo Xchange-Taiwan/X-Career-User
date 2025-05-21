@@ -1,17 +1,17 @@
 import json
-from enum import Enum
-from typing import List, Optional, Union, Dict, Set
-from fastapi.encoders import jsonable_encoder
+import logging as log
 
-from pydantic import BaseModel
-from src.config.constant import InterestCategory
+from typing import List, Optional, Union, Dict, Set
+
+from pydantic import BaseModel, Field
 from src.config.conf import DEFAULT_LANGUAGE
+from src.config.constant import InterestCategory
 from .common_model import (
     InterestVO, InterestListVO, ProfessionListVO, ProfessionVO,
 )
-import logging as log
 
 log.basicConfig(filemode='w', level=log.INFO)
+
 
 
 class ProfileDTO(BaseModel):
@@ -22,17 +22,15 @@ class ProfileDTO(BaseModel):
     company: Optional[str] = ''
     years_of_experience: Optional[str] = '0'
     location: Optional[str] = ''
-    interested_positions: Optional[List[Union[str]]] = []
-    skills: Optional[List[Union[str]]] = []
-    topics: Optional[List[Union[str]]] = []
+    interested_positions: Optional[List[str]] = Field(default_factory=list)
+    skills: Optional[List[str]] = Field(default_factory=list)
+    topics: Optional[List[str]] = Field(default_factory=list)
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
-    personal_links = Optional[List[Union[Dict]]] = []
-    education = Optional[List[Union[Dict]]] = []
-    work_experience = Optional[List[Union[Dict]]] = []
-    
-    class Config:
-        from_attributes = True # orm_mode = True
+
+    model_config = {
+        "from_attributes": True
+    }
 
     def get_all_subject_groups(self) -> List[str]:
         all = []
@@ -80,9 +78,6 @@ class ProfileVO(BaseModel):
     industry: Optional[ProfessionVO] = None
     onboarding: Optional[bool] = False
     is_mentor: Optional[bool] = False
-    personal_links = Optional[List[Union[Dict]]] = []
-    education = Optional[List[Union[Dict]]] = []
-    work_experience = Optional[List[Union[Dict]]] = []
     language: Optional[str] = DEFAULT_LANGUAGE
 
     @staticmethod
@@ -95,10 +90,6 @@ class ProfileVO(BaseModel):
             company=model.company,
             years_of_experience=model.years_of_experience,
             location=model.location,
-            personal_links=model.personal_links,
-            education=model.education,
-            work_experience=model.work_experience,
-            
         )
 
     def i_to_subject_groups(self, interest_list: InterestListVO):
