@@ -121,7 +121,8 @@ class ProfessionService:
         self, list_vo: ProfessionListVO, subject_groups: List[str]
     ) -> ProfessionListVO:
         sub_list_vo = ProfessionListVO(professions=[])
-        sub_list_vo.professions = [
-            p for p in list_vo.professions if p.subject_group in subject_groups
-        ]
+        if (subject_groups is not None): # subject group can be none
+            sub_list_vo.professions = [
+                p for p in list_vo.professions if p.subject_group in subject_groups
+            ]
         return sub_list_vo

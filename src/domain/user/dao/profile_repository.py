@@ -17,7 +17,7 @@ class ProfileRepository:
         query: Optional[Profile] = await get_first_template(db, stmt)
         if query is None:
             raise NotFoundException(msg=f"No such user with id: {user_id}")
-        return ProfileDTO.from_orm(query)
+        return ProfileDTO.model_validate(query)
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileDTO:
         if (dto is None) or (dto.user_id is None):
@@ -29,7 +29,7 @@ class ProfileRepository:
 
         await db.commit()
         await db.refresh(model)
-        return ProfileDTO.from_orm(model)
+        return ProfileDTO.model_validate(model)
 
     async def delete_profile(self, db: AsyncSession, user_id: str) -> None:
         stmt: Select = select(Profile).filter(Profile.user_id == user_id)

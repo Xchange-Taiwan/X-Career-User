@@ -22,7 +22,7 @@ class ExperienceService:
             mentor_exp: List[MentorExperience] = await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
             if not mentor_exp:
                 return []
-            return [ExperienceVO.from_orm(exp) for exp in mentor_exp]
+            return [ExperienceVO.model_validate(exp) for exp in mentor_exp]
         except Exception as e:
             log.error(f'get_exp_list_by_user_id error: %s', str(e))
             raise ServerException(msg='get experience list response failed')
