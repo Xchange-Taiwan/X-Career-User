@@ -12,12 +12,12 @@ PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 
 # db config params
-DB_HOST = os.getenv('DB_HOST', 'x-career-db-test.cu7knbzuvltn.ap-northeast-1.rds.amazonaws.com')
+DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
-DB_USER = os.getenv('DB_USER', 'postgres')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'postgres')
-DB_NAME = os.getenv('DB_NAME', 'postgres')
-DB_SCHEMA = os.getenv('DB_SCHEMA', 'x-career-dev')
+DB_USER = os.getenv('DB_USER', 'user_connection')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'pg_user_password')
+DB_NAME = os.getenv('DB_NAME', 'x-career')
+DB_SCHEMA = os.getenv('DB_SCHEMA', 'Xchange_local')
 RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE')
 
 SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api')
