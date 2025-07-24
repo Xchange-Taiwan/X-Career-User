@@ -92,4 +92,4 @@ class ExperienceService:
                 exp_categories.add(exp.category)
 
         # 如果有填寫至少 2 種經驗類別, 則視為已完成 Mentor
-        return (len(exp_categories) >= 2
+        return (len(exp_categories) >= 2)
