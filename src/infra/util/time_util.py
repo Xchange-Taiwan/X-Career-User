@@ -54,7 +54,7 @@ def create_calendar_with_rrule(event_title: str,
     event.add('dtstart', start_date)  # start time
     event.add('dtend', end_date)  # end time
     if rrule:
-        rrule_dict = get_rrule_dict(rrule, dt_format)
+        rrule_dict = get_rrule_dict(rrule, dt_format) # 合法的 rrule_dict
         event.add('rrule', rrule_dict)
     cal.add_component(event)
     return cal
