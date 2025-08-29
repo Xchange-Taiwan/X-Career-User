@@ -130,6 +130,8 @@ async def new_booking(
 ):
     body.my_user_id = user_id
     body.my_status = BookingStatus.ACCEPT
+    # NOTE: 目前預約都是由 mentee 發起
+    body.my_role = RoleType.MENTEE
     res = await booking_service.create(db, body)
     return res_success(data=jsonable_encoder(res))
 

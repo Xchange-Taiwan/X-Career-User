@@ -14,7 +14,7 @@ PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 
 # db config params
-DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_HOST = os.getenv('DB_HOST', 'x-career-db-test.cu7knbzuvltn.ap-northeast-1.rds.amazonaws.com')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_USER = os.getenv('DB_USER', 'postgres')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'postgres')
