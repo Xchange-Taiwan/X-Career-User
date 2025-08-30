@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     dtend BIGINT NOT NULL,
     my_user_id BIGINT NOT NULL,    -- sharding key: my_user_id
     my_status BOOKING_STATUS NOT NULL,
-    -- my_role ROLE_TYPE NOT NULL,  # FIXME: deprecated
+    my_role ROLE_TYPE NULL,
     user_id BIGINT NOT NULL,
     "status" BOOKING_STATUS NOT NULL,
     "messages" JSONB DEFAULT '[]'::jsonb,

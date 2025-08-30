@@ -9,7 +9,8 @@ from .experience_model import ExperienceVO
 from ....config.conf import *
 from ....config.constant import *
 from ....config.exception import ClientException, UnprocessableClientException
-from ....infra.util.time_util import (
+from src.infra.db.orm.init.user_init import MentorSchedule
+from src.infra.util.time_util import (
     create_calendar_with_rrule,
     rrule_events,
 )
@@ -121,16 +122,34 @@ class TimeSlotDTO(BaseModel):
     dt_month: Optional[int] = Field(default=None, example=6)
     dtstart: int = Field(..., example=1717203600)
     dtend: int = Field(..., example=1717207200)
-    timezone: str = Field(default='UTC', example='UTC')
     rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
-    exdate: List[Optional[int]] = Field(
-        default=[], example=[1718413200, 1719622800])
+    timezone: str = Field(default='UTC', example='UTC')
+    exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
 
     class Config:
         from_attributes = True  # orm_mode = True
         # json_encoders = {
         #     datetime: lambda v: v.strftime(DATETIME_FORMAT)
         # }
+    
+    @staticmethod
+    def convert_schedule_to_dto(schedule: MentorSchedule) -> 'TimeSlotDTO':
+        """
+        轉換 SQLAlchemy Schedule 模型為 TimeSlotDTO，避免 greenlet 問題
+        """
+        schedule_dict = {
+            'id': schedule.id,
+            'user_id': schedule.user_id,
+            'dt_type': schedule.dt_type,
+            'dt_year': schedule.dt_year,
+            'dt_month': schedule.dt_month,
+            'dtstart': schedule.dtstart,
+            'dtend': schedule.dtend,
+            'rrule': schedule.rrule,
+            'timezone': schedule.timezone,
+            'exdate': schedule.exdate or []
+        }
+        return TimeSlotDTO(**schedule_dict)
 
     def hash(self):
         srt_timestamp = int(self.dtstart)
@@ -156,18 +175,25 @@ class TimeSlotDTO(BaseModel):
             self.dtstart = int(self.dtstart)
         if isinstance(self.dtend, float):
             self.dtend = int(self.dtend)
-        self.exdate = [int(ex) if isinstance(ex, float) else ex for ex in self.exdate]
+        # self.exdate = [int(ex) if isinstance(ex, float) else ex for ex in self.exdate]
         return self.model_dump()
 
 
 class MentorScheduleDTO(BaseModel):
-    until: int = Field(default=None, example=1735689600)
+    until: int = Field(default=32503651200, example=1735689600)
     timeslots: List[TimeSlotDTO] = Field(default=[])
 
     def min_dtstart_to_max_dtend(self) -> Tuple[int, int]:
+        if not self.timeslots:
+            raise ValueError("No timeslots provided")
+        
         min_dtstart = 9999999999
         for timeslot in self.timeslots:
             min_dtstart = min(min_dtstart, timeslot.dtstart)
+        
+        if self.until is None:
+            raise ValueError("until field is required but not provided")
+            
         return (min_dtstart, self.until)
 
 
@@ -176,8 +202,16 @@ class MentorScheduleDTO(BaseModel):
     def opverlapping_interval_check(cls, timeslots: List[TimeSlotDTO], UNTIL_TIMESTAMP: int):
         UNTIL_END_DATE = datetime.fromtimestamp(UNTIL_TIMESTAMP)
         timeslots = cls.sort_with_rrule(timeslots, UNTIL_END_DATE)
+        
+        # 如果展開後少於2個時間段，無需進行重疊檢查
         if len(timeslots) < 2:
-            raise UnprocessableClientException(msg='Parse iCalendar rrule error')
+            # 檢查是否是 rrule 展開失敗導致的問題
+            has_rrule = any(timeslot.rrule for timeslot in timeslots if hasattr(timeslot, 'rrule') and timeslot.rrule)
+            if has_rrule and len(timeslots) == 0:
+                # 原本有 rrule 但展開後沒有任何時間段，可能是解析錯誤
+                raise UnprocessableClientException(msg='Failed to expand recurring events from rrule')
+            # 否則，少於2個時間段是正常情況，無需檢查重疊，直接返回
+            return
 
         first_timeslot = timeslots[0]
         last_timeslot = timeslots[len(timeslots) - 1]
