@@ -15,8 +15,8 @@ log.basicConfig(filemode='w', level=log.INFO)
 
 
 class ReservationQueryDTO(BaseModel):
-    state: str = Field(None, example=ReservationListState.UPCOMING.value,
-                       pattern=f'^({ReservationListState.UPCOMING.value}|{ReservationListState.PENDING.value}|{ReservationListState.HISTORY.value})$')
+    state: str = Field(None, example=ReservationListState.MENTOR_UPCOMING.value,
+                       pattern=f'^({ReservationListState.MENTOR_UPCOMING.value}|{ReservationListState.MENTEE_UPCOMING.value}|{ReservationListState.MENTOR_PENDING.value}|{ReservationListState.MENTEE_PENDING.value}|{ReservationListState.HISTORY.value})$')
     batch: int = Field(..., example=BATCH, ge=1)
     next_dtend: Optional[int] = Field(None, example=1735398000)
 
@@ -25,6 +25,8 @@ class UpdateReservationDTO(BaseModel):
     my_user_id: int = 0
     my_status: Optional[BookingStatus] = Field(
         None, example=BookingStatus.PENDING)
+    my_role: Optional[RoleType] = Field(
+        None, example=RoleType.MENTEE)
     user_id: int = 0
     schedule_id: int = 0
     dtstart: int = 0    # timestamp
@@ -50,6 +52,8 @@ class UpdateReservationDTO(BaseModel):
 
 
 class ReservationDTO(UpdateReservationDTO):
+    my_role: Optional[RoleType] = Field(
+        RoleType.MENTEE, example=RoleType.MENTEE)
     # sender's previous reservation
     previous_reserve: Optional[Dict[str, Any]] = None
 
@@ -62,7 +66,7 @@ class ReservationDTO(UpdateReservationDTO):
 
             my_user_id=self.my_user_id,
             my_status=my_status,
-            # my_role=sender.role,
+            my_role=self.my_role,
 
             user_id=self.user_id,
             status=BookingStatus.PENDING,  # participant's status, in ReservationVO
@@ -71,6 +75,13 @@ class ReservationDTO(UpdateReservationDTO):
         )
 
     def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        # 确保 my_role 不为 None
+        if not self.my_role:
+            raise ClientException(msg='my_role is required')
+        
+        # 根据发送者的角色确定参与者的角色
+        participant_role = RoleType.MENTOR if self.my_role == RoleType.MENTEE else RoleType.MENTEE
+        
         return Reservation(
             id=id,
             schedule_id=self.schedule_id,
@@ -79,7 +90,7 @@ class ReservationDTO(UpdateReservationDTO):
 
             my_user_id=self.user_id,
             my_status=BookingStatus.PENDING,  # participant's status, in ReservationVO
-            # my_role=participant.role,
+            my_role=participant_role,
 
             user_id=self.my_user_id,
             status=status,
@@ -129,8 +140,8 @@ class ReservationDTO(UpdateReservationDTO):
 
 class RUserInfoVO(BaseModel):
     user_id: Optional[int] = Field(None, example=0)
-    # role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
-    #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
+    role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
+                         pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
     status: Optional[str] = Field(None, example=BookingStatus.PENDING.value,
                                   pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
     name: Optional[str] = ''
@@ -149,8 +160,6 @@ class ReservationVO(ReservationDTO):
 
     @staticmethod
     def from_model(reservation: Reservation) -> 'ReservationVO':
-        # sender_role = reservation.my_role
-        # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
         return ReservationVO(
             id=reservation.id,
             # schedule
@@ -160,6 +169,7 @@ class ReservationVO(ReservationDTO):
             # mine
             my_user_id=reservation.my_user_id,
             my_status=reservation.my_status,
+            my_role=reservation.my_role,
             # antoher side
             user_id=reservation.user_id,
             status=reservation.status,
@@ -177,7 +187,7 @@ class ReservationVO(ReservationDTO):
 
             my_user_id=self.my_user_id,
             my_status=my_status,
-            # my_role=sender.role,
+            my_role=self.my_role,
 
             user_id=self.user_id,
             status=self.status,  # participant's status, in ReservationVO
@@ -186,6 +196,9 @@ class ReservationVO(ReservationDTO):
         )
 
     def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
+        # 根据发送者的角色确定参与者的角色
+        participant_role = RoleType.MENTOR if self.my_role == RoleType.MENTEE else RoleType.MENTEE
+        
         return Reservation(
             id=id,
             schedule_id=self.schedule_id,
@@ -194,7 +207,7 @@ class ReservationVO(ReservationDTO):
 
             my_user_id=self.user_id,
             my_status=self.status,  # participant's status, in ReservationVO
-            # my_role=participant.role,
+            my_role=participant_role,
 
             user_id=self.my_user_id,
             status=status,
@@ -204,8 +217,8 @@ class ReservationVO(ReservationDTO):
 
 class ReservationMessageVO(BaseModel):
     user_id: int = Field(None, example=0)
-    # role: Optional[str] = Field(..., example=RoleType.MENTEE.value,
-    #                      pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
+    role: Optional[str] = Field(None, example=RoleType.MENTEE.value,
+                         pattern=f'^({RoleType.MENTOR.value}|{RoleType.MENTEE.value})$')
     content: str = Field(None, example='')
 
 
@@ -221,18 +234,19 @@ class ReservationInfoVO(BaseModel):
 
     @staticmethod
     def from_sender_model(reservation: Reservation):
-        # sender_role = reservation.my_role
-        # participant_role = RoleType.MENTOR if sender_role==RoleType.MENTEE else RoleType.MENTEE
+        sender_role = reservation.my_role
+        participant_role = RoleType.MENTOR if sender_role == RoleType.MENTEE else RoleType.MENTEE
+        
         return ReservationInfoVO(
             id=reservation.id,
             sender=RUserInfoVO(
                 user_id=reservation.my_user_id,
-                # role=sender_role,
+                role=sender_role.value if sender_role else None,
                 status=reservation.my_status,
             ),
             participant=RUserInfoVO(
                 user_id=reservation.user_id,
-                # role=participant_role,
+                role=participant_role.value,
                 status=reservation.status,
                 name=reservation.name,
                 avatar=reservation.avatar,

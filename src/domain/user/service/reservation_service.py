@@ -56,6 +56,9 @@ class ReservationService:
             # the default status is 'PENDING'
             await self.check_my_accepted_bookings(db, reservation_dto)
 
+            # 检查是否已存在相同的预订
+            await self.check_duplicate_reservation(db, reservation_dto)
+
             # sender 這次的新預約
             sender: Reservation = \
                 reservation_dto.sender_model(BookingStatus.ACCEPT)
@@ -97,6 +100,9 @@ class ReservationService:
             # checking participant's reservations is not necessary,
             # the default status is 'PENDING'
             await self.check_my_accepted_bookings(db, reservation_dto)
+
+            # 检查是否已存在相同的预订
+            await self.check_duplicate_reservation(db, reservation_dto)
 
             # sender 這次的新預約
             sender: Reservation = \
@@ -221,6 +227,28 @@ class ReservationService:
         # checking participant's reservations is not necessary,
         # the default status is 'PENDING'
 
+    async def check_duplicate_reservation(self, db: AsyncSession, reservation_dto: ReservationDTO):
+        # 检查是否已存在完全相同的预订记录
+        try:
+            existing_reservation = await self.reservation_repo.find_one(
+                db,
+                {
+                    'schedule_id': reservation_dto.schedule_id,
+                    'dtstart': reservation_dto.dtstart,
+                    'dtend': reservation_dto.dtend,
+                    'my_user_id': reservation_dto.my_user_id,
+                    'user_id': reservation_dto.user_id,
+                }
+            )
+            
+            if existing_reservation:
+                raise ClientException(msg='Duplicate reservation already exists')
+                
+        except Exception as e:
+            if isinstance(e, ClientException):
+                raise e
+            log.error('check duplicate reservation failed: %s', str(e))
+            raise ClientException(msg='check duplicate reservation failed')
 
     async def get_sender_vo_by_id(self, db: AsyncSession, 
                                   reserve_id: int,

@@ -107,8 +107,8 @@ class Reservation(Base):
     my_user_id = Column(BigInteger, nullable=True)  # nullable while updating
     my_status = Column(
         ENUM(BookingStatus, name='booking_status', create_type=False))
-    # my_role = Column( 
-    #     ENUM(RoleType, name='role_type', create_type=False))  # FIXME: deprecated
+    my_role = Column( 
+        ENUM(RoleType, name='role_type', create_type=False))
     user_id = Column(BigInteger, nullable=True)     # nullable while updating
     status = Column(
         ENUM(BookingStatus, name='booking_status', create_type=False))

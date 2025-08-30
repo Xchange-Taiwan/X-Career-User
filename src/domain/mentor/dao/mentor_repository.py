@@ -18,13 +18,13 @@ class MentorRepository:
         stmt: Select = select(Profile).filter(Profile.user_id == mentor_id)
         mentor: Profile = await get_first_template(db, stmt)
         # join MentorExperience 有存在的才返回
-        return MentorProfileDTO.from_orm(mentor)
+        return MentorProfileDTO.model_validate(mentor)
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
         model: Profile = convert_dto_to_model(mentor_profile_dto, Profile)
 
         model = await db.merge(model)
-        res: MentorProfileDTO = MentorProfileDTO.from_orm(model)
+        res: MentorProfileDTO = MentorProfileDTO.model_validate(model)
         await db.commit()
         return res
 
