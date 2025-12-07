@@ -77,6 +77,7 @@ class MentorProfileVO(ProfileVO):
             personal_statement=mentor_profile_dto.personal_statement,
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level,
+            is_mentor=mentor_profile_dto.is_mentor,
         )
 
     def from_dto(self):
@@ -101,6 +102,7 @@ class MentorProfileVO(ProfileVO):
             personal_links=self.personal_links,
             education = self.education,
             work_experience = self.work_experience,
+            is_mentor=self.is_mentor,
         )
 
     def to_dto_json(self):

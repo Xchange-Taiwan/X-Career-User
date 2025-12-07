@@ -27,6 +27,7 @@ class ProfileDTO(BaseModel):
     topics: Optional[List[str]] = Field(default_factory=list)
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
+    is_mentor: Optional[bool] = False
 
     model_config = {
         "from_attributes": True
@@ -90,6 +91,7 @@ class ProfileVO(BaseModel):
             company=model.company,
             years_of_experience=model.years_of_experience,
             location=model.location,
+            is_mentor=model.is_mentor,
         )
 
     def i_to_subject_groups(self, interest_list: InterestListVO):
