@@ -1,8 +1,8 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime
-from sqlalchemy.dialects.postgresql import JSONB, ENUM, BOOLEAN
+from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean
+from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
 
