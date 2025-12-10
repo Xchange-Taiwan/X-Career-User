@@ -1,7 +1,7 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime
+from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
@@ -32,6 +32,7 @@ class Profile(Base):
     topics = Column(JSONB)
     expertises = Column(JSONB)
     language = Column(String(10), default='')
+    is_mentor = Column(Boolean, default=False)
 
 
 class MentorExperience(Base):
