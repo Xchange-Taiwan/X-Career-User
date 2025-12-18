@@ -5,9 +5,9 @@ from src.domain.user.model.reservation_model import *
 from src.domain.user.dao.reservation_repository import ReservationRepository
 from src.config.conf import BATCH
 from src.config.exception import *
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class SagaReservationService:
@@ -16,7 +16,7 @@ class SagaReservationService:
         self.user_repo = None
 
     async def get_reservations(self, db: AsyncSession,
-                               user_id: int, 
+                               user_id: int,
                                query_dto: ReservationQueryDTO) -> Optional[ReservationInfoListVO]:
         try:
             res: ReservationInfoListVO = ReservationInfoListVO()
@@ -36,8 +36,8 @@ class SagaReservationService:
             raise_http_exception(e=e, msg='get reservations failed')
 
 
-    async def create_sender(self, 
-                     db: AsyncSession, 
+    async def create_sender(self,
+                     db: AsyncSession,
                      reservation_dto: ReservationDTO
                      ) -> Optional[ReservationVO]:
         try:
@@ -62,8 +62,8 @@ class SagaReservationService:
             raise_http_exception(e=e, msg=err_msg)
 
 
-    async def create_participant(self, 
-                     db: AsyncSession, 
+    async def create_participant(self,
+                     db: AsyncSession,
                      reservation_dto: ReservationDTO
                      ) -> Optional[ReservationVO]:
         try:
@@ -84,8 +84,8 @@ class SagaReservationService:
 
 
 
-    async def create_sender_new_and_reject_previous(self, 
-                                             db: AsyncSession, 
+    async def create_sender_new_and_reject_previous(self,
+                                             db: AsyncSession,
                                              reservation_dto: ReservationDTO
                                              ) -> Optional[ReservationVO]:
         try:
@@ -103,7 +103,7 @@ class SagaReservationService:
             PREV_SENDER_VO: ReservationVO = \
                 await self.get_prev_sender_vo(db, reservation_dto)
             prev_sender: Reservation = \
-                PREV_SENDER_VO.sender_model(BookingStatus.REJECT, 
+                PREV_SENDER_VO.sender_model(BookingStatus.REJECT,
                                              PREV_SENDER_VO.id)
             await self.reservation_repo.save_all(db, [
                 sender,
@@ -117,8 +117,8 @@ class SagaReservationService:
             raise_http_exception(e=e, msg=err_msg)
 
 
-    async def create_participant_new_and_reject_previous(self, 
-                                             db: AsyncSession, 
+    async def create_participant_new_and_reject_previous(self,
+                                             db: AsyncSession,
                                              reservation_dto: ReservationDTO
                                              ) -> Optional[ReservationVO]:
         try:
@@ -156,9 +156,9 @@ class SagaReservationService:
             raise_http_exception(e=e, msg=err_msg)
 
 
-    async def update_sender_reservation_status(self, 
-                                        db: AsyncSession, 
-                                        reserve_id: int, 
+    async def update_sender_reservation_status(self,
+                                        db: AsyncSession,
+                                        reserve_id: int,
                                         update_dto: UpdateReservationDTO
                                         ) -> Optional[ReservationVO]:
         try:
@@ -185,9 +185,9 @@ class SagaReservationService:
             raise_http_exception(e=e, msg=err_msg)
 
 
-    async def update_participant_reservation_status(self, 
-                                        db: AsyncSession, 
-                                        reserve_id: int, 
+    async def update_participant_reservation_status(self,
+                                        db: AsyncSession,
+                                        reserve_id: int,
                                         update_dto: UpdateReservationDTO
                                         ) -> Optional[ReservationVO]:
         try:
@@ -250,7 +250,7 @@ class SagaReservationService:
         # the default status is 'PENDING'
 
 
-    async def get_sender_vo_by_id(self, db: AsyncSession, 
+    async def get_sender_vo_by_id(self, db: AsyncSession,
                                   reserve_id: int,
                                   update_dto: UpdateReservationDTO) -> Optional[ReservationVO]:
         my_user_id = update_dto.my_user_id
@@ -259,7 +259,7 @@ class SagaReservationService:
         if not SENDER_VO:
             log.error('sender reservation not found, reserve_id: %s', reserve_id)
             raise ClientException(msg='sender reservation not found')
-        
+
         return SENDER_VO
 
 
@@ -275,7 +275,7 @@ class SagaReservationService:
         return participant_vo
 
 
-    async def get_prev_sender_vo(self, db: AsyncSession, 
+    async def get_prev_sender_vo(self, db: AsyncSession,
                                  reservation_dto: ReservationDTO) -> Optional[ReservationVO]:
         # sender reserve_id 在 reservation_dto.previous_reserve 中
         (reserve_id, my_user_id) = reservation_dto.previous_sender_query_by_id()
@@ -290,7 +290,7 @@ class SagaReservationService:
         return prev_sender_vo
 
 
-    async def get_prev_participant_vo(self, db: AsyncSession, 
+    async def get_prev_participant_vo(self, db: AsyncSession,
                                       prev_sender_vo: ReservationVO) -> Optional[ReservationVO]:
         p_query = prev_sender_vo.participant_query()
         prev_participant_vo: ReservationVO = \

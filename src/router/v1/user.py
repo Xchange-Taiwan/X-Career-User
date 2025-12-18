@@ -1,4 +1,4 @@
-import logging as log
+import logging
 
 from fastapi import (
     APIRouter,
@@ -22,8 +22,8 @@ from ...domain.user.service.profile_service import ProfileService
 from ...infra.databse import get_db, db_session
 
 from ...app._di.injection import (
-    get_interest_service, 
-    get_profession_service, 
+    get_interest_service,
+    get_profession_service,
     get_profile_service,
     get_reservation_service,
     get_booking_service,
@@ -37,7 +37,7 @@ from ...app._di.injection import (
 
 )
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix='/users',
@@ -49,7 +49,7 @@ router = APIRouter(
 @router.put('/profile',
             responses=idempotent_response('upsert_profile', user.ProfileVO))
 async def upsert_profile(
-        background_tasks: BackgroundTasks, 
+        background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(db_session),
         body: user.ProfileDTO = Body(...),
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),

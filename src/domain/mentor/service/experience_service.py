@@ -8,9 +8,9 @@ from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO
 from src.domain.user.model.common_model import InterestVO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ExperienceService:
@@ -35,14 +35,14 @@ class ExperienceService:
                 await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
             if not mentor_exp_list:
                 return []
-            
+
             experiences = [ExperienceVO.model_validate(exp) for exp in mentor_exp_list]
             return ExperienceListVO(experiences=experiences)
         except Exception as e:
             log.error(f'get_exp_by_user_id error: %s', str(e))
             raise ServerException(msg='get experience response failed')
 
-    async def upsert_exp(self, db: AsyncSession, 
+    async def upsert_exp(self, db: AsyncSession,
                          user_id: int,
                          experience_dto: ExperienceDTO) -> ExperienceVO:
         try:
@@ -56,8 +56,8 @@ class ExperienceService:
             log.error(f'upsert_exp error: %s', str(e))
             raise ServerException(msg='upsert experience response failed')
 
-    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession, 
-                                            user_id: int, 
+    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession,
+                                            user_id: int,
                                             experience_dto: ExperienceDTO) -> bool:
         try:
             res: bool = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, experience_dto)
@@ -75,12 +75,12 @@ class ExperienceService:
     def is_onboarding(all_interests: Optional[Dict[str, List[InterestVO]]]) -> bool:
         if all_interests is None:
             return False
-        
+
         for interest_category, interests in all_interests.items():
             if len(interests) == 0:
                 log.info(f'{interest_category} is not filled')
                 return False
-        
+
         return True
 
     # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷

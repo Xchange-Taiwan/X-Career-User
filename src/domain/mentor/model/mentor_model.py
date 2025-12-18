@@ -15,7 +15,7 @@ from src.infra.util.time_util import (
     rrule_events,
 )
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 # class MentorProfileDTO(BaseModel):
@@ -116,7 +116,7 @@ class TimeSlotDTO(BaseModel):
     id: Optional[int] = Field(None, example=0)
     user_id: int = Field(..., example=1)
     dt_type: str = Field(
-        ..., 
+        ...,
         example=ScheduleType.ALLOW.value,
         pattern=f'^({ScheduleType.ALLOW.value}|{ScheduleType.FORBIDDEN.value})$'
     )
@@ -133,7 +133,7 @@ class TimeSlotDTO(BaseModel):
         # json_encoders = {
         #     datetime: lambda v: v.strftime(DATETIME_FORMAT)
         # }
-    
+
     @staticmethod
     def convert_schedule_to_dto(schedule: MentorSchedule) -> 'TimeSlotDTO':
         """
@@ -188,14 +188,14 @@ class MentorScheduleDTO(BaseModel):
     def min_dtstart_to_max_dtend(self) -> Tuple[int, int]:
         if not self.timeslots:
             raise ValueError("No timeslots provided")
-        
+
         min_dtstart = 9999999999
         for timeslot in self.timeslots:
             min_dtstart = min(min_dtstart, timeslot.dtstart)
-        
+
         if self.until is None:
             raise ValueError("until field is required but not provided")
-            
+
         return (min_dtstart, self.until)
 
 
@@ -204,7 +204,7 @@ class MentorScheduleDTO(BaseModel):
     def opverlapping_interval_check(cls, timeslots: List[TimeSlotDTO], UNTIL_TIMESTAMP: int):
         UNTIL_END_DATE = datetime.fromtimestamp(UNTIL_TIMESTAMP)
         timeslots = cls.sort_with_rrule(timeslots, UNTIL_END_DATE)
-        
+
         # 如果展開後少於2個時間段，無需進行重疊檢查
         if len(timeslots) < 2:
             # 檢查是否是 rrule 展開失敗導致的問題

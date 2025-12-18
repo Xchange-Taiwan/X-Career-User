@@ -6,7 +6,9 @@ from fastapi import (
     Depends,
     Path, Body
 )
-import logging as log
+import logging
+
+log = logging.getLogger(__name__)
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +19,7 @@ from ...domain.file.service.file_service import FileService
 from ...infra.databse import get_db
 from ...app._di.injection import get_file_service
 
-log.basicConfig(filemode='w', level=log.INFO)
+
 
 router = APIRouter(
     prefix='/file',

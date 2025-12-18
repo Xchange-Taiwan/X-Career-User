@@ -1,9 +1,9 @@
 from typing import Any, Set, Dict, List, Optional
 from ..template.cache import ICache
 from ..util.time_util import current_seconds
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class LocalCache(ICache):
@@ -29,7 +29,7 @@ class LocalCache(ICache):
         if key is None:
             log.error('local cache key is None key: %s, val: %s, ex: %s', key, val, ex)
             return
-        
+
         self.cache[key] = val
         if ex is not None:
             now = current_seconds()

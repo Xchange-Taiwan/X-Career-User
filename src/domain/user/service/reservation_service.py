@@ -5,9 +5,9 @@ from src.domain.user.model.reservation_model import *
 from src.domain.user.dao.reservation_repository import ReservationRepository
 from src.config.conf import BATCH
 from src.config.exception import *
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ReservationService:
@@ -16,7 +16,7 @@ class ReservationService:
         self.user_repo = None
 
     async def get_reservations(self, db: AsyncSession,
-                               user_id: int, 
+                               user_id: int,
                                query_dto: ReservationQueryDTO) -> Optional[ReservationInfoListVO]:
         try:
             res: ReservationInfoListVO = ReservationInfoListVO()
@@ -46,8 +46,8 @@ class ReservationService:
     2. 新建/更新 sender 狀態
     3. 新建/更新 participant 狀態
     '''
-    async def create(self, 
-                     db: AsyncSession, 
+    async def create(self,
+                     db: AsyncSession,
                      reservation_dto: ReservationDTO
                      ) -> Optional[ReservationVO]:
         try:
@@ -91,8 +91,8 @@ class ReservationService:
         - 先透過 previous_reserve 找到對應的 sender 上一次的預約
         - 再透過 sender 上一次的預約找到對應的 participant 上一次的預約
     '''
-    async def create_new_and_reject_previous(self, 
-                                             db: AsyncSession, 
+    async def create_new_and_reject_previous(self,
+                                             db: AsyncSession,
                                              reservation_dto: ReservationDTO
                                              ) -> Optional[ReservationVO]:
         try:
@@ -118,7 +118,7 @@ class ReservationService:
             PREV_SENDER_VO: ReservationVO = \
                 await self.get_prev_sender_vo(db, reservation_dto)
             prev_sender: Reservation = \
-                PREV_SENDER_VO.sender_model(BookingStatus.REJECT, 
+                PREV_SENDER_VO.sender_model(BookingStatus.REJECT,
                                              PREV_SENDER_VO.id)
 
             # participant 的上一次預約
@@ -158,9 +158,9 @@ class ReservationService:
     '''
 
     # FIXME: function 改為 update_reservation_status, 有 id
-    async def update_reservation_status(self, 
-                                        db: AsyncSession, 
-                                        reserve_id: int, 
+    async def update_reservation_status(self,
+                                        db: AsyncSession,
+                                        reserve_id: int,
                                         update_dto: UpdateReservationDTO
                                         ) -> Optional[ReservationVO]:
         try:
@@ -240,17 +240,17 @@ class ReservationService:
                     'user_id': reservation_dto.user_id,
                 }
             )
-            
+
             if existing_reservation:
                 raise ClientException(msg='Duplicate reservation already exists')
-                
+
         except Exception as e:
             if isinstance(e, ClientException):
                 raise e
             log.error('check duplicate reservation failed: %s', str(e))
             raise ClientException(msg='check duplicate reservation failed')
 
-    async def get_sender_vo_by_id(self, db: AsyncSession, 
+    async def get_sender_vo_by_id(self, db: AsyncSession,
                                   reserve_id: int,
                                   update_dto: UpdateReservationDTO) -> Optional[ReservationVO]:
         my_user_id = update_dto.my_user_id
@@ -259,7 +259,7 @@ class ReservationService:
         if not SENDER_VO:
             log.error('sender reservation not found, reserve_id: %s', reserve_id)
             raise ClientException(msg='sender reservation not found')
-        
+
         return SENDER_VO
 
     async def get_participant_vo(self, db: AsyncSession,
@@ -273,7 +273,7 @@ class ReservationService:
 
         return participant_vo
 
-    async def get_prev_sender_vo(self, db: AsyncSession, 
+    async def get_prev_sender_vo(self, db: AsyncSession,
                                  reservation_dto: ReservationDTO) -> Optional[ReservationVO]:
         # sender reserve_id 在 reservation_dto.previous_reserve 中
         (reserve_id, my_user_id) = reservation_dto.previous_sender_query_by_id()
@@ -287,7 +287,7 @@ class ReservationService:
 
         return prev_sender_vo
 
-    async def get_prev_participant_vo(self, db: AsyncSession, 
+    async def get_prev_participant_vo(self, db: AsyncSession,
                                       prev_sender_vo: ReservationVO) -> Optional[ReservationVO]:
         p_query = prev_sender_vo.participant_query()
         prev_participant_vo: ReservationVO = \
