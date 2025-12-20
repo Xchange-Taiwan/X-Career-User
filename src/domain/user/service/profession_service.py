@@ -1,4 +1,4 @@
-import logging as log
+import logging
 from typing import List, Type, Optional, Dict
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +11,7 @@ from src.domain.user.model.common_model import ProfessionListVO, ProfessionVO
 from src.infra.db.orm.init.user_init import Profession
 from src.infra.cache.local_cache import LocalCache
 
-log.basicConfig(filemode="w", level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ProfessionService:

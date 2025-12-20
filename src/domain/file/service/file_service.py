@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.exception import *
 from src.domain.file.dao.file_repository import FileRepository
 from src.domain.file.model.file_model import FileInfoDTO, FileInfoVO, FileInfoListVO
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 class FileService:
     def __init__(self, file_repository: FileRepository):

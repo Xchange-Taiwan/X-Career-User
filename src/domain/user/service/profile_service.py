@@ -1,5 +1,5 @@
 import asyncio
-import logging as log
+import logging
 from typing import Optional, Coroutine, Any, Set, Dict, List, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,8 +25,7 @@ from src.domain.user.model.user_model import ProfileDTO, ProfileVO
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 
-log.basicConfig(filemode="w", level=log.INFO)
-
+log = logging.getLogger(__name__)
 
 class ProfileService:
     def __init__(

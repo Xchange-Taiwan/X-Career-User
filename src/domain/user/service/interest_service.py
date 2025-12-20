@@ -9,9 +9,9 @@ from src.domain.user.model.common_model import InterestListVO, InterestVO
 from src.infra.db.orm.init.user_init import Interest
 from src.infra.cache.local_cache import LocalCache
 from src.config.exception import raise_http_exception
-import logging as log
+import logging
 
-log.basicConfig(filemode="w", level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class InterestService:

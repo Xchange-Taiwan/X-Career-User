@@ -7,9 +7,9 @@ from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 class MentorService:
     def __init__(self, mentor_repository: MentorRepository, profile_repository: ProfileRepository,

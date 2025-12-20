@@ -18,9 +18,9 @@ from src.config.conf import (
     SEARCH_SERVICE_URL,
     DEFAULT_LANGUAGE,
 )
-import logging as log
+import logging
 
-log.basicConfig(filemode="w", level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 POST_MENTOR_URL = SEARCH_SERVICE_URL + "/v1/internal/mentor"
@@ -58,8 +58,8 @@ class MentorProfile:
 
 
     async def upsert_mentor_profile(
-        self, 
-        db: AsyncSession, 
+        self,
+        db: AsyncSession,
         profile_dto: mentor.MentorProfileDTO,
         background_tasks: BackgroundTasks,
     ):
@@ -88,8 +88,8 @@ class MentorProfile:
         )
         background_tasks.add_task(
             self.notify_service.notify_updated_user_experiences,
-            db=db, 
-            user_id=user_id, 
+            db=db,
+            user_id=user_id,
             is_mentor=is_mentor,
         )
         return res
@@ -107,8 +107,8 @@ class MentorProfile:
         )
         background_tasks.add_task(
             self.notify_service.notify_updated_user_experiences,
-            db=db, 
-            user_id=user_id, 
+            db=db,
+            user_id=user_id,
             is_mentor=is_mentor,
         )
         return res

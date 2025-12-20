@@ -5,9 +5,9 @@ from pydantic import BaseModel
 
 from ....config.constant import *
 from ....infra.db.orm.init.user_init import MentorExperience
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ExperienceDTO(BaseModel):
@@ -37,7 +37,7 @@ class ExperienceVO(BaseModel):
 
 class ExperienceListVO(BaseModel):
     experiences: List[ExperienceVO] = []
-    
+
     def to_json(self):
         result = self.model_dump_json()
         return json.loads(result)

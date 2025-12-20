@@ -1,4 +1,4 @@
-import logging as log
+import logging
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -11,7 +11,7 @@ from src.infra.db.orm.init.user_init import (
     Reservation,
 )
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ReservationQueryDTO(BaseModel):
@@ -78,10 +78,10 @@ class ReservationDTO(UpdateReservationDTO):
         # 确保 my_role 不为 None
         if not self.my_role:
             raise ClientException(msg='my_role is required')
-        
+
         # 根据发送者的角色确定参与者的角色
         participant_role = RoleType.MENTOR if self.my_role == RoleType.MENTEE else RoleType.MENTEE
-        
+
         return Reservation(
             id=id,
             schedule_id=self.schedule_id,
@@ -198,7 +198,7 @@ class ReservationVO(ReservationDTO):
     def participant_model(self, status: BookingStatus, id: Optional[int] = None) -> Reservation:
         # 根据发送者的角色确定参与者的角色
         participant_role = RoleType.MENTOR if self.my_role == RoleType.MENTEE else RoleType.MENTEE
-        
+
         return Reservation(
             id=id,
             schedule_id=self.schedule_id,
@@ -236,7 +236,7 @@ class ReservationInfoVO(BaseModel):
     def from_sender_model(reservation: Reservation):
         sender_role = reservation.my_role
         participant_role = RoleType.MENTOR if sender_role == RoleType.MENTEE else RoleType.MENTEE
-        
+
         return ReservationInfoVO(
             id=reservation.id,
             sender=RUserInfoVO(

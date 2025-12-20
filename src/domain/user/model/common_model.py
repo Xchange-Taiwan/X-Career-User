@@ -2,9 +2,9 @@ import json
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 from ....config.constant import *
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class InterestVO(BaseModel):

@@ -6,7 +6,6 @@ from typing import Callable, Dict
 from src.infra.resource.handler import SQSResourceHandler
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 

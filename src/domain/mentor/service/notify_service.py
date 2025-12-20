@@ -17,9 +17,9 @@ from src.config.conf import (
     SEARCH_SERVICE_URL,
     DEFAULT_LANGUAGE,
 )
-import logging as log
+import logging
 
-log.basicConfig(filemode="w", level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 POST_MENTOR_URL = SEARCH_SERVICE_URL + "/v1/internal/mentor"
