@@ -38,6 +38,14 @@ provider:
   iam:
     role:
       statements:
+        # CloudWatch Logs 權限 - 用於寫入日誌
+        - Effect: "Allow"
+          Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+          Resource:
+            - "arn:aws:logs:${env:THE_REGION}:${env:ACCOUNT_ID}:log-group:/aws/lambda/*:*"
         - Effect: "Allow"
           Action:
             - "s3:ListBucket"
