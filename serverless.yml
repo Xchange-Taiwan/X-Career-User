@@ -27,7 +27,7 @@ provider:
   name: aws
   runtime: python3.9
   region: ${env:THE_REGION} # ${opt:region, "ap-northeast-1"}
-  stage: ${env:STAGE} # ${opt:stage, "dev"}
+  stage: ${env:STAGE, "dev"} # ${opt:stage, "dev"}
   timeout: 30
 
 # you can overwrite defaults here
@@ -38,35 +38,40 @@ provider:
   iam:
     role:
       statements:
-        # CloudWatch Logs 權限 - 用於寫入日誌
-        - Effect: "Allow"
-          Action:
-            - "logs:CreateLogGroup"
-            - "logs:CreateLogStream"
-            - "logs:PutLogEvents"
-          Resource:
-            - "arn:aws:logs:${env:THE_REGION}:${env:ACCOUNT_ID}:log-group:/aws/lambda/*:*"
-        - Effect: "Allow"
-          Action:
-            - "s3:ListBucket"
-          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-        - Effect: "Allow"
-          Action:
-            - "s3:PutObject"
-          Resource:
-            Fn::Join:
-              - ""
-              - - "arn:aws:s3:::"
-                - "Ref" : "ServerlessDeploymentBucket"
-                - "/*"
-        - Effect: "Allow"
-          Action:
-            - "sqs:GetQueueAttributes"
-            - "sqs:SendMessage"
-            - "sqs:ReceiveMessage"
-            - "sqs:DeleteMessage"
-          Resource: 
-            - "arn:aws:sqs:ap-northeast-1:991681440467:X_CAREER_USER_DUPLICATE_QUEUE.fifo"
+      # CloudWatch Logs 權限 - 用於寫入日誌
+      - Effect: Allow
+        Action:
+          - logs:CreateLogGroup
+          - logs:TagResource
+        Resource:
+          - arn:aws:logs:${env:THE_REGION}:${env:ACCOUNT_ID}:log-group:/aws/lambda/${self:service}-${self:provider.stage}-app
+      - Effect: Allow
+        Action:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        Resource:
+          - arn:aws:logs:${env:THE_REGION}:${env:ACCOUNT_ID}:log-group:/aws/lambda/${self:service}-${self:provider.stage}-app:*
+      - Effect: "Allow"
+        Action:
+          - "s3:ListBucket"
+        Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+      - Effect: "Allow"
+        Action:
+          - "s3:PutObject"
+        Resource:
+          Fn::Join:
+            - ""
+            - - "arn:aws:s3:::"
+              - "Ref" : "ServerlessDeploymentBucket"
+              - "/*"
+      - Effect: "Allow"
+        Action:
+          - "sqs:GetQueueAttributes"
+          - "sqs:SendMessage"
+          - "sqs:ReceiveMessage"
+          - "sqs:DeleteMessage"
+        Resource: 
+          - "arn:aws:sqs:${env:THE_REGION}:${env:ACCOUNT_ID}:X_CAREER_USER_DUPLICATE_QUEUE.fifo"
 
 # you can define service wide environment variables here
 #  environment:
