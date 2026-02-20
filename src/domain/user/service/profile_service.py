@@ -15,6 +15,7 @@ from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfile
 from src.domain.mentor.model.experience_model import ExperienceVO
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
+from src.domain.outbox.dao.outbox_message_repository import OutboxMessageRepository
 from src.domain.user.model.common_model import (
     ProfessionVO,
     InterestVO,
@@ -24,6 +25,7 @@ from src.domain.user.model.common_model import (
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
+from src.config.constant import EventType, AggregateType
 
 log = logging.getLogger(__name__)
 
@@ -34,11 +36,13 @@ class ProfileService:
         profession_service: ProfessionService,
         experience_service: ExperienceService,
         profile_repository: ProfileRepository,
+        outbox_message_repository: OutboxMessageRepository
     ):
         self.__interest_service: InterestService = interest_service
         self.__profession_service: ProfessionService = profession_service
         self.__exp_service: ExperienceService = experience_service
         self.__profile_repository: ProfileRepository = profile_repository
+        self.__outbox_repository: OutboxMessageRepository = outbox_message_repository
 
     async def get_by_user_id(
         self, db: AsyncSession, user_id: int, language: Optional[str] = None
@@ -58,11 +62,27 @@ class ProfileService:
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         try:
-            res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(
-                db, dto
-            )
+            existing = await self.__profile_repository.get_by_user_id(db, dto.user_id)
+            event_type = EventType.USER_UPDATED.value if existing else EventType.USER_CREATED.value
+
+            res = await self.__profile_repository.upsert_profile(db, dto)
+            
+            if res.is_mentor:
+                await self.__outbox_repository.save_message(
+                    db=db,
+                    aggregate_id=str(dto.user_id),
+                    aggregate_type=AggregateType.PROFILES,
+                    event_type=event_type,
+                    payload=dto.model_dump(mode="json"),
+                )
+
+            # ATOMIC COMMIT: Finalize both Profile and Outbox together
+            await db.commit()
+
             return await self.convert_to_profile_vo(db, res)
+
         except Exception as e:
+            await db.rollback()
             log.error(f"upsert_profile error: %s", str(e))
             err_msg = getattr(e, "msg", "upsert profile response failed")
             raise_http_exception(e, msg=err_msg)

@@ -6,16 +6,23 @@ from src.config.constant import ExperienceCategory
 from src.config.exception import NotFoundException, ServerException
 from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO, ExperienceListVO
 from src.domain.user.model.common_model import InterestVO
+from src.domain.mentor.model import (
+    experience_model as exp,
+    mentor_model as mentor
+)
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
+from src.domain.outbox.dao.outbox_message_repository import OutboxMessageRepository
 from src.infra.db.orm.init.user_init import MentorExperience
+from src.config.constant import EventType, AggregateType
 import logging
 
 log = logging.getLogger(__name__)
 
 
 class ExperienceService:
-    def __init__(self, exp_dao: MentorExperienceRepository):
+    def __init__(self, exp_dao: MentorExperienceRepository, outbox_message_repository: OutboxMessageRepository):
         self.__exp_dao = exp_dao
+        self.__outbox_repository = outbox_message_repository
 
     async def get_exp_list_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[List[ExperienceVO]]:
         try:
@@ -42,33 +49,83 @@ class ExperienceService:
             log.error(f'get_exp_by_user_id error: %s', str(e))
             raise ServerException(msg='get experience response failed')
 
-    async def upsert_exp(self, db: AsyncSession,
-                         user_id: int,
-                         experience_dto: ExperienceDTO) -> ExperienceVO:
+    async def upsert_exp(
+        self, db: AsyncSession, user_id: int, experience_dto: ExperienceDTO, is_mentor: bool
+    ) -> ExperienceVO:
         try:
-            mentor_exp: MentorExperience = await self.__exp_dao.upsert_mentor_exp_by_user_id(db=db,
-                                                                                            user_id=user_id,
-                                                                                            mentor_exp_dto=experience_dto)
-            res: ExperienceVO = ExperienceVO.model_validate(mentor_exp)
+            event_type = (EventType.USER_UPDATED.value if experience_dto.id else EventType.USER_CREATED.value)
+            mentor_exp: MentorExperience = (
+                await self.__exp_dao.upsert_mentor_exp_by_user_id(
+                    db=db, user_id=user_id, mentor_exp_dto=experience_dto
+                )
+            )
 
+            if is_mentor:
+                experiences: List[exp.ExperienceVO] = (
+                    await self.get_exp_list_by_user_id(db, user_id)
+                )
+                await self.__outbox_repository.save_message(
+                    db=db,
+                    aggregate_id=str(user_id),
+                    aggregate_type=AggregateType.PROFILES,
+                    event_type=event_type,
+                    payload={
+                        'user_id': user_id,
+                        'experiences': [e.model_dump(mode='json') for e in experiences],
+                        'is_mentor': is_mentor,
+                    },
+                )
+
+            await db.commit()
+            await db.refresh(mentor_exp)
+
+            res: ExperienceVO = ExperienceVO.model_validate(mentor_exp)
             return res
+
         except Exception as e:
+            await db.rollback()
             log.error(f'upsert_exp error: %s', str(e))
             raise ServerException(msg='upsert experience response failed')
 
-    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession,
-                                            user_id: int,
-                                            experience_dto: ExperienceDTO) -> bool:
+    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession, user_id: int, experience_dto: ExperienceDTO, is_mentor: bool) -> bool:
+        # TODO: I don't know how to fix this. please Terrence do this one
+        exp_id = experience_dto.id
         try:
-            res: bool = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, experience_dto)
-            if not res:
-                exp_id = experience_dto.id
-                log.info('user_id: %s No such experience with id: %s', user_id, exp_id)
-            return res
-        except Exception as e:
-            log.error(f'delete_exp_by_user_and_exp_id error: %s', str(e))
-            raise ServerException(msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}')
+            res: bool = await self.__exp_dao.delete_mentor_exp_by_id(
+                db, user_id, experience_dto
+            )
 
+            if not res:
+                log.info('user_id: %s No such experience with id: %s', user_id, exp_id)
+                return False
+            if is_mentor is False:
+                experiences = []
+            else:
+                experiences: List[exp.ExperienceVO] = (
+                    await self.get_exp_list_by_user_id(db, user_id)
+                )
+
+            if is_mentor:
+                mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
+                    user_id=user_id, experiences=experiences, is_mentor=is_mentor
+                )
+                await self.__outbox_repository.save_message(
+                    db=db,
+                    aggregate_id=str(user_id),
+                    aggregate_type=AggregateType.PROFILES,
+                    event_type=EventType.USER_DELETED,
+                    payload=mentor_profile.to_dto_json(),
+                )
+
+            await db.commit()
+            return res
+
+        except Exception as e:
+            await db.rollback()
+            log.error(f'delete_exp_by_user_and_exp_id error: %s', str(e))
+            raise ServerException(
+                msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}'
+            )
 
     # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
     @staticmethod

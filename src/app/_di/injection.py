@@ -15,6 +15,8 @@ from src.domain.mentor.service.notify_service import NotifyService
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.dao.reservation_repository import ReservationRepository
+from src.domain.outbox.dao.outbox_message_repository import OutboxMessageRepository
+from src.domain.outbox.service.outbox_service import OutboxService
 from src.domain.user.service.reservation_service import ReservationService
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
@@ -57,6 +59,8 @@ def get_schedule_dao() -> ScheduleRepository:
 def get_resevation_dao() -> ReservationRepository:
     return ReservationRepository()
 
+def get_outbox_dao() -> OutboxMessageRepository:
+    return OutboxMessageRepository()
 
 def get_sqs_mq_adapter() -> SqsMqAdapter:
     sqs_rsc = resource_manager.get("sqs_rsc")
@@ -77,8 +81,12 @@ def get_profession_service(
 
 def get_experience_service(
     experience_repository: MentorExperienceRepository = Depends(get_experience_dao),
+    outbox_message_repository: OutboxMessageRepository = Depends(get_outbox_dao),
 ) -> ExperienceService:
-    return ExperienceService(experience_repository)
+    return ExperienceService(
+        experience_repository,
+        outbox_message_repository
+    )
 
 
 # Dependency function to create Service instance with DAO dependency injected
@@ -89,12 +97,14 @@ def get_profile_service(
     profession_service: ProfessionService = Depends(get_profession_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
+    outbox_message_repository: OutboxMessageRepository = Depends(get_outbox_dao),
 ) -> ProfileService:
     return ProfileService(
         interest_service=interest_service,
         profession_service=profession_service,
         experience_service=experience_service,
         profile_repository=profile_repository,
+        outbox_message_repository=outbox_message_repository
     )
 
 
@@ -104,6 +114,7 @@ def get_mentor_service(
     interest_service: InterestService = Depends(get_interest_service),
     profession_service: ProfessionService = Depends(get_profession_service),
     profile_service: ProfileService = Depends(get_profile_service),
+    outbox_message_repository: OutboxMessageRepository = Depends(get_outbox_dao),
 ) -> MentorService:
     return MentorService(
         mentor_repository,
@@ -111,6 +122,7 @@ def get_mentor_service(
         interest_service,
         profession_service,
         profile_service,
+        outbox_message_repository
     )
 
 
@@ -144,12 +156,19 @@ def get_notify_service(
     return NotifyService(mentor_service, experience_service, mq_adapter)
 
 
+def get_outbox_service(
+    outbox_repository: OutboxMessageRepository = Depends(get_outbox_dao),
+):
+    return OutboxService(outbox_repository)
+
+
 def get_mentor_profile_app(
     profile_service: ProfileService = Depends(get_profile_service),
     mentor_service: MentorService = Depends(get_mentor_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     notify_service: NotifyService = Depends(get_notify_service),
+    outbox_message_repository: OutboxMessageRepository = Depends(get_outbox_dao),
 ):
     return MentorProfile(
-        profile_service, mentor_service, experience_service, notify_service
+        profile_service, mentor_service, experience_service, notify_service, outbox_message_repository
     )

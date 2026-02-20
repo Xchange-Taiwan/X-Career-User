@@ -12,8 +12,7 @@ from mangum import Mangum
 
 from src.config import exception
 from src.router.v1 import (
-    user,
-    mentor, file_controller,
+    user, mentor, file_controller, outbox_internal
 )
 from src.infra.resource.manager import resource_manager
 
@@ -44,6 +43,7 @@ async def shutdown_event():
 router_v1 = APIRouter(prefix='/user-service/api/v1')
 router_v1.include_router(user.router)
 router_v1.include_router(mentor.router)
+router_v1.include_router(outbox_internal.router)
 router_v1.include_router(file_controller.router)
 
 app.include_router(router_v1)

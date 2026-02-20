@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 class Language(Enum):
@@ -57,10 +57,22 @@ class ReservationListState(Enum):
     HISTORY = 'HISTORY'
 
 
+# Used for outbox_message
+class AggregateType(Enum):
+    PROFILES = 'PROFILES'
+class EventType(Enum):
+    USER_CREATED = 'USER_CREATED'
+    USER_UPDATED = 'USER_UPDATED'
+    USER_DELETED = 'USER_DELETED'
+
+class OutboxStatus(IntEnum):
+    INITIAL = 0
+    PENDING = 1
+    FAILED = 2
+    SUCCESS = 3
 class SortingBy(Enum):
     UPDATED_TIME = 'UPDATED_TIME'
     # VIEW = 'VIEW'
-
 
 class Sorting(Enum):
     ASC = 1

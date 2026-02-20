@@ -22,8 +22,6 @@ class MentorExperienceRepository:
                                                         )
 
         mentor_exp = await db.merge(mentor_exp)
-        await db.commit()
-        await db.refresh(mentor_exp)
 
         return mentor_exp
 

@@ -9,6 +9,7 @@ from src.domain.user.model import user_model as user
 from src.domain.mentor.service.mentor_service import MentorService
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.mentor.service.notify_service import NotifyService
+from src.domain.outbox.dao.outbox_message_repository import OutboxMessageRepository
 from src.domain.mentor.model import (
     experience_model as exp,
     mentor_model as mentor,
@@ -38,24 +39,27 @@ class MentorProfile:
         mentor_service: MentorService,
         experience_service: ExperienceService,
         notify_service: NotifyService,
+        outbox_repository: OutboxMessageRepository
     ):
         self.profile_service: ProfileService = profile_service
         self.mentor_service: MentorService = mentor_service
         self.exp_service: ExperienceService = experience_service
         self.notify_service: NotifyService = notify_service
+        self.outbox_repository: OutboxMessageRepository = outbox_repository
 
+    # NOTE: The notify service logic move to Sequin to monitor postgreSQL data change and sink to SQS
     async def upsert_profile(
         self, db: AsyncSession, dto: user.ProfileDTO, background_tasks: BackgroundTasks
     ):
         res: user.ProfileVO = await self.profile_service.upsert_profile(db, dto)
+        # TODO:Check update problem
         # 若為 is_mentor 狀態，則需通知 Search Service
-        if res.is_mentor:
-            # NOTE: 試試不用 background_tasks
-            # background_tasks.add_task(
-            await self.notify_service.updated_user_profile(db=db, user_id=res.user_id)
-            # )
+        # if res.is_mentor:
+        #     # NOTE: 試試不用 background_tasks
+        #     # background_tasks.add_task(
+        #     await self.notify_service.updated_user_profile(db=db, user_id=res.user_id)
+        #     # )
         return res
-
 
     async def upsert_mentor_profile(
         self,
@@ -66,11 +70,11 @@ class MentorProfile:
         res: mentor.MentorProfileVO = await self.mentor_service.upsert_mentor_profile(
             db, profile_dto
         )
-        # 若為 is_mentor 狀態，則需通知 Search Service
-        if res.is_mentor:
-            background_tasks.add_task(
-                self.notify_service.updated_mentor_profile, mentor_profile=res
-            )
+        # # 若為 is_mentor 狀態，則需通知 Search Service
+        # if res.is_mentor:
+        #     background_tasks.add_task(
+        #         self.notify_service.updated_mentor_profile, mentor_profile=res
+        #     )
         return res
 
     async def upsert_exp(
@@ -85,13 +89,14 @@ class MentorProfile:
             db=db,
             user_id=user_id,
             experience_dto=experience_dto,
+            is_mentor=is_mentor
         )
-        background_tasks.add_task(
-            self.notify_service.notify_updated_user_experiences,
-            db=db,
-            user_id=user_id,
-            is_mentor=is_mentor,
-        )
+        # background_tasks.add_task(
+        #     self.notify_service.notify_updated_user_experiences,
+        #     db=db,
+        #     user_id=user_id,
+        #     is_mentor=is_mentor,
+        # )
         return res
 
     async def delete_experience(
@@ -102,13 +107,14 @@ class MentorProfile:
         background_tasks: BackgroundTasks,
         is_mentor: Optional[bool] = None,
     ):
+        # TODO: This has some bug, Terrence please fix it.
         res: bool = await self.exp_service.delete_exp_by_user_and_exp_id(
-            db=db, user_id=user_id, experience_dto=experience_dto,
+            db=db, user_id=user_id, experience_dto=experience_dto, is_mentor=is_mentor
         )
-        background_tasks.add_task(
-            self.notify_service.notify_updated_user_experiences,
-            db=db,
-            user_id=user_id,
-            is_mentor=is_mentor,
-        )
+        # background_tasks.add_task(
+        #     self.notify_service.notify_updated_user_experiences,
+        #     db=db,
+        #     user_id=user_id,
+        #     is_mentor=is_mentor,
+        # )
         return res

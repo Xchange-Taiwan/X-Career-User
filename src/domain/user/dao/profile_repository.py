@@ -27,8 +27,6 @@ class ProfileRepository:
         model: Profile = convert_dto_to_model(dto, Profile)
         model = await db.merge(model)
 
-        await db.commit()
-        await db.refresh(model)
         return ProfileDTO.model_validate(model)
 
     async def delete_profile(self, db: AsyncSession, user_id: str) -> None:

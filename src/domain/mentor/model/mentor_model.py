@@ -37,6 +37,7 @@ class MentorProfileDTO(ProfileDTO):
     about: Optional[str]
     seniority_level: Optional[SeniorityLevel]
     expertises: Optional[List[str]]
+    personal_links: Optional[str]
 
     class Config:
         from_attributes = True # orm_mode = True
@@ -62,6 +63,7 @@ class MentorProfileVO(ProfileVO):
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
     expertises: Optional[ProfessionListVO] = None
     experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
+    personal_links: Optional[str] = ""
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -78,6 +80,7 @@ class MentorProfileVO(ProfileVO):
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level,
             is_mentor=mentor_profile_dto.is_mentor,
+            personal_links=mentor_profile_dto.personal_links
         )
 
     def from_dto(self):
