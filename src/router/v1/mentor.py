@@ -1,14 +1,14 @@
 import json
-import logging as log
+import logging
 from typing import List
 
 from fastapi import (
-    APIRouter, 
-    Header, 
+    APIRouter,
+    Header,
     Path,
     Query,
-    Body, 
-    Depends, 
+    Body,
+    Depends,
     BackgroundTasks,
 )
 from fastapi.encoders import jsonable_encoder
@@ -33,14 +33,14 @@ from ...domain.user.service.profession_service import ProfessionService
 from ...infra.databse import get_db, db_session
 from ...app.mentor_profile.upsert import MentorProfile
 from ...app._di.injection import (
-    get_mentor_service, 
-    get_experience_service, 
+    get_mentor_service,
+    get_experience_service,
     get_profession_service,
     get_schedule_service,
     get_mentor_profile_app,
 )
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix='/mentors',
@@ -52,7 +52,7 @@ router = APIRouter(
 @router.put('/mentor_profile',
             responses=idempotent_response('upsert_mentor_profile', mentor.MentorProfileVO))
 async def upsert_mentor_profile(
-        background_tasks: BackgroundTasks, 
+        background_tasks: BackgroundTasks,
         db: AsyncSession = Depends(get_db),
         body: mentor.MentorProfileDTO = Body(...),
         mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),

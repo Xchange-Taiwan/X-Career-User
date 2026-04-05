@@ -2,9 +2,9 @@ from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.responses import JSONResponse
 from typing import Any
 from ..router.res.response import res_err_format
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ErrorLogger:
@@ -177,7 +177,7 @@ def raise_http_exception(e: Exception, msg: str = None, data: Any = None):
 
     if isinstance(e, DuplicateUserException):
         raise DuplicateUserException(msg=msg or e.msg, data=data or e.data)
-    
+
     if isinstance(e, UnprocessableClientException):
         raise UnprocessableClientException(msg=msg or e.msg, data=data or e.data)
 

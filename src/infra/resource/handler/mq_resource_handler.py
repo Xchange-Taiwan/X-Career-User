@@ -9,7 +9,6 @@ from src.config.conf import (
 from ._resource_handler import ResourceHandler
 import logging
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 

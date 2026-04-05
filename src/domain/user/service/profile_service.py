@@ -1,5 +1,5 @@
 import asyncio
-import logging as log
+import logging
 from typing import Optional, Coroutine, Any, Set, Dict, List, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,8 +25,7 @@ from src.domain.user.model.user_model import ProfileDTO, ProfileVO
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 
-log.basicConfig(filemode="w", level=log.INFO)
-
+log = logging.getLogger(__name__)
 
 class ProfileService:
     def __init__(
@@ -108,8 +107,8 @@ class ProfileService:
 
             # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
             res.onboarding = ExperienceService.is_onboarding(all_interests)
-            # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
-            res.is_mentor = ExperienceService.is_mentor(experiences)
+            # 是否為 Mentor, 直接使用 dto 的 is_mentor 欄位
+            res.is_mentor = dto.is_mentor
             res.language = language
             return res
 
@@ -167,8 +166,8 @@ class ProfileService:
             res.experiences = experiences
             # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
             res.onboarding = ExperienceService.is_onboarding(all_interests)
-            # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
-            res.is_mentor = ExperienceService.is_mentor(experiences)
+            # 是否為 Mentor, 直接使用 dto 的 is_mentor 欄位
+            res.is_mentor = dto.is_mentor
             res.language = language
             return res
 

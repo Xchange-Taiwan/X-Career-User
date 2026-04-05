@@ -17,9 +17,9 @@ from src.config.conf import (
     SEARCH_SERVICE_URL,
     DEFAULT_LANGUAGE,
 )
-import logging as log
+import logging
 
-log.basicConfig(filemode="w", level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 POST_MENTOR_URL = SEARCH_SERVICE_URL + "/v1/internal/mentor"
@@ -74,8 +74,8 @@ class NotifyService:
                     await self.exp_service.get_exp_list_by_user_id(db, user_id)
                 )
 
-            # 若為 is_mentor 狀態，則需通知 Search Service
-            if ExperienceService.is_mentor(experiences):
+            # 若為 is_mentor 狀態且 experiences 有至少兩筆資料，則需通知 Search Service
+            if is_mentor is True and ExperienceService.is_mentor(experiences):
                 mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
                     user_id=user_id, experiences=experiences
                 )

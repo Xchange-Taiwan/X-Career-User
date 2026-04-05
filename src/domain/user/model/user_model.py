@@ -1,5 +1,5 @@
 import json
-import logging as log
+import logging
 
 from typing import List, Optional, Union, Dict, Set
 
@@ -10,7 +10,7 @@ from .common_model import (
     InterestVO, InterestListVO, ProfessionListVO, ProfessionVO,
 )
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 
@@ -27,6 +27,7 @@ class ProfileDTO(BaseModel):
     topics: Optional[List[str]] = Field(default_factory=list)
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
+    is_mentor: Optional[bool] = False
 
     model_config = {
         "from_attributes": True
@@ -46,13 +47,13 @@ class ProfileDTO(BaseModel):
         interest_set: Set = { subject_group for subject_group in self.interested_positions }
         skill_set: Set = { subject_group for subject_group in self.skills }
         topic_set: Set = { subject_group for subject_group in self.topics }
-        
+
         all_interest_details: Dict = {
             InterestCategory.INTERESTED_POSITION.value: [],
             InterestCategory.SKILL.value: [],
             InterestCategory.TOPIC.value: [],
         }
-        
+
         for interest in all_interests.interests:
             if interest.subject_group in interest_set:
                 all_interest_details[InterestCategory.INTERESTED_POSITION.value].append(interest)
@@ -90,6 +91,7 @@ class ProfileVO(BaseModel):
             company=model.company,
             years_of_experience=model.years_of_experience,
             location=model.location,
+            is_mentor=model.is_mentor,
         )
 
     def i_to_subject_groups(self, interest_list: InterestListVO):

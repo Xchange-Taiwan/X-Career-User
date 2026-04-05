@@ -12,9 +12,9 @@ from src.config.exception import (
     raise_http_exception,
     ClientException,
 )
-import logging as log
+import logging
 
-log.basicConfig(filemode='w', level=log.INFO)
+log = logging.getLogger(__name__)
 
 
 class ScheduleService:
@@ -63,14 +63,14 @@ class ScheduleService:
             return res
 
         except Exception as e:
-            error_msg = getattr(e, 'msg', str(e)) 
+            error_msg = getattr(e, 'msg', str(e))
             log.error('save_schedules error: %s', error_msg)
             raise_http_exception(e, msg=error_msg)
 
 
     # CHECK: 合併用戶輸入和資料庫內的時間區間
-    def __merge_timeslots(self, 
-                          input_timeslots: List[TimeSlotDTO], 
+    def __merge_timeslots(self,
+                          input_timeslots: List[TimeSlotDTO],
                           stored_timeslots: List[TimeSlotDTO]) -> List[TimeSlotDTO]:
         # 1) stored in database
         stored_timeslots_dict: Dict[int, TimeSlotDTO] = {timeslot.id: timeslot for timeslot in stored_timeslots}
