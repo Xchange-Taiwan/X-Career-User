@@ -38,6 +38,7 @@ class NotifyService:
         self.mq_adapter = mq_adapter
 
     async def updated_user_profile(self, user_id: int):
+        """Triggered by PUT /users/profile — syncs the full mentor profile document."""
         try:
             async with SessionLocal() as db:
                 mentor_profile: mentor.MentorProfileVO = (
@@ -45,31 +46,33 @@ class NotifyService:
                         db, user_id, DEFAULT_LANGUAGE
                     )
                 )
-            await self.mq_adapter.publish_message(
-                mentor_profile.to_dto_json(),
-                group_id=str(user_id),
-            )
-            log.info(f"[NotifyService] published user profile update, user_id={user_id}")
+            payload = {
+                **mentor_profile.to_dto_json(),
+                "action": "UPSERT_MENTOR_PROFILE",
+            }
+            await self.mq_adapter.publish_message(payload, group_id=str(user_id))
+            log.info(f"[NotifyService] published UPSERT_MENTOR_PROFILE, user_id={user_id}")
 
         except Exception as e:
             log.error(f"[NotifyService] failed to publish user profile update, user_id={user_id}: {e}")
 
-    # 更新 user 的 profile
     async def updated_mentor_profile(self, mentor_profile: mentor.MentorProfileVO):
+        """Triggered by PUT /mentors/mentor_profile — updates mentor-specific fields."""
         try:
             user_id = mentor_profile.user_id
-            await self.mq_adapter.publish_message(
-                mentor_profile.to_dto_json(),
-                group_id=str(user_id),
-            )
-            log.info(f"[NotifyService] published mentor profile update, user_id={user_id}")
+            payload = {
+                **mentor_profile.to_dto_json(),
+                "action": "PUT_MENTOR_PROFILE",
+            }
+            await self.mq_adapter.publish_message(payload, group_id=str(user_id))
+            log.info(f"[NotifyService] published PUT_MENTOR_PROFILE, user_id={user_id}")
         except Exception as e:
             log.error(f"[NotifyService] failed to publish mentor profile update, user_id={user_id}: {e}")
 
-    # 更新 user 的 experience
     async def notify_updated_user_experiences(
         self, user_id: int, is_mentor: Optional[bool] = None
     ):
+        """Triggered by PUT/DELETE /mentors/{id}/experiences — patches the experiences array."""
         try:
             if is_mentor is False:
                 experiences = []
@@ -84,11 +87,12 @@ class NotifyService:
                 mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
                     user_id=user_id, experiences=experiences
                 )
-                await self.mq_adapter.publish_message(
-                    mentor_profile.to_dto_json(),
-                    group_id=str(user_id),
-                )
-                log.info(f"[NotifyService] published experience update, user_id={user_id}")
+                payload = {
+                    **mentor_profile.to_dto_json(),
+                    "action": "PATCH_MENTOR_PROFILE",
+                }
+                await self.mq_adapter.publish_message(payload, group_id=str(user_id))
+                log.info(f"[NotifyService] published PATCH_MENTOR_PROFILE, user_id={user_id}")
 
         except Exception as e:
             log.error(f"[NotifyService] failed to publish experience update, user_id={user_id}: {e}")

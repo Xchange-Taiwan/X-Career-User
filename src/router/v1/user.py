@@ -56,7 +56,9 @@ async def upsert_profile(
 ):
     # TODO-EVENT: implement event
     res: user.ProfileVO = await mentor_profile_app.upsert_profile(
-        db, body, background_tasks
+        db=db,
+        dto=body,
+        background_tasks=background_tasks,
     )
     return res_success(data=jsonable_encoder(res))
 
