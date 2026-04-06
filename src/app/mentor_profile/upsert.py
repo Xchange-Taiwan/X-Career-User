@@ -50,10 +50,9 @@ class MentorProfile:
         res: user.ProfileVO = await self.profile_service.upsert_profile(db, dto)
         # 若為 is_mentor 狀態，則需通知 Search Service
         if res.is_mentor:
-            # NOTE: 試試不用 background_tasks
-            # background_tasks.add_task(
-            await self.notify_service.updated_user_profile(db=db, user_id=res.user_id)
-            # )
+            background_tasks.add_task(
+                self.notify_service.updated_user_profile, user_id=res.user_id
+            )
         return res
 
 
@@ -88,7 +87,6 @@ class MentorProfile:
         )
         background_tasks.add_task(
             self.notify_service.notify_updated_user_experiences,
-            db=db,
             user_id=user_id,
             is_mentor=is_mentor,
         )
@@ -107,7 +105,6 @@ class MentorProfile:
         )
         background_tasks.add_task(
             self.notify_service.notify_updated_user_experiences,
-            db=db,
             user_id=user_id,
             is_mentor=is_mentor,
         )

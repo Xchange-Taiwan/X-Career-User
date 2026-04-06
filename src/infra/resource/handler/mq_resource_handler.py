@@ -39,20 +39,23 @@ class SQSResourceHandler(ResourceHandler):
         try:
             async with self.lock:
                 if self.sqs_client is None:
-                    async with self.session.client('sqs', config=mq_config) as sqs_client:
-                        self.sqs_client = sqs_client
-                        response = await self.sqs_client.get_queue_attributes(
-                            QueueUrl=self.queue_url,
-                            AttributeNames=['QueueArn']
-                        )
-                        log.info('Message Queue[SQS] Connection QueueArn: %s',
-                                 response['Attributes']['QueueArn'])
+                    # NOTE: Do NOT use "async with" here — it closes the client
+                    # when the block exits. We need the client to stay alive for
+                    # publish_message() calls later.
+                    ctx = self.session.client('sqs', config=mq_config)
+                    self.sqs_client = await ctx.__aenter__()
+                    response = await self.sqs_client.get_queue_attributes(
+                        QueueUrl=self.queue_url,
+                        AttributeNames=['QueueArn']
+                    )
+                    log.info('Message Queue[SQS] Connection QueueArn: %s',
+                             response['Attributes']['QueueArn'])
 
         except Exception as e:
             log.error(e.__str__())
             async with self.lock:
-                async with self.session.client('sqs', config=mq_config) as sqs_client:
-                    self.sqs_client = sqs_client
+                ctx = self.session.client('sqs', config=mq_config)
+                self.sqs_client = await ctx.__aenter__()
 
     async def accessing(self, **kwargs):
         async with self.lock:
