@@ -64,9 +64,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     skills JSONB,
     topics JSONB,
     expertises JSONB,
-    personal_links JSONB,
-    education JSONB,
-    work_experience JSONB,
     "language" VARCHAR(10),
     is_mentor BOOLEAN DEFAULT FALSE
 );
