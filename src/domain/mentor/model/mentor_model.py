@@ -33,10 +33,13 @@ log = logging.getLogger(__name__)
 
 
 class MentorProfileDTO(ProfileDTO):
-    personal_statement: Optional[str]
-    about: Optional[str]
-    seniority_level: Optional[SeniorityLevel]
-    expertises: Optional[List[str]]
+    personal_statement: Optional[str] = None
+    about: Optional[str] = None
+    seniority_level: Optional[SeniorityLevel] = None
+    expertises: Optional[List[str]] = None
+    personal_links: Optional[Dict] = None
+    education: Optional[Dict] = None
+    work_experience: Optional[Dict] = None
 
     class Config:
         from_attributes = True # orm_mode = True
@@ -61,6 +64,9 @@ class MentorProfileVO(ProfileVO):
     about: Optional[str] = ""
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
     expertises: Optional[ProfessionListVO] = None
+    personal_links: Optional[Dict] = None
+    education: Optional[Dict] = None
+    work_experience: Optional[Dict] = None
     experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
 
     @staticmethod
@@ -77,6 +83,9 @@ class MentorProfileVO(ProfileVO):
             personal_statement=mentor_profile_dto.personal_statement,
             about=mentor_profile_dto.about,
             seniority_level=mentor_profile_dto.seniority_level,
+            personal_links=mentor_profile_dto.personal_links,
+            education=mentor_profile_dto.education,
+            work_experience=mentor_profile_dto.work_experience,
             is_mentor=mentor_profile_dto.is_mentor,
         )
 
@@ -100,8 +109,8 @@ class MentorProfileVO(ProfileVO):
             seniority_level=self.seniority_level,
             expertises=self.p_to_subject_groups(self.expertises),
             personal_links=self.personal_links,
-            education = self.education,
-            work_experience = self.work_experience,
+            education=self.education,
+            work_experience=self.work_experience,
             is_mentor=self.is_mentor,
         )
 

@@ -4,6 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.infra.template.service_api import IServiceApi
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
+from src.infra.databse import SessionLocal
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.model import user_model as user
 from src.domain.mentor.service.mentor_service import MentorService
@@ -36,20 +37,22 @@ class NotifyService:
         self.exp_service: ExperienceService = experience_service
         self.mq_adapter = mq_adapter
 
-    async def updated_user_profile(self, db: AsyncSession, user_id: str):
+    async def updated_user_profile(self, user_id: int):
         try:
-            mentor_profile: mentor.MentorProfileVO = (
-                await self.mentor_service.get_mentor_profile_by_id(
-                    db, user_id, DEFAULT_LANGUAGE
+            async with SessionLocal() as db:
+                mentor_profile: mentor.MentorProfileVO = (
+                    await self.mentor_service.get_mentor_profile_by_id(
+                        db, user_id, DEFAULT_LANGUAGE
+                    )
                 )
-            )
             await self.mq_adapter.publish_message(
                 mentor_profile.to_dto_json(),
-                group_id=str(user_id / 1000),
+                group_id=str(user_id),
             )
+            log.info(f"[NotifyService] published user profile update, user_id={user_id}")
 
         except Exception as e:
-            log.error(f"Failed to notify search service: {str(e)}")
+            log.error(f"[NotifyService] failed to publish user profile update, user_id={user_id}: {e}")
 
     # 更新 user 的 profile
     async def updated_mentor_profile(self, mentor_profile: mentor.MentorProfileVO):
@@ -57,22 +60,24 @@ class NotifyService:
             user_id = mentor_profile.user_id
             await self.mq_adapter.publish_message(
                 mentor_profile.to_dto_json(),
-                group_id=str(user_id / 1000),
+                group_id=str(user_id),
             )
+            log.info(f"[NotifyService] published mentor profile update, user_id={user_id}")
         except Exception as e:
-            log.error(f"Failed to notify search service: {str(e)}")
+            log.error(f"[NotifyService] failed to publish mentor profile update, user_id={user_id}: {e}")
 
     # 更新 user 的 experience
     async def notify_updated_user_experiences(
-        self, db: AsyncSession, user_id: str, is_mentor: Optional[bool] = None
+        self, user_id: int, is_mentor: Optional[bool] = None
     ):
         try:
             if is_mentor is False:
                 experiences = []
             else:
-                experiences: List[exp.ExperienceVO] = (
-                    await self.exp_service.get_exp_list_by_user_id(db, user_id)
-                )
+                async with SessionLocal() as db:
+                    experiences: List[exp.ExperienceVO] = (
+                        await self.exp_service.get_exp_list_by_user_id(db, user_id)
+                    )
 
             # 若為 is_mentor 狀態且 experiences 有至少兩筆資料，則需通知 Search Service
             if is_mentor is True and ExperienceService.is_mentor(experiences):
@@ -81,8 +86,9 @@ class NotifyService:
                 )
                 await self.mq_adapter.publish_message(
                     mentor_profile.to_dto_json(),
-                    group_id=str(user_id / 1000),
+                    group_id=str(user_id),
                 )
+                log.info(f"[NotifyService] published experience update, user_id={user_id}")
 
         except Exception as e:
-            log.error(f"Failed to notify search service: {str(e)}")
+            log.error(f"[NotifyService] failed to publish experience update, user_id={user_id}: {e}")

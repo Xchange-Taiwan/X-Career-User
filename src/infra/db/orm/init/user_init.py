@@ -31,6 +31,9 @@ class Profile(Base):
     skills = Column(JSONB)
     topics = Column(JSONB)
     expertises = Column(JSONB)
+    personal_links = Column(JSONB)
+    education = Column(JSONB)
+    work_experience = Column(JSONB)
     language = Column(String(10), default='')
     is_mentor = Column(Boolean, default=False)
 
