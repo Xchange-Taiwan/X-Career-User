@@ -262,5 +262,5 @@ class ReservationInfoVO(BaseModel):
 
 
 class ReservationInfoListVO(BaseModel):
-    reservations: Optional[List[ReservationInfoVO]] = []
+    reservations: List[ReservationInfoVO] = []
     next_dtend: Optional[int] = 0
