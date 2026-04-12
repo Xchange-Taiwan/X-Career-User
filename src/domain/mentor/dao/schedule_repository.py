@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 
-from sqlalchemy import select, Select, and_
+from sqlalchemy import select, Select, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
@@ -111,6 +111,11 @@ class ScheduleRepository:
 
         # return merged_schedules
     
+    async def delete_all_by_user_id(self, db: AsyncSession, user_id: int) -> int:
+        stmt = delete(Schedule).where(Schedule.user_id == user_id)
+        result = await db.execute(stmt)
+        return result.rowcount
+
     async def delete_schedule(self, db: AsyncSession, user_id: int, schedule_id: int) -> int:
         stmt = select(Schedule).filter(Schedule.user_id == user_id) \
             .filter(Schedule.id == schedule_id)

@@ -3,7 +3,7 @@ import uuid
 from datetime import timezone, datetime
 from typing import List
 
-from sqlalchemy import Select, and_
+from sqlalchemy import Select, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -82,6 +82,13 @@ class FileRepository:
         )
         res: FileInfo = await get_all_template(session, stmt)
         return res
+
+    async def soft_delete_all_by_user_id(self, db: AsyncSession, user_id: int) -> int:
+        stmt = update(FileInfo).where(
+            FileInfo.create_user_id == user_id
+        ).values(is_deleted=True)
+        result = await db.execute(stmt)
+        return result.rowcount
 
     # update
     async def update(self, session: AsyncSession, user_id: int, file_info_dto: FileInfoDTO) -> FileInfo:
