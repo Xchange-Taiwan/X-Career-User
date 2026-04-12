@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import Select, select, and_
+from sqlalchemy import Select, select, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.constant import ExperienceCategory
@@ -45,6 +45,11 @@ class MentorExperienceRepository:
         mentor_exp: MentorExperience = await get_first_template(db, stmt)
 
         return mentor_exp
+
+    async def delete_all_by_user_id(self, db: AsyncSession, user_id: int) -> int:
+        stmt = delete(MentorExperience).where(MentorExperience.user_id == user_id)
+        result = await db.execute(stmt)
+        return result.rowcount
 
     async def delete_mentor_exp_by_id(self, db: AsyncSession, 
                                       user_id: int, 

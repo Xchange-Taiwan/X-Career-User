@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict
-from sqlalchemy import func, Integer, Select, select, update, insert, join, and_, bindparam
+from sqlalchemy import func, Integer, Select, select, update, insert, join, and_, bindparam, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.conf import BATCH, RESERVATION_ISOLAION_LEVEL
 from src.domain.user.model.reservation_model import *
@@ -16,6 +16,38 @@ log = logging.getLogger(__name__)
 
 
 class ReservationRepository:
+
+    async def has_active_or_future_reservations(
+        self, db: AsyncSession, user_id: int
+    ) -> bool:
+        stmt = select(exists().where(
+            and_(
+                Reservation.my_user_id == user_id,
+                Reservation.dtend >= current_seconds(),
+                Reservation.my_status != BookingStatus.REJECT,
+                Reservation.status != BookingStatus.REJECT,
+            )
+        ))
+        result = await db.scalar(stmt)
+        return bool(result)
+
+    async def anonymize_by_my_user_id(
+        self, db: AsyncSession, user_id: int
+    ) -> int:
+        stmt = update(Reservation).where(
+            Reservation.my_user_id == user_id
+        ).values(my_user_id=-user_id)
+        result = await db.execute(stmt)
+        return result.rowcount
+
+    async def anonymize_by_user_id(
+        self, db: AsyncSession, user_id: int
+    ) -> int:
+        stmt = update(Reservation).where(
+            Reservation.user_id == user_id
+        ).values(user_id=-user_id)
+        result = await db.execute(stmt)
+        return result.rowcount
 
     async def find_by_id(self, db: AsyncSession,
                          reserve_id: int,

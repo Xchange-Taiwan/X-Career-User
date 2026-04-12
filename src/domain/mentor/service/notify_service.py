@@ -96,3 +96,15 @@ class NotifyService:
 
         except Exception as e:
             log.error(f"[NotifyService] failed to publish experience update, user_id={user_id}: {e}")
+
+    async def notify_delete_mentor_profile(self, user_id: int) -> None:
+        try:
+            payload = {
+                "action": "DELETE_MENTOR_PROFILE",
+                "user_id": user_id,
+            }
+            await self.mq_adapter.publish_message(payload, group_id=str(user_id))
+            log.info(f"[NotifyService] published DELETE_MENTOR_PROFILE, user_id={user_id}")
+        except Exception as e:
+            log.error(f"[NotifyService] failed to publish DELETE_MENTOR_PROFILE, user_id={user_id}: {e}")
+            raise
