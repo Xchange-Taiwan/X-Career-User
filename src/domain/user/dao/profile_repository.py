@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import select, Select
+from sqlalchemy import select, Select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.exception import NotFoundException
@@ -19,6 +19,13 @@ class ProfileRepository:
             raise NotFoundException(msg=f"No such user with id: {user_id}")
         return ProfileDTO.model_validate(query)
 
+    async def find_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[ProfileDTO]:
+        stmt: Select = select(Profile).filter(Profile.user_id == user_id)
+        query: Optional[Profile] = await get_first_template(db, stmt)
+        if query is None:
+            return None
+        return ProfileDTO.model_validate(query)
+
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileDTO:
         if (dto is None) or (dto.user_id is None):
             raise NotFoundException(msg="not a valid user")
@@ -31,10 +38,7 @@ class ProfileRepository:
         await db.refresh(model)
         return ProfileDTO.model_validate(model)
 
-    async def delete_profile(self, db: AsyncSession, user_id: str) -> None:
-        stmt: Select = select(Profile).filter(Profile.user_id == user_id)
-        mentor = get_first_template(db, stmt)
-        if mentor:
-            await db.delete(mentor)
-            await db.commit()
+    async def delete_profile(self, db: AsyncSession, user_id: int) -> None:
+        stmt = sa_delete(Profile).where(Profile.user_id == user_id)
+        await db.execute(stmt)
 

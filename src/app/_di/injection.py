@@ -4,6 +4,7 @@ from fastapi import Depends
 
 from src.domain.file.dao.file_repository import FileRepository
 from src.domain.file.service.file_service import FileService
+from src.domain.mentor.dao.canned_message_repository import CannedMessageRepository
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
 from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
@@ -15,10 +16,12 @@ from src.domain.mentor.service.notify_service import NotifyService
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.dao.reservation_repository import ReservationRepository
+from src.domain.user.service.delete_account_service import DeleteAccountService
 from src.domain.user.service.reservation_service import ReservationService
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
+from src.app.account.delete import DeleteAccount
 from src.app.reservation.booking import Booking
 from src.app.mentor_profile.upsert import MentorProfile
 from src.infra.cache.local_cache import _local_cache
@@ -54,7 +57,7 @@ def get_schedule_dao() -> ScheduleRepository:
     return ScheduleRepository()
 
 
-def get_resevation_dao() -> ReservationRepository:
+def get_reservation_dao() -> ReservationRepository:
     return ReservationRepository()
 
 
@@ -125,7 +128,7 @@ def get_schedule_service(
 
 
 def get_reservation_service(
-    reservation_repository: ReservationRepository = Depends(get_resevation_dao),
+    reservation_repository: ReservationRepository = Depends(get_reservation_dao),
 ):
     return ReservationService(reservation_repository)
 
@@ -152,4 +155,36 @@ def get_mentor_profile_app(
 ):
     return MentorProfile(
         profile_service, mentor_service, experience_service, notify_service
+    )
+
+
+def get_canned_message_dao() -> CannedMessageRepository:
+    return CannedMessageRepository()
+
+
+def get_delete_account_service(
+    reservation_repository: ReservationRepository = Depends(get_reservation_dao),
+) -> DeleteAccountService:
+    return DeleteAccountService(reservation_repository)
+
+
+def get_delete_account_app(
+    delete_account_service: DeleteAccountService = Depends(get_delete_account_service),
+    experience_repository: MentorExperienceRepository = Depends(get_experience_dao),
+    schedule_repository: ScheduleRepository = Depends(get_schedule_dao),
+    canned_message_repository: CannedMessageRepository = Depends(get_canned_message_dao),
+    reservation_repository: ReservationRepository = Depends(get_reservation_dao),
+    profile_repository: ProfileRepository = Depends(get_profile_dao),
+    file_repository: FileRepository = Depends(get_file_dao),
+    notify_service: NotifyService = Depends(get_notify_service),
+) -> DeleteAccount:
+    return DeleteAccount(
+        delete_account_service,
+        experience_repository,
+        schedule_repository,
+        canned_message_repository,
+        reservation_repository,
+        profile_repository,
+        file_repository,
+        notify_service,
     )
