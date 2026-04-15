@@ -29,6 +29,12 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_type') THEN
         CREATE TYPE ACCOUNT_TYPE AS ENUM('XC', 'GOOGLE', 'LINKEDIN');
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_service') THEN
+        CREATE TYPE ACTIVITY_SERVICE AS ENUM('GOOGLE');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_status') THEN
+        CREATE TYPE ACTIVITY_STATUS AS ENUM('SCHEDULED', 'CANCELLED');
+    END IF;
 END $$;
 
 
@@ -150,6 +156,18 @@ CREATE TABLE IF NOT EXISTS interests (
     "desc" JSONB
 );
 
+CREATE TABLE IF NOT EXISTS activities (
+    "id" VARCHAR(255) PRIMARY KEY,
+    mentor_reservation_id INT NOT NULL,
+    mentee_reservation_id INT NOT NULL,
+    "service" ACTIVITY_SERVICE NOT NULL DEFAULT 'GOOGLE',
+    "status" ACTIVITY_STATUS NOT NULL DEFAULT 'SCHEDULED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_activities_mentor_reservation_id ON activities(mentor_reservation_id);
+CREATE INDEX idx_activities_mentee_reservation_id ON activities(mentee_reservation_id);
 
 --以下測試用插入資料
 INSERT INTO interests (category, "subject_group", "language", "subject", "desc")

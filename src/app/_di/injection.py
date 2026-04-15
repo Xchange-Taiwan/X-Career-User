@@ -17,7 +17,9 @@ from src.domain.user.dao.mentor_experience_repository import MentorExperienceRep
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.dao.reservation_repository import ReservationRepository
 from src.domain.user.service.delete_account_service import DeleteAccountService
+from src.domain.user.dao.activity_repository import ActivityRepository
 from src.domain.user.service.reservation_service import ReservationService
+from src.domain.user.service.activity_service import ActivityService
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
@@ -59,6 +61,10 @@ def get_schedule_dao() -> ScheduleRepository:
 
 def get_reservation_dao() -> ReservationRepository:
     return ReservationRepository()
+
+
+def get_activity_dao() -> ActivityRepository:
+    return ActivityRepository()
 
 
 def get_sqs_mq_adapter() -> SqsMqAdapter:
@@ -127,10 +133,17 @@ def get_schedule_service(
     return ScheduleService(schedule_repository)
 
 
+def get_activity_service(
+    activity_repository: ActivityRepository = Depends(get_activity_dao),
+) -> ActivityService:
+    return ActivityService(activity_repository)
+
+
 def get_reservation_service(
     reservation_repository: ReservationRepository = Depends(get_reservation_dao),
+    activity_service: ActivityService = Depends(get_activity_service),
 ):
-    return ReservationService(reservation_repository)
+    return ReservationService(reservation_repository, activity_service)
 
 
 def get_booking_service(

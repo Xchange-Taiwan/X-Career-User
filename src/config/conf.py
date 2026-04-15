@@ -36,7 +36,8 @@ DB_JIT_OFF = int(os.getenv('DB_JIT_OFF', 1))    # 是否關閉 PostgreSQL JIT (�
 DB_JIT_OFF = True if DB_JIT_OFF >= 1 else False
 
 SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api')
-
+AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://127.0.0.1:8008/auth-service/api')
+    
 
 # sqs/event bus conf
 MQ_CONNECT_TIMEOUT = int(os.getenv("MQ_CONNECT_TIMEOUT", 10))
