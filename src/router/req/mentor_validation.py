@@ -9,6 +9,8 @@ from src.domain.mentor.model.mentor_model import MentorScheduleDTO
 from src.domain.mentor.model.experience_model import ExperienceDTO
 from src.config.constant import ExperienceCategory
 
+UTC = 'UTC'
+
 
 def upsert_mentor_schedule_check(
     user_id: int = Path(...),
@@ -31,6 +33,8 @@ def upsert_mentor_schedule_check(
 
     # CHECK: 開始時間(dtstart)應小於結束時間(dtend)
     for timeslot in timeslots:
+        if timeslot.timezone != UTC:
+            raise ClientException(msg=f'timezone must be {UTC}')
         if timeslot.dtstart >= timeslot.dtend:
             raise ClientException(msg=f'dtstart:{timeslot.dtstart} should smaller then dtend:{timeslot.dtend}')
 

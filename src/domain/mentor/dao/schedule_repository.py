@@ -3,7 +3,11 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy import select, Select, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
+from src.config.constant import BookingStatus, RoleType, ScheduleType
+from src.infra.db.orm.init.user_init import (
+    MentorSchedule as Schedule,
+    Reservation,
+)
 from src.infra.util.convert_util import (
     get_all_template, 
     bulk_insert,
@@ -13,24 +17,46 @@ from src.domain.mentor.model.mentor_model import TimeSlotDTO
 
 
 class ScheduleRepository:
-    
-    async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: Optional[int] = None, next_dtstart: Optional[int] = None) -> List[Optional[TimeSlotDTO]]:
-        stmt: Select = select(Schedule).filter_by(**filter) \
+
+    async def get_month_schedules(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        dt_year: int,
+        dt_month: int,
+        dt_type: ScheduleType,
+    ) -> List[TimeSlotDTO]:
+        # 以 (user_id, dt_year, dt_month) 命中既有複合索引，並依 dt_type 分流
+        stmt: Select = (
+            select(Schedule)
+            .filter(
+                Schedule.user_id == user_id,
+                Schedule.dt_year == dt_year,
+                Schedule.dt_month == dt_month,
+                Schedule.dt_type == dt_type.value,
+            )
             .order_by(Schedule.dtstart)
-
-        if limit:
-            stmt = stmt.limit(limit=limit)
-
-        if next_dtstart:
-            stmt = stmt.filter(Schedule.dtstart >= next_dtstart)
-
+        )
         schedules: List[Optional[Schedule]] = await get_all_template(db, stmt)
-        timeslot_dtos: List[Optional[TimeSlotDTO]] = []
-        for schedule in schedules:
-            if schedule:
-                timeslot_dtos.append(TimeSlotDTO.model_validate(schedule))
+        return [TimeSlotDTO.model_validate(s) for s in schedules if s]
 
-        return timeslot_dtos
+    async def get_accepted_reservations_of_mentor(
+        self,
+        db: AsyncSession,
+        mentor_user_id: int,
+        window_start_ts: int,
+        window_end_ts: int,
+    ) -> List[Reservation]:
+        # mentor 自己這一側已 ACCEPT 的預約即視為時段被佔用
+        # 條件命中 idx_reservation_user_my_status_dtstart_dtend
+        stmt: Select = select(Reservation).filter(
+            Reservation.my_user_id == mentor_user_id,
+            Reservation.my_role == RoleType.MENTOR.value,
+            Reservation.my_status == BookingStatus.ACCEPT.value,
+            Reservation.dtend > window_start_ts,
+            Reservation.dtstart < window_end_ts,
+        )
+        return list(await get_all_template(db, stmt))
 
 
     async def get_schedules_by_time_range(self, db: AsyncSession, user_id: int, dtstart: int, dtend: int):
