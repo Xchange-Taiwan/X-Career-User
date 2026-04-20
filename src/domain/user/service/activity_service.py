@@ -26,7 +26,7 @@ class ActivityService:
         start_time: int,
         end_time: int,
         user_ids: List[int],
-        summary: str = 'XChange X-Talent Appointment',
+        summary: str = 'Appointment with X-Talent',
         description: str = '',
     ) -> Optional[Activity]:
         try:
