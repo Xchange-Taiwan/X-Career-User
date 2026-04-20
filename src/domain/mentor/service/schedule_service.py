@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -44,14 +43,18 @@ class ScheduleService:
         try:
             window_start, window_end = month_range_ts(dt_year, dt_month)
 
-            allow_rows, forbid_rows, reservations = await asyncio.gather(
-                self.__schedule_repository.get_month_schedules(
-                    db, user_id, dt_year, dt_month, ScheduleType.ALLOW),
-                self.__schedule_repository.get_month_schedules(
-                    db, user_id, dt_year, dt_month, ScheduleType.FORBIDDEN),
-                self.__schedule_repository.get_accepted_reservations_of_mentor(
-                    db, user_id, window_start, window_end),
-            )
+            schedules = await self.__schedule_repository.get_month_schedules_all_types(
+                db, user_id, dt_year, dt_month)
+            reservations = await self.__schedule_repository.get_accepted_reservations_of_mentor(
+                db, user_id, window_start, window_end)
+            allow_rows = [
+                schedule for schedule in schedules
+                if schedule.dt_type == ScheduleType.ALLOW.value
+            ]
+            forbid_rows = [
+                schedule for schedule in schedules
+                if schedule.dt_type == ScheduleType.FORBIDDEN.value
+            ]
 
             allow_occurrences = self.__expand_schedules(
                 allow_rows, window_start, window_end)

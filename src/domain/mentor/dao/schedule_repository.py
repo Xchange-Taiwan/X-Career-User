@@ -18,6 +18,30 @@ from src.domain.mentor.model.mentor_model import TimeSlotDTO
 
 class ScheduleRepository:
 
+    async def get_month_schedules_all_types(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        dt_year: int,
+        dt_month: int,
+    ) -> List[TimeSlotDTO]:
+        # 單次查詢撈出當月 ALLOW/FORBIDDEN，減少 round-trip 次數
+        stmt: Select = (
+            select(Schedule)
+            .filter(
+                Schedule.user_id == user_id,
+                Schedule.dt_year == dt_year,
+                Schedule.dt_month == dt_month,
+                Schedule.dt_type.in_([
+                    ScheduleType.ALLOW.value,
+                    ScheduleType.FORBIDDEN.value,
+                ]),
+            )
+            .order_by(Schedule.dtstart)
+        )
+        schedules: List[Optional[Schedule]] = await get_all_template(db, stmt)
+        return [TimeSlotDTO.model_validate(s) for s in schedules if s]
+
     async def get_month_schedules(
         self,
         db: AsyncSession,
