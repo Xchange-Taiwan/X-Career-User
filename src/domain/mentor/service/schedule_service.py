@@ -1,18 +1,27 @@
+import logging
 from typing import List, Dict, Any, Optional, Tuple
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.config.conf import DATETIME_FORMAT
+from src.config.constant import ScheduleType
+from src.config.exception import (
+    raise_http_exception,
+    ClientException,
+)
+from src.domain.mentor.dao.schedule_repository import ScheduleRepository
 from src.domain.mentor.model.mentor_model import (
     TimeSlotDTO,
     MentorScheduleDTO,
     TimeSlotVO,
     MentorScheduleVO,
 )
-from src.domain.mentor.dao.schedule_repository import ScheduleRepository
 from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
-from src.config.exception import (
-    raise_http_exception,
-    ClientException,
+from src.infra.util.time_util import (
+    expand_occurrences,
+    month_range_ts,
+    overlaps,
 )
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -21,27 +30,99 @@ class ScheduleService:
     def __init__(self, schedule_repository: ScheduleRepository):
         self.__schedule_repository: ScheduleRepository = schedule_repository
 
-    async def get_schedule_list(self, db: AsyncSession, filter: Dict = {}, limit: Optional[int] = None, next_dtstart: Optional[int] = None) -> MentorScheduleVO:
+    async def get_schedule_list(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        dt_year: int,
+        dt_month: int,
+        limit: Optional[int] = None,
+        next_dtstart: Optional[int] = None,
+    ) -> MentorScheduleVO:
+        # 回傳該 mentor 於指定年月「尚未被預約」且「未被 FORBIDDEN 覆蓋」的可用時段
         try:
+            window_start, window_end = month_range_ts(dt_year, dt_month)
+
+            schedules = await self.__schedule_repository.get_month_schedules_all_types(
+                db, user_id, dt_year, dt_month)
+            reservations = await self.__schedule_repository.get_accepted_reservations_of_mentor(
+                db, user_id, window_start, window_end)
+            allow_rows = [
+                schedule for schedule in schedules
+                if schedule.dt_type == ScheduleType.ALLOW.value
+            ]
+            forbid_rows = [
+                schedule for schedule in schedules
+                if schedule.dt_type == ScheduleType.FORBIDDEN.value
+            ]
+
+            allow_occurrences = self.__expand_schedules(
+                allow_rows, window_start, window_end)
+            forbid_occurrences = self.__expand_schedules(
+                forbid_rows, window_start, window_end)
+            busy_intervals: List[Tuple[int, int]] = (
+                [(b_start, b_end) for (b_start, b_end, _) in forbid_occurrences]
+                + [(int(r.dtstart), int(r.dtend)) for r in reservations]
+            )
+
+            free_occurrences = [
+                occ for occ in allow_occurrences
+                if not self.__is_busy(occ[0], occ[1], busy_intervals)
+            ]
+            free_occurrences.sort(key=lambda o: o[0])
+
+            if next_dtstart is not None:
+                free_occurrences = [o for o in free_occurrences if o[0] >= next_dtstart]
+
             res: MentorScheduleVO = MentorScheduleVO()
-            limit = (limit + 1) if limit else None
-            timeslot_dtos: List[Optional[TimeSlotDTO]] = await self.__schedule_repository.get_schedule_list(db, filter, limit, next_dtstart)
+            if limit and len(free_occurrences) > limit:
+                res.next_dtstart = free_occurrences[limit][0]
+                free_occurrences = free_occurrences[:limit]
 
-            list_size = len(timeslot_dtos)
-            if list_size == 0:
-                return res
-
-            timeslot_vos: List[TimeSlotVO] = [TimeSlotVO.of(timeslot_dto) for timeslot_dto in timeslot_dtos]
-            if not limit or list_size < limit:
-                res.timeslots = timeslot_vos
-            else:
-                res.next_dtstart = timeslot_vos[-1].dtstart
-                res.timeslots = timeslot_vos[:-1]
-
+            res.timeslots = [
+                self.__occurrence_to_vo(src_dto, occ_start, occ_end)
+                for (occ_start, occ_end, src_dto) in free_occurrences
+            ]
             return res
         except Exception as e:
             log.error('get_schedule_list error: %s', str(e))
             raise_http_exception(e, msg='Schedule list not found')
+
+    def __expand_schedules(
+        self,
+        schedules: List[TimeSlotDTO],
+        window_start: int,
+        window_end: int,
+    ) -> List[Tuple[int, int, TimeSlotDTO]]:
+        occurrences: List[Tuple[int, int, TimeSlotDTO]] = []
+        for src in schedules:
+            for (occ_start, occ_end) in expand_occurrences(
+                dtstart=src.dtstart,
+                dtend=src.dtend,
+                rrule=src.rrule,
+                exdate=src.exdate,
+                dt_format=DATETIME_FORMAT,
+                window_start=window_start,
+                window_end=window_end,
+            ):
+                occurrences.append((occ_start, occ_end, src))
+        return occurrences
+
+    @staticmethod
+    def __is_busy(a_start: int, a_end: int, busy: List[Tuple[int, int]]) -> bool:
+        for (b_start, b_end) in busy:
+            if overlaps(a_start, a_end, b_start, b_end):
+                return True
+        return False
+
+    @staticmethod
+    def __occurrence_to_vo(src: TimeSlotDTO, occ_start: int, occ_end: int) -> TimeSlotVO:
+        # 展開後的 occurrence 以原始 schedule 的欄位為基底，覆寫 dtstart/dtend
+        # id 保留原始 schedule.id，前端以 (id, dtstart) 辨識特定 occurrence
+        data = src.model_dump()
+        data['dtstart'] = occ_start
+        data['dtend'] = occ_end
+        return TimeSlotVO(**data)
 
 
     async def save_schedules(self, db: AsyncSession, user_id: int, schedule_dto: MentorScheduleDTO) -> MentorScheduleVO:

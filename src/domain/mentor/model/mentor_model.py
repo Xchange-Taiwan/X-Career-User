@@ -119,11 +119,31 @@ class TimeSlotDTO(BaseModel):
     )
     dt_year: Optional[int] = Field(default=None, example=2024)
     dt_month: Optional[int] = Field(default=None, example=6)
-    dtstart: int = Field(..., example=1717203600)
-    dtend: int = Field(..., example=1717207200)
-    rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
-    timezone: str = Field(default='UTC', example='UTC')
-    exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
+    dtstart: int = Field(
+        ...,
+        example=1717203600,
+        description='Unix timestamp seconds in UTC (GMT+0)',
+    )
+    dtend: int = Field(
+        ...,
+        example=1717207200,
+        description='Unix timestamp seconds in UTC (GMT+0)',
+    )
+    rrule: Optional[str] = Field(
+        default=None,
+        example='FREQ=WEEKLY;COUNT=4',
+        description='Recurrence rule interpreted in UTC (GMT+0)',
+    )
+    timezone: str = Field(
+        default='UTC',
+        example='UTC',
+        description='Must be UTC. Client and backend are fixed to GMT+0.',
+    )
+    exdate: List[Optional[int]] = Field(
+        default=[],
+        example=[1718413200, 1719622800],
+        description='Excluded occurrence starts in Unix timestamp seconds UTC (GMT+0)',
+    )
 
     class Config:
         from_attributes = True  # orm_mode = True

@@ -146,25 +146,33 @@ async def get_expertises(
     return res_success(data=jsonable_encoder(res))
 
 
-@router.get('/{user_id}/schedule/y/{dt_year}/m/{dt_month}',
-            responses=idempotent_response('get_mentor_schedule_list', mentor.MentorScheduleVO))
+@router.get(
+    '/{user_id}/schedule/y/{dt_year}/m/{dt_month}',
+    responses=idempotent_response('get_mentor_schedule_list', mentor.MentorScheduleVO),
+    summary='Get mentor free schedule slots (UTC)',
+    description=(
+        'All schedule timestamps use Unix seconds in UTC (GMT+0). '
+        'The backend expands rrule in UTC, removes exdate in UTC, then filters out '
+        'FORBIDDEN and booked intervals before returning available slots.'
+    ),
+)
 async def get_mentor_schedule_list(
         db: AsyncSession = Depends(db_session),
         user_id: int = Path(...),
-        dt_year: int = Path(...),
-        dt_month: int = Path(...),
+        dt_year: int = Path(..., ge=2000, le=2100),
+        dt_month: int = Path(..., ge=1, le=12),
         limit: int = Query(None, ge=1),
         next_dtstart: int = Query(None),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
     res: mentor.MentorScheduleVO = await schedule_service.get_schedule_list(
-        db, filter={
-            'user_id': user_id,
-            'dt_year': dt_year,
-            'dt_month': dt_month,
-        },
+        db,
+        user_id=user_id,
+        dt_year=dt_year,
+        dt_month=dt_month,
         limit=limit,
-        next_dtstart=next_dtstart)
+        next_dtstart=next_dtstart,
+    )
     return res_success(data=res.to_json())
 
 
