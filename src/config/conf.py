@@ -12,6 +12,8 @@ PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
 
 # default cache ttl: 5 minutes
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
+# schedule slot length (seconds), default 30 minutes
+BOOKING_SLOT_SECONDS = int(os.getenv('BOOKING_SLOT_SECONDS', 30 * 60))
 
 # db config params
 DB_HOST = os.getenv('DB_HOST', 'x-career-db-test.cu7knbzuvltn.ap-northeast-1.rds.amazonaws.com')
