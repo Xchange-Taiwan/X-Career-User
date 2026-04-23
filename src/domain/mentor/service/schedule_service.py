@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.conf import DATETIME_FORMAT
+from src.config.conf import DATETIME_FORMAT, BOOKING_SLOT_SECONDS
 from src.config.constant import ScheduleType
 from src.config.exception import (
     raise_http_exception,
@@ -58,6 +58,9 @@ class ScheduleService:
 
             allow_occurrences = self.__expand_schedules(
                 allow_rows, window_start, window_end)
+            allow_occurrences = self.__split_allow_occurrences_to_booking_slots(
+                allow_occurrences
+            )
             forbid_occurrences = self.__expand_schedules(
                 forbid_rows, window_start, window_end)
             busy_intervals: List[Tuple[int, int]] = (
@@ -107,6 +110,20 @@ class ScheduleService:
             ):
                 occurrences.append((occ_start, occ_end, src))
         return occurrences
+
+    @staticmethod
+    def __split_allow_occurrences_to_booking_slots(
+        occurrences: List[Tuple[int, int, TimeSlotDTO]],
+    ) -> List[Tuple[int, int, TimeSlotDTO]]:
+        slot_occurrences: List[Tuple[int, int, TimeSlotDTO]] = []
+        for (occ_start, occ_end, src) in occurrences:
+            cursor = int(occ_start)
+            end = int(occ_end)
+            while cursor < end:
+                next_end = min(cursor + BOOKING_SLOT_SECONDS, end)
+                slot_occurrences.append((cursor, next_end, src))
+                cursor = next_end
+        return slot_occurrences
 
     @staticmethod
     def __is_busy(a_start: int, a_end: int, busy: List[Tuple[int, int]]) -> bool:
