@@ -16,12 +16,12 @@ CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 BOOKING_SLOT_SECONDS = int(os.getenv('BOOKING_SLOT_SECONDS', 30 * 60))
 
 # db config params
-DB_HOST = os.getenv('DB_HOST', 'x-career-db-test.cu7knbzuvltn.ap-northeast-1.rds.amazonaws.com')
+DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
-DB_USER = os.getenv('DB_USER', 'postgres')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'postgres')
-DB_NAME = os.getenv('DB_NAME', 'postgres')
-DB_SCHEMA = os.getenv('DB_SCHEMA', 'x-career-dev')
+DB_USER = os.getenv('DB_USER', 'user')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'pass')
+DB_NAME = os.getenv('DB_NAME', 'db')
+DB_SCHEMA = os.getenv('DB_SCHEMA', 'public')
 RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE')
 
 # db connection pool config params
