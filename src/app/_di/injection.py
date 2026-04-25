@@ -29,6 +29,8 @@ from src.app.mentor_profile.upsert import MentorProfile
 from src.infra.cache.local_cache import _local_cache
 from src.infra.resource.manager import resource_manager
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
+from src.infra.template.service_api import IServiceApi
+from src.infra.client.async_service_api_adapter import AsyncServiceApiAdapter
 
 
 def get_experience_dao() -> MentorExperienceRepository:
@@ -66,6 +68,9 @@ def get_reservation_dao() -> ReservationRepository:
 def get_activity_dao() -> ActivityRepository:
     return ActivityRepository()
 
+
+def get_service_api() -> IServiceApi:
+    return AsyncServiceApiAdapter()
 
 def get_sqs_mq_adapter() -> SqsMqAdapter:
     sqs_rsc = resource_manager.get("sqs_rsc")
@@ -135,8 +140,9 @@ def get_schedule_service(
 
 def get_activity_service(
     activity_repository: ActivityRepository = Depends(get_activity_dao),
+    service_api: IServiceApi = Depends(get_service_api),
 ) -> ActivityService:
-    return ActivityService(activity_repository)
+    return ActivityService(activity_repository, service_api)
 
 
 def get_reservation_service(

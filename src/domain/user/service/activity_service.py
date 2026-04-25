@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.conf import AUTH_SERVICE_URL
 from src.config.constant import ActivityStatus, RoleType
 from src.domain.user.dao.activity_repository import ActivityRepository
-from src.infra.client.async_service_api_adapter import _async_service_api_adapter
+from src.infra.template.service_api import IServiceApi
 from src.infra.db.orm.init.user_init import Activity
 
 log = logging.getLogger(__name__)
@@ -15,8 +15,13 @@ CALENDAR_EVENTS_PATH = '/v1/calendar/events'
 
 
 class ActivityService:
-    def __init__(self, activity_repository: ActivityRepository):
+    def __init__(
+        self,  
+        activity_repository: ActivityRepository, 
+        service_api: IServiceApi,
+    ):
         self.activity_repo = activity_repository
+        self.service_api = service_api
 
     async def create_google_event_and_schedule_activity(
         self,
@@ -46,7 +51,7 @@ class ActivityService:
                 'user_ids': user_ids,
             }
             url = f'{AUTH_SERVICE_URL}{CALENDAR_EVENTS_PATH}'
-            data = await _async_service_api_adapter.simple_post(url=url, json=payload)
+            data = await self.service_api.simple_post(url=url, json=payload)
             if not data or not data.get('event_id'):
                 log.error('create google event fail: invalid response data=%s', data)
                 return None
@@ -92,7 +97,7 @@ class ActivityService:
                 return False
 
             url = f'{AUTH_SERVICE_URL}{CALENDAR_EVENTS_PATH}/{activity.id}'
-            await _async_service_api_adapter.simple_delete(url=url)
+            await self.service_api.simple_delete(url=url)
             log.info(
                 'cancel google event success: event_id=%s, reservation_id=%s, role=%s',
                 activity.id,
