@@ -1,7 +1,7 @@
 from profile import Profile
 
 import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean
+from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean, func
 from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
@@ -127,3 +127,20 @@ class Interest(Base):
     subject = Column(String)
     desc = Column(JSONB)
     language = Column(String, nullable=False)
+
+class Activity(Base):
+    __tablename__ = 'activities'
+    id = Column(String(255), primary_key=True, nullable=False)
+    mentor_reservation_id = Column(Integer, nullable=False, index=True)
+    mentee_reservation_id = Column(Integer, nullable=False, index=True)
+    service = Column(ENUM(ActivityService, name="activity_service"),  nullable=False)
+    status = Column(ENUM(ActivityStatus, name="activity_status"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f'<Activity(id={self.id}, \
+            mentor_reservation_id={self.mentor_reservation_id}, \
+            mentee_reservation_id={self.mentee_reservation_id}, \
+            service={self.service}, \
+            status={self.status})>'
