@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from sqlalchemy import select, Select, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,28 +36,6 @@ class ScheduleRepository:
                     ScheduleType.ALLOW.value,
                     ScheduleType.FORBIDDEN.value,
                 ]),
-            )
-            .order_by(Schedule.dtstart)
-        )
-        schedules: List[Optional[Schedule]] = await get_all_template(db, stmt)
-        return [TimeSlotDTO.model_validate(s) for s in schedules if s]
-
-    async def get_month_schedules(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        dt_year: int,
-        dt_month: int,
-        dt_type: ScheduleType,
-    ) -> List[TimeSlotDTO]:
-        # 以 (user_id, dt_year, dt_month) 命中既有複合索引，並依 dt_type 分流
-        stmt: Select = (
-            select(Schedule)
-            .filter(
-                Schedule.user_id == user_id,
-                Schedule.dt_year == dt_year,
-                Schedule.dt_month == dt_month,
-                Schedule.dt_type == dt_type.value,
             )
             .order_by(Schedule.dtstart)
         )
@@ -142,24 +120,9 @@ class ScheduleRepository:
             await db.commit()
             return timeslot_dtos
             
-        except Exception as e:
+        except Exception:
             await db.rollback()
             raise
-
-        # merged_schedules = []
-        # for schedule in schedules:
-        #     # merge 會返回一個新的對象實例
-        #     merged_schedule = await db.merge(schedule)
-        #     merged_schedules.append(merged_schedule)
-
-        # # 先提交確保所有更改都被保存
-        # await db.commit()
-
-        # # commit 後再進行 refresh
-        # for schedule in merged_schedules:
-        #     await db.refresh(schedule)
-
-        # return merged_schedules
     
     async def delete_all_by_user_id(self, db: AsyncSession, user_id: int) -> int:
         stmt = delete(Schedule).where(Schedule.user_id == user_id)

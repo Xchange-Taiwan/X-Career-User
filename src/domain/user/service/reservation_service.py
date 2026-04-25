@@ -3,6 +3,7 @@ from typing import List, Tuple, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.user.model.reservation_model import *
 from src.domain.user.dao.reservation_repository import ReservationRepository
+from src.domain.user.service.activity_service import ActivityService
 from src.config.conf import BATCH
 from src.config.exception import *
 import logging
@@ -11,8 +12,12 @@ log = logging.getLogger(__name__)
 
 
 class ReservationService:
-    def __init__(self, reservation_repository: ReservationRepository):
+    def __init__(self,
+                 reservation_repository: ReservationRepository,
+                 activity_service: ActivityService,
+                 ):
         self.reservation_repo = reservation_repository
+        self.activity_service = activity_service
         self.user_repo = None
 
     async def get_reservations(self, db: AsyncSession,
@@ -140,6 +145,15 @@ class ReservationService:
                 prev_participant,
             ])
 
+            try:
+                await self.activity_service.cancel_google_event_and_cancel_activity(
+                    db,
+                    reservation_id=PREV_SENDER_VO.id,
+                    role=PREV_SENDER_VO.my_role,
+                )
+            except Exception as side_effect_error:
+                log.error('cancel google event for previous reservation fail: %s', str(side_effect_error))
+
             return ReservationVO.from_model(sender)
 
         except Exception as e:
@@ -186,6 +200,32 @@ class ReservationService:
                 participant,
             ])
 
+            try:
+                # 雙方皆 ACCEPT 時建立 Google event
+                if sender.my_status == BookingStatus.ACCEPT and sender.status == BookingStatus.ACCEPT:
+                    mentor_reservation_id, mentee_reservation_id = self.get_activity_pair_ids(sender, participant)
+                    await self.activity_service.create_google_event_and_schedule_activity(
+                        db=db,
+                        mentor_reservation_id=mentor_reservation_id,
+                        mentee_reservation_id=mentee_reservation_id,
+                        start_time=sender.dtstart,
+                        end_time=sender.dtend,
+                        user_ids=[sender.my_user_id, sender.user_id],
+                    )
+            except Exception as side_effect_error:
+                log.error('create google event fail: %s', str(side_effect_error))
+
+            try:
+                # 本次狀態為 REJECT 時，若活動存在且為 SCHEDULED，則取消
+                if MY_STATUS == BookingStatus.REJECT:
+                    await self.activity_service.cancel_google_event_and_cancel_activity(
+                        db,
+                        reservation_id=reserve_id,
+                        role=SENDER_VO.my_role,
+                    )
+            except Exception as side_effect_error:
+                log.error('cancel google event fail: %s', str(side_effect_error))
+                
             return ReservationVO.from_model(sender)
 
         except Exception as e:
@@ -202,6 +242,14 @@ class ReservationService:
             isinstance(NEW_MESSAGES[0], Dict) and \
             isinstance(sender.messages, List):
             sender.messages.insert(0, NEW_MESSAGES[0])
+
+    def get_activity_pair_ids(self,
+                              sender: Reservation,
+                              participant: Reservation,
+                              ) -> Tuple[int, int]:
+        if sender.my_role == RoleType.MENTOR:
+            return sender.id, participant.id
+        return participant.id, sender.id
 
     '''
     Check my bookings with a status: "ACCEPT"

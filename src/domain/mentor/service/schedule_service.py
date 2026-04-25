@@ -1,13 +1,11 @@
 import logging
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.conf import DATETIME_FORMAT, BOOKING_SLOT_SECONDS
 from src.config.constant import ScheduleType
 from src.config.exception import (
     raise_http_exception,
-    ClientException,
 )
 from src.domain.mentor.dao.schedule_repository import ScheduleRepository
 from src.domain.mentor.model.mentor_model import (
@@ -15,13 +13,10 @@ from src.domain.mentor.model.mentor_model import (
     MentorScheduleDTO,
     TimeSlotVO,
     MentorScheduleVO,
+    MentorScheduleQueryVO,
+    MentorScheduleSegmentVO,
 )
-from src.infra.db.orm.init.user_init import MentorSchedule as Schedule
-from src.infra.util.time_util import (
-    expand_occurrences,
-    month_range_ts,
-    overlaps,
-)
+from src.infra.util.time_util import month_range_ts
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +33,11 @@ class ScheduleService:
         dt_month: int,
         limit: Optional[int] = None,
         next_dtstart: Optional[int] = None,
-    ) -> MentorScheduleVO:
-        # 回傳該 mentor 於指定年月「尚未被預約」且「未被 FORBIDDEN 覆蓋」的可用時段
+    ) -> MentorScheduleQueryVO:
+        # 回傳該 mentor 於指定年月的三類時段：
+        # - ALLOW/FORBIDDEN: 原始 schedule（包含 rrule/exdate），不在後端展開
+        # - BOOKED: mentor 已 ACCEPT 的 reservation 區間
+        # rrule 解析與可用時段推導改由前端處理
         try:
             window_start, window_end = month_range_ts(dt_year, dt_month)
 
@@ -47,99 +45,53 @@ class ScheduleService:
                 db, user_id, dt_year, dt_month)
             reservations = await self.__schedule_repository.get_accepted_reservations_of_mentor(
                 db, user_id, window_start, window_end)
-            allow_rows = [
-                schedule for schedule in schedules
-                if schedule.dt_type == ScheduleType.ALLOW.value
-            ]
-            forbid_rows = [
-                schedule for schedule in schedules
-                if schedule.dt_type == ScheduleType.FORBIDDEN.value
-            ]
 
-            allow_occurrences = self.__expand_schedules(
-                allow_rows, window_start, window_end)
-            allow_occurrences = self.__split_allow_occurrences_to_booking_slots(
-                allow_occurrences
-            )
-            forbid_occurrences = self.__expand_schedules(
-                forbid_rows, window_start, window_end)
-            busy_intervals: List[Tuple[int, int]] = (
-                [(b_start, b_end) for (b_start, b_end, _) in forbid_occurrences]
-                + [(int(r.dtstart), int(r.dtend)) for r in reservations]
-            )
-
-            free_occurrences = [
-                occ for occ in allow_occurrences
-                if not self.__is_busy(occ[0], occ[1], busy_intervals)
+            segments: List[MentorScheduleSegmentVO] = [
+                self.__timeslot_to_segment(timeslot)
+                for timeslot in schedules
             ]
-            free_occurrences.sort(key=lambda o: o[0])
+            segments.extend([
+                MentorScheduleSegmentVO(
+                    user_id=user_id,
+                    dt_type=ScheduleType.BOOKED.value,
+                    dtstart=int(r.dtstart),
+                    dtend=int(r.dtend),
+                    timezone='UTC',
+                    source='reservation',
+                    source_id=int(r.id),
+                )
+                for r in reservations
+            ])
+            segments.sort(key=lambda s: s.dtstart)
 
             if next_dtstart is not None:
-                free_occurrences = [o for o in free_occurrences if o[0] >= next_dtstart]
+                segments = [s for s in segments if s.dtstart >= next_dtstart]
 
-            res: MentorScheduleVO = MentorScheduleVO()
-            if limit and len(free_occurrences) > limit:
-                res.next_dtstart = free_occurrences[limit][0]
-                free_occurrences = free_occurrences[:limit]
-
-            res.timeslots = [
-                self.__occurrence_to_vo(src_dto, occ_start, occ_end)
-                for (occ_start, occ_end, src_dto) in free_occurrences
-            ]
+            res: MentorScheduleQueryVO = MentorScheduleQueryVO()
+            if limit and len(segments) > limit:
+                res.next_dtstart = segments[limit].dtstart
+                segments = segments[:limit]
+            res.segments = segments
             return res
         except Exception as e:
             log.error('get_schedule_list error: %s', str(e))
             raise_http_exception(e, msg='Schedule list not found')
 
-    def __expand_schedules(
-        self,
-        schedules: List[TimeSlotDTO],
-        window_start: int,
-        window_end: int,
-    ) -> List[Tuple[int, int, TimeSlotDTO]]:
-        occurrences: List[Tuple[int, int, TimeSlotDTO]] = []
-        for src in schedules:
-            for (occ_start, occ_end) in expand_occurrences(
-                dtstart=src.dtstart,
-                dtend=src.dtend,
-                rrule=src.rrule,
-                exdate=src.exdate,
-                dt_format=DATETIME_FORMAT,
-                window_start=window_start,
-                window_end=window_end,
-            ):
-                occurrences.append((occ_start, occ_end, src))
-        return occurrences
-
-    @staticmethod
-    def __split_allow_occurrences_to_booking_slots(
-        occurrences: List[Tuple[int, int, TimeSlotDTO]],
-    ) -> List[Tuple[int, int, TimeSlotDTO]]:
-        slot_occurrences: List[Tuple[int, int, TimeSlotDTO]] = []
-        for (occ_start, occ_end, src) in occurrences:
-            cursor = int(occ_start)
-            end = int(occ_end)
-            while cursor < end:
-                next_end = min(cursor + BOOKING_SLOT_SECONDS, end)
-                slot_occurrences.append((cursor, next_end, src))
-                cursor = next_end
-        return slot_occurrences
-
-    @staticmethod
-    def __is_busy(a_start: int, a_end: int, busy: List[Tuple[int, int]]) -> bool:
-        for (b_start, b_end) in busy:
-            if overlaps(a_start, a_end, b_start, b_end):
-                return True
-        return False
-
-    @staticmethod
-    def __occurrence_to_vo(src: TimeSlotDTO, occ_start: int, occ_end: int) -> TimeSlotVO:
-        # 展開後的 occurrence 以原始 schedule 的欄位為基底，覆寫 dtstart/dtend
-        # id 保留原始 schedule.id，前端以 (id, dtstart) 辨識特定 occurrence
-        data = src.model_dump()
-        data['dtstart'] = occ_start
-        data['dtend'] = occ_end
-        return TimeSlotVO(**data)
+    def __timeslot_to_segment(
+        src: TimeSlotDTO,
+    ) -> MentorScheduleSegmentVO:
+        return MentorScheduleSegmentVO(
+            id=src.id,
+            user_id=src.user_id,
+            dt_type=src.dt_type,
+            dtstart=src.dtstart,
+            dtend=src.dtend,
+            rrule=src.rrule,
+            timezone=src.timezone,
+            exdate=src.exdate,
+            source='schedule',
+            source_id=src.id,
+        )
 
 
     async def save_schedules(self, db: AsyncSession, user_id: int, schedule_dto: MentorScheduleDTO) -> MentorScheduleVO:

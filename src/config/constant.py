@@ -36,6 +36,7 @@ class SeniorityLevel(Enum):
 class ScheduleType(Enum):
     ALLOW = 'ALLOW'
     FORBIDDEN = 'FORBIDDEN'
+    BOOKED = 'BOOKED'
 
 
 class RoleType(Enum):
@@ -56,6 +57,13 @@ class ReservationListState(Enum):
     MENTEE_PENDING = 'MENTEE_PENDING'
     HISTORY = 'HISTORY'
 
+class ActivityService(Enum):
+    GOOGLE = 'GOOGLE'
+
+
+class ActivityStatus(Enum):
+    SCHEDULED = 'SCHEDULED'
+    CANCELLED = 'CANCELLED'
 
 class SortingBy(Enum):
     UPDATED_TIME = 'UPDATED_TIME'
