@@ -1,4 +1,5 @@
-from typing import Dict, Tuple
+import stat
+from typing import Any, Dict, Tuple
 from pydantic import Field
 from datetime import datetime
 
@@ -9,7 +10,6 @@ from .experience_model import ExperienceVO
 from ....config.conf import *
 from ....config.constant import *
 from ....config.exception import ClientException, UnprocessableClientException
-from src.infra.db.orm.init.user_init import MentorSchedule
 from src.infra.util.time_util import (
     create_calendar_with_rrule,
     rrule_events,
@@ -150,25 +150,6 @@ class TimeSlotDTO(BaseModel):
         # json_encoders = {
         #     datetime: lambda v: v.strftime(DATETIME_FORMAT)
         # }
-
-    @staticmethod
-    def convert_schedule_to_dto(schedule: MentorSchedule) -> 'TimeSlotDTO':
-        """
-        轉換 SQLAlchemy Schedule 模型為 TimeSlotDTO，避免 greenlet 問題
-        """
-        schedule_dict = {
-            'id': schedule.id,
-            'user_id': schedule.user_id,
-            'dt_type': schedule.dt_type,
-            'dt_year': schedule.dt_year,
-            'dt_month': schedule.dt_month,
-            'dtstart': schedule.dtstart,
-            'dtend': schedule.dtend,
-            'rrule': schedule.rrule,
-            'timezone': schedule.timezone,
-            'exdate': schedule.exdate or []
-        }
-        return TimeSlotDTO(**schedule_dict)
 
     def hash(self):
         srt_timestamp = int(self.dtstart)
@@ -327,5 +308,76 @@ class MentorScheduleVO(BaseModel):
         timeslots: Dict = [timeslot.to_json() for timeslot in self.timeslots]
         return {
             'timeslots': timeslots,
+            'next_dtstart': self.next_dtstart,
+        }
+
+
+class MentorScheduleSegmentVO(BaseModel):
+    id: Optional[int] = Field(default=None, example=0)
+    user_id: int = Field(..., example=1)
+    dt_type: str = Field(
+        ...,
+        example=ScheduleType.ALLOW.value,
+        pattern=(
+            f'^({ScheduleType.ALLOW.value}|{ScheduleType.FORBIDDEN.value}|'
+            f'{ScheduleType.BOOKED.value}|{ScheduleType.PENDING.value})$'
+        )
+    )
+    dtstart: int = Field(..., example=1717203600)
+    dtend: int = Field(..., example=1717207200)
+    rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
+    timezone: str = Field(default='UTC', example='UTC')
+    exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
+    source: str = Field(..., example='schedule')
+    source_id: Optional[int] = Field(default=None, example=100)
+
+    @staticmethod
+    def timeslot_to_segment(
+        src: TimeSlotDTO,
+    ) -> "MentorScheduleSegmentVO":
+        return MentorScheduleSegmentVO(
+            id=src.id,
+            user_id=src.user_id,
+            dt_type=src.dt_type,
+            dtstart=src.dtstart,
+            dtend=src.dtend,
+            rrule=src.rrule,
+            timezone=src.timezone,
+            exdate=src.exdate,
+            source='schedule',
+            source_id=src.id,
+        )
+    
+    @staticmethod
+    def reservation_to_segment(
+        src: Any,
+        user_id: int,
+    ) -> "MentorScheduleSegmentVO":
+        return MentorScheduleSegmentVO(
+            user_id=user_id,
+            dt_type=(
+                ScheduleType.BOOKED.value
+                if getattr(src.my_status, 'value', src.my_status) == BookingStatus.ACCEPT.value
+                else ScheduleType.PENDING.value
+            ),
+            dtstart=int(src.dtstart),
+            dtend=int(src.dtend),
+            timezone='UTC',
+            source='reservation',
+            source_id=int(src.id),
+        )
+
+    def to_json(self):
+        return self.model_dump()
+
+
+class MentorScheduleQueryVO(BaseModel):
+    segments: Optional[List[MentorScheduleSegmentVO]] = Field(default=[])
+    next_dtstart: Optional[int] = Field(default=None, example=0)
+
+    def to_json(self) -> Dict:
+        segments: Dict = [segment.to_json() for segment in self.segments]
+        return {
+            'segments': segments,
             'next_dtstart': self.next_dtstart,
         }

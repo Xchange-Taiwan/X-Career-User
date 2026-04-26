@@ -36,6 +36,8 @@ class SeniorityLevel(Enum):
 class ScheduleType(Enum):
     ALLOW = 'ALLOW'
     FORBIDDEN = 'FORBIDDEN'
+    BOOKED = 'BOOKED'
+    PENDING = 'PENDING'
 
 
 class RoleType(Enum):

@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import List
 
@@ -148,12 +147,13 @@ async def get_expertises(
 
 @router.get(
     '/{user_id}/schedule/y/{dt_year}/m/{dt_month}',
-    responses=idempotent_response('get_mentor_schedule_list', mentor.MentorScheduleVO),
-    summary='Get mentor free schedule slots (UTC)',
+    responses=idempotent_response('get_mentor_schedule_list', mentor.MentorScheduleQueryVO),
+    summary='Get mentor schedule segments (UTC)',
     description=(
         'All schedule timestamps use Unix seconds in UTC (GMT+0). '
-        'The backend expands rrule in UTC, removes exdate in UTC, then filters out '
-        'FORBIDDEN and booked intervals before returning available slots.'
+        'The backend returns raw schedule rules (ALLOW/FORBIDDEN with rrule/exdate) '
+        'and BOOKED/PENDING segments (mentor reservations by my_status). '
+        'Rrule expansion and calendar rendering are handled by the frontend.'
     ),
 )
 async def get_mentor_schedule_list(
@@ -165,7 +165,7 @@ async def get_mentor_schedule_list(
         next_dtstart: int = Query(None),
         schedule_service: ScheduleService = Depends(get_schedule_service),
 ):
-    res: mentor.MentorScheduleVO = await schedule_service.get_schedule_list(
+    res: mentor.MentorScheduleQueryVO = await schedule_service.get_schedule_list(
         db,
         user_id=user_id,
         dt_year=dt_year,
