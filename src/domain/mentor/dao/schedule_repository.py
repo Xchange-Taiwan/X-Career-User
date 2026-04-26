@@ -42,19 +42,22 @@ class ScheduleRepository:
         schedules: List[Optional[Schedule]] = await get_all_template(db, stmt)
         return [TimeSlotDTO.model_validate(s) for s in schedules if s]
 
-    async def get_accepted_reservations_of_mentor(
+    async def get_schedule_related_reservations_of_mentor(
         self,
         db: AsyncSession,
         mentor_user_id: int,
         window_start_ts: int,
         window_end_ts: int,
     ) -> List[Reservation]:
-        # mentor 自己這一側已 ACCEPT 的預約即視為時段被佔用
+        # mentor 自己這一側為 ACCEPT/PENDING 的預約都要回傳到 schedule segments
         # 條件命中 idx_reservation_user_my_status_dtstart_dtend
         stmt: Select = select(Reservation).filter(
             Reservation.my_user_id == mentor_user_id,
             Reservation.my_role == RoleType.MENTOR.value,
-            Reservation.my_status == BookingStatus.ACCEPT.value,
+            Reservation.my_status.in_([
+                BookingStatus.ACCEPT.value,
+                BookingStatus.PENDING.value,
+            ]),
             Reservation.dtend > window_start_ts,
             Reservation.dtstart < window_end_ts,
         )

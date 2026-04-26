@@ -152,7 +152,7 @@ async def get_expertises(
     description=(
         'All schedule timestamps use Unix seconds in UTC (GMT+0). '
         'The backend returns raw schedule rules (ALLOW/FORBIDDEN with rrule/exdate) '
-        'and BOOKED segments (accepted reservations). '
+        'and BOOKED/PENDING segments (mentor reservations by my_status). '
         'Rrule expansion and calendar rendering are handled by the frontend.'
     ),
 )

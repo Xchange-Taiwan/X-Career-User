@@ -3,7 +3,6 @@ from typing import List, Dict, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import ScheduleType
 from src.config.exception import (
     raise_http_exception,
 )
@@ -36,30 +35,22 @@ class ScheduleService:
     ) -> MentorScheduleQueryVO:
         # 回傳該 mentor 於指定年月的三類時段：
         # - ALLOW/FORBIDDEN: 原始 schedule（包含 rrule/exdate），不在後端展開
-        # - BOOKED: mentor 已 ACCEPT 的 reservation 區間
+        # - BOOKED/PENDING: mentor reservation 依 my_status 對應的區間
         # rrule 解析與可用時段推導改由前端處理
         try:
             window_start, window_end = month_range_ts(dt_year, dt_month)
 
             schedules = await self.__schedule_repository.get_month_schedules_all_types(
                 db, user_id, dt_year, dt_month)
-            reservations = await self.__schedule_repository.get_accepted_reservations_of_mentor(
+            reservations = await self.__schedule_repository.get_schedule_related_reservations_of_mentor(
                 db, user_id, window_start, window_end)
 
             segments: List[MentorScheduleSegmentVO] = [
-                self.__timeslot_to_segment(timeslot)
+                MentorScheduleSegmentVO.timeslot_to_segment(timeslot)
                 for timeslot in schedules
             ]
             segments.extend([
-                MentorScheduleSegmentVO(
-                    user_id=user_id,
-                    dt_type=ScheduleType.BOOKED.value,
-                    dtstart=int(r.dtstart),
-                    dtend=int(r.dtend),
-                    timezone='UTC',
-                    source='reservation',
-                    source_id=int(r.id),
-                )
+                MentorScheduleSegmentVO.reservation_to_segment(r, user_id)
                 for r in reservations
             ])
             segments.sort(key=lambda s: s.dtstart)
@@ -76,22 +67,6 @@ class ScheduleService:
         except Exception as e:
             log.error('get_schedule_list error: %s', str(e))
             raise_http_exception(e, msg='Schedule list not found')
-
-    def __timeslot_to_segment(
-        src: TimeSlotDTO,
-    ) -> MentorScheduleSegmentVO:
-        return MentorScheduleSegmentVO(
-            id=src.id,
-            user_id=src.user_id,
-            dt_type=src.dt_type,
-            dtstart=src.dtstart,
-            dtend=src.dtend,
-            rrule=src.rrule,
-            timezone=src.timezone,
-            exdate=src.exdate,
-            source='schedule',
-            source_id=src.id,
-        )
 
 
     async def save_schedules(self, db: AsyncSession, user_id: int, schedule_dto: MentorScheduleDTO) -> MentorScheduleVO:

@@ -1,4 +1,5 @@
-from typing import Dict, Tuple
+import stat
+from typing import Any, Dict, Tuple
 from pydantic import Field
 from datetime import datetime
 
@@ -317,7 +318,10 @@ class MentorScheduleSegmentVO(BaseModel):
     dt_type: str = Field(
         ...,
         example=ScheduleType.ALLOW.value,
-        pattern=f'^({ScheduleType.ALLOW.value}|{ScheduleType.FORBIDDEN.value}|{ScheduleType.BOOKED.value})$'
+        pattern=(
+            f'^({ScheduleType.ALLOW.value}|{ScheduleType.FORBIDDEN.value}|'
+            f'{ScheduleType.BOOKED.value}|{ScheduleType.PENDING.value})$'
+        )
     )
     dtstart: int = Field(..., example=1717203600)
     dtend: int = Field(..., example=1717207200)
@@ -326,6 +330,42 @@ class MentorScheduleSegmentVO(BaseModel):
     exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
     source: str = Field(..., example='schedule')
     source_id: Optional[int] = Field(default=None, example=100)
+
+    @staticmethod
+    def timeslot_to_segment(
+        src: TimeSlotDTO,
+    ) -> "MentorScheduleSegmentVO":
+        return MentorScheduleSegmentVO(
+            id=src.id,
+            user_id=src.user_id,
+            dt_type=src.dt_type,
+            dtstart=src.dtstart,
+            dtend=src.dtend,
+            rrule=src.rrule,
+            timezone=src.timezone,
+            exdate=src.exdate,
+            source='schedule',
+            source_id=src.id,
+        )
+    
+    @staticmethod
+    def reservation_to_segment(
+        src: Any,
+        user_id: int,
+    ) -> "MentorScheduleSegmentVO":
+        return MentorScheduleSegmentVO(
+            user_id=user_id,
+            dt_type=(
+                ScheduleType.BOOKED.value
+                if getattr(src.my_status, 'value', src.my_status) == BookingStatus.ACCEPT.value
+                else ScheduleType.PENDING.value
+            ),
+            dtstart=int(src.dtstart),
+            dtend=int(src.dtend),
+            timezone='UTC',
+            source='reservation',
+            source_id=int(src.id),
+        )
 
     def to_json(self):
         return self.model_dump()
