@@ -73,6 +73,31 @@ class ReservationRepository:
         return ReservationVO.model_validate(reservation)
 
 
+    async def find_active_duplicate(self, db: AsyncSession,
+                                    schedule_id: int,
+                                    dtstart: int,
+                                    dtend: int,
+                                    my_user_id: int,
+                                    user_id: int) -> Optional[ReservationVO]:
+        # Cancelled reservations are kept as REJECT rows, so they must be
+        # excluded here — otherwise re-booking the same slot is blocked.
+        stmt: Select = select(Reservation).where(
+            and_(
+                Reservation.schedule_id == schedule_id,
+                Reservation.dtstart == dtstart,
+                Reservation.dtend == dtend,
+                Reservation.my_user_id == my_user_id,
+                Reservation.user_id == user_id,
+                Reservation.my_status != BookingStatus.REJECT,
+                Reservation.status != BookingStatus.REJECT,
+            )
+        )
+        reservation = await get_first_template(db, stmt)
+        if not reservation:
+            return None
+        return ReservationVO.model_validate(reservation)
+
+
     async def find_all(self, db: AsyncSession,
                        query: Dict,
                        dtstart: Optional[int] = None,
@@ -280,11 +305,22 @@ class ReservationRepository:
             if query.next_dtend:
                 stmt = stmt.where(Reservation.dtend >= query.next_dtend)
 
-        elif query.state == ReservationListState.HISTORY.value:
+        elif query.state == ReservationListState.MENTOR_HISTORY.value:
             stmt = stmt.where(
-                (Reservation.my_status == BookingStatus.REJECT) |
-                (Reservation.status == BookingStatus.REJECT) |
-                (Reservation.dtend < current_seconds())
+                (Reservation.my_role == RoleType.MENTOR) &
+                ((Reservation.my_status == BookingStatus.REJECT) |
+                 (Reservation.status == BookingStatus.REJECT) |
+                 (Reservation.dtend < current_seconds()))
+            )
+            if query.next_dtend:
+                stmt = stmt.where(Reservation.dtend <= query.next_dtend)
+
+        elif query.state == ReservationListState.MENTEE_HISTORY.value:
+            stmt = stmt.where(
+                (Reservation.my_role == RoleType.MENTEE) &
+                ((Reservation.my_status == BookingStatus.REJECT) |
+                 (Reservation.status == BookingStatus.REJECT) |
+                 (Reservation.dtend < current_seconds()))
             )
             if query.next_dtend:
                 stmt = stmt.where(Reservation.dtend <= query.next_dtend)

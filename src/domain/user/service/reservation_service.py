@@ -277,16 +277,15 @@ class ReservationService:
 
     async def check_duplicate_reservation(self, db: AsyncSession, reservation_dto: ReservationDTO):
         # 检查是否已存在完全相同的预订记录
+        # 取消後 row 仍保留並標記為 REJECT，需排除掉才能讓使用者重訂同一時段
         try:
-            existing_reservation = await self.reservation_repo.find_one(
+            existing_reservation = await self.reservation_repo.find_active_duplicate(
                 db,
-                {
-                    'schedule_id': reservation_dto.schedule_id,
-                    'dtstart': reservation_dto.dtstart,
-                    'dtend': reservation_dto.dtend,
-                    'my_user_id': reservation_dto.my_user_id,
-                    'user_id': reservation_dto.user_id,
-                }
+                schedule_id=reservation_dto.schedule_id,
+                dtstart=reservation_dto.dtstart,
+                dtend=reservation_dto.dtend,
+                my_user_id=reservation_dto.my_user_id,
+                user_id=reservation_dto.user_id,
             )
 
             if existing_reservation:
