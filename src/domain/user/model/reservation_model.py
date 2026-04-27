@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 class ReservationQueryDTO(BaseModel):
     state: str = Field(None, example=ReservationListState.MENTOR_UPCOMING.value,
-                       pattern=f'^({ReservationListState.MENTOR_UPCOMING.value}|{ReservationListState.MENTEE_UPCOMING.value}|{ReservationListState.MENTOR_PENDING.value}|{ReservationListState.MENTEE_PENDING.value}|{ReservationListState.HISTORY.value})$')
+                       pattern=f'^({ReservationListState.MENTOR_UPCOMING.value}|{ReservationListState.MENTEE_UPCOMING.value}|{ReservationListState.MENTOR_PENDING.value}|{ReservationListState.MENTEE_PENDING.value}|{ReservationListState.MENTOR_HISTORY.value}|{ReservationListState.MENTEE_HISTORY.value})$')
     batch: int = Field(..., example=BATCH, ge=1)
     next_dtend: Optional[int] = Field(None, example=1735398000)
 

@@ -280,11 +280,22 @@ class ReservationRepository:
             if query.next_dtend:
                 stmt = stmt.where(Reservation.dtend >= query.next_dtend)
 
-        elif query.state == ReservationListState.HISTORY.value:
+        elif query.state == ReservationListState.MENTOR_HISTORY.value:
             stmt = stmt.where(
-                (Reservation.my_status == BookingStatus.REJECT) |
-                (Reservation.status == BookingStatus.REJECT) |
-                (Reservation.dtend < current_seconds())
+                (Reservation.my_role == RoleType.MENTOR) &
+                ((Reservation.my_status == BookingStatus.REJECT) |
+                 (Reservation.status == BookingStatus.REJECT) |
+                 (Reservation.dtend < current_seconds()))
+            )
+            if query.next_dtend:
+                stmt = stmt.where(Reservation.dtend <= query.next_dtend)
+
+        elif query.state == ReservationListState.MENTEE_HISTORY.value:
+            stmt = stmt.where(
+                (Reservation.my_role == RoleType.MENTEE) &
+                ((Reservation.my_status == BookingStatus.REJECT) |
+                 (Reservation.status == BookingStatus.REJECT) |
+                 (Reservation.dtend < current_seconds()))
             )
             if query.next_dtend:
                 stmt = stmt.where(Reservation.dtend <= query.next_dtend)
