@@ -257,8 +257,8 @@ class ReservationRepository:
             join(
                 Reservation,
                 Profile,
-                (Reservation.my_user_id == Profile.user_id or Reservation.user_id == Profile.user_id),
-                isouter=True
+                Reservation.user_id == Profile.user_id,
+                isouter=True,
             )
         )
         # for key, value in query.items():
