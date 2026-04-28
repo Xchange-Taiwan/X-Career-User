@@ -17,6 +17,7 @@ class Profile(Base):
     user_id = Column(BigInteger, primary_key=True)
     name = Column(String(255), nullable=False)
     avatar = Column(String(255), default='')
+    avatar_updated_at = Column(BigInteger, nullable=True)
     location = Column(String(100), default='')
     job_title = Column(String(255), default='')
     personal_statement = Column(String, default='')
