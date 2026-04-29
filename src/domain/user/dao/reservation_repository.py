@@ -286,7 +286,13 @@ class ReservationRepository:
                 stmt = stmt.where(Reservation.dtend >= query.next_dtend)
 
         elif query.state == ReservationListState.MENTOR_PENDING.value:
+            # Either side rejecting ends the reservation, so PENDING must exclude
+            # rows where my_status or status is REJECT — otherwise a self-cancel
+            # before the counterparty responds keeps the row in PENDING because
+            # the other side's status is still PENDING (mirrors HISTORY filter).
             stmt = stmt.where(
+                (Reservation.my_status != BookingStatus.REJECT) &
+                (Reservation.status != BookingStatus.REJECT) &
                 ((Reservation.my_status == BookingStatus.PENDING) |
                 (Reservation.status == BookingStatus.PENDING)) &
                 (Reservation.my_role == RoleType.MENTOR) &
@@ -297,6 +303,8 @@ class ReservationRepository:
 
         elif query.state == ReservationListState.MENTEE_PENDING.value:
             stmt = stmt.where(
+                (Reservation.my_status != BookingStatus.REJECT) &
+                (Reservation.status != BookingStatus.REJECT) &
                 ((Reservation.my_status == BookingStatus.PENDING) |
                 (Reservation.status == BookingStatus.PENDING)) &
                 (Reservation.my_role == RoleType.MENTEE) &
