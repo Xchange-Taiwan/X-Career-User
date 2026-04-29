@@ -13,15 +13,30 @@ from src.infra.util.time_util import current_seconds
 async def assign_avatar_updated_at(db: AsyncSession, dto: ProfileDTO) -> None:
     """Set ``dto.avatar_updated_at`` ahead of an upsert.
 
-    Bumps to ``current_seconds()`` only when the avatar URL actually changes
-    so unrelated profile edits don't invalidate the avatar's cache buster.
-    Preserves the previous timestamp otherwise.
+    Per-user S3 avatar URLs are stable, so URL-comparison can't tell when
+    the bytes have changed. The frontend signals an avatar refresh by
+    sending a non-null ``avatar_updated_at`` in the upsert payload — when
+    we see that signal, bump using the server clock (the client value is
+    treated as a flag, not the source of truth).
+
+    Falls back to the legacy URL-comparison heuristic for callers that
+    don't send the signal (e.g. avatar switching between Google OAuth and
+    a custom upload, where the URL legitimately changes). Otherwise the
+    previous timestamp is preserved so unrelated profile edits don't
+    invalidate the cache buster.
     """
     if dto is None or dto.user_id is None:
         return
 
     stmt: Select = select(Profile).filter(Profile.user_id == dto.user_id)
     existing: Optional[Profile] = await get_first_template(db, stmt)
+
+    if dto.avatar_updated_at is not None:
+        # Frontend signaled an avatar refresh. Always overwrite with the
+        # server clock so a malicious or skewed client time can't poison
+        # the cache buster.
+        dto.avatar_updated_at = current_seconds()
+        return
 
     new_avatar = (dto.avatar or '').strip()
     prev_avatar = (getattr(existing, 'avatar', None) or '') if existing else ''
