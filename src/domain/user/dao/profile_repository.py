@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, Tuple
 
-from sqlalchemy import select, Select, delete as sa_delete
+from sqlalchemy import select, Select, delete as sa_delete, update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.exception import NotFoundException
@@ -64,4 +64,30 @@ class ProfileRepository:
     async def delete_profile(self, db: AsyncSession, user_id: int) -> None:
         stmt = sa_delete(Profile).where(Profile.user_id == user_id)
         await db.execute(stmt)
+
+    async def bump_avatar_updated_at(
+        self, db: AsyncSession, user_id: int
+    ) -> Tuple[int, bool]:
+        """Set ``avatar_updated_at`` to ``current_seconds()`` and return the
+        value plus ``is_mentor``.
+
+        The S3 avatar key is per-user and stable, so a re-upload doesn't change
+        ``profile.avatar``. The BFF calls this after a successful upload (POST
+        to presigned URL or server-side upload) to refresh the cache buster
+        without going through the full profile upsert path. Returns
+        ``is_mentor`` so the caller can decide whether to re-publish to Search.
+        """
+        now = current_seconds()
+        stmt = (
+            sa_update(Profile)
+            .where(Profile.user_id == user_id)
+            .values(avatar_updated_at=now)
+            .returning(Profile.avatar_updated_at, Profile.is_mentor)
+        )
+        result = await db.execute(stmt)
+        row = result.first()
+        if row is None:
+            raise NotFoundException(msg=f"No such user with id: {user_id}")
+        await db.commit()
+        return row.avatar_updated_at, bool(row.is_mentor)
 

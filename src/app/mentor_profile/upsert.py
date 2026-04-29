@@ -55,6 +55,29 @@ class MentorProfile:
             )
         return res
 
+    async def touch_avatar(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        background_tasks: BackgroundTasks,
+    ) -> int:
+        """Bump ``avatar_updated_at`` after a successful avatar upload.
+
+        Stable per-user S3 keys mean ``profile.avatar`` doesn't change on
+        re-upload, so the standard upsert path can't detect the bytes have
+        changed. The BFF calls this directly after the upload to refresh the
+        cache buster, then re-publishes to Search for mentor users so the
+        index stays in sync within the existing 60s SLA.
+        """
+        new_value, is_mentor = await self.profile_service.touch_avatar(
+            db, user_id
+        )
+        if is_mentor:
+            background_tasks.add_task(
+                self.notify_service.updated_user_profile, user_id=user_id
+            )
+        return new_value
+
 
     async def upsert_mentor_profile(
         self,

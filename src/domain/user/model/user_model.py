@@ -13,6 +13,9 @@ from .common_model import (
 log = logging.getLogger(__name__)
 
 
+class AvatarTouchVO(BaseModel):
+    avatar_updated_at: int
+
 
 class ProfileDTO(BaseModel):
     user_id: Optional[int]

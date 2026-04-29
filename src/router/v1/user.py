@@ -63,6 +63,29 @@ async def upsert_profile(
     return res_success(data=jsonable_encoder(res))
 
 
+@router.post('/{user_id}/avatar/touch',
+             responses=idempotent_response('touch_avatar', user.AvatarTouchVO))
+async def touch_avatar(
+        background_tasks: BackgroundTasks,
+        user_id: int = Path(...),
+        db: AsyncSession = Depends(db_session),
+        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
+):
+    """Bump avatar_updated_at after a successful avatar upload.
+
+    Per-user S3 keys are stable, so re-uploads don't change profile.avatar's
+    URL — the standard upsert path can't tell the bytes have changed. The
+    BFF calls this from the avatar-upload completion flow to refresh the
+    cache buster.
+    """
+    new_value: int = await mentor_profile_app.touch_avatar(
+        db=db,
+        user_id=user_id,
+        background_tasks=background_tasks,
+    )
+    return res_success(data={'avatar_updated_at': new_value})
+
+
 @router.get('/{user_id}/{language}/profile',
             responses=idempotent_response('get_profile', user.ProfileVO))
 async def get_profile(

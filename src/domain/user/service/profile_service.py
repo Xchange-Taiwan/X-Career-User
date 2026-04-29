@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Coroutine, Any, Set, Dict, List, Union
+from typing import Optional, Coroutine, Any, Set, Dict, List, Tuple, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,6 +65,18 @@ class ProfileService:
         except Exception as e:
             log.error(f"upsert_profile error: %s", str(e))
             err_msg = getattr(e, "msg", "upsert profile response failed")
+            raise_http_exception(e, msg=err_msg)
+
+    async def touch_avatar(
+        self, db: AsyncSession, user_id: int
+    ) -> Tuple[int, bool]:
+        try:
+            return await self.__profile_repository.bump_avatar_updated_at(
+                db, user_id
+            )
+        except Exception as e:
+            log.error(f"touch_avatar error: %s", str(e))
+            err_msg = getattr(e, "msg", "touch avatar response failed")
             raise_http_exception(e, msg=err_msg)
 
     async def convert_to_profile_vo(
