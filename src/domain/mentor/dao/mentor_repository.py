@@ -4,9 +4,10 @@ from sqlalchemy import func, Integer, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.mentor.model.mentor_model import MentorProfileDTO
+from src.domain.user.dao.profile_repository import assign_avatar_updated_at
 from src.infra.db.orm.init.user_init import Profile, MentorExperience
 from src.infra.util.convert_util import (
-    get_first_template, 
+    get_first_template,
     get_all_template,
     convert_dto_to_model,
 )
@@ -21,6 +22,7 @@ class MentorRepository:
         return MentorProfileDTO.model_validate(mentor)
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
+        await assign_avatar_updated_at(db, mentor_profile_dto)
         model: Profile = convert_dto_to_model(mentor_profile_dto, Profile)
 
         model = await db.merge(model)
