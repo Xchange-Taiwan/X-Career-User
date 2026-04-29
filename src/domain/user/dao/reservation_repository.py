@@ -251,6 +251,7 @@ class ReservationRepository:
             Reservation.previous_reserve,
             Profile.name,
             Profile.avatar,
+            Profile.avatar_updated_at,
             Profile.job_title,
             Profile.years_of_experience,
         ).select_from(

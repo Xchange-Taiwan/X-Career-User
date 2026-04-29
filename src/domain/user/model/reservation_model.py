@@ -146,6 +146,7 @@ class RUserInfoVO(BaseModel):
                                   pattern=f'^({BookingStatus.ACCEPT.value}|{BookingStatus.REJECT.value}|{BookingStatus.PENDING.value})$')
     name: Optional[str] = ''
     avatar: Optional[str] = ''
+    avatar_updated_at: Optional[int] = None
     job_title: Optional[str] = ''
     years_of_experience: Optional[str] = '0'
 
@@ -250,6 +251,7 @@ class ReservationInfoVO(BaseModel):
                 status=reservation.status,
                 name=reservation.name,
                 avatar=reservation.avatar,
+                avatar_updated_at=reservation.avatar_updated_at,
                 job_title=reservation.job_title,
                 years_of_experience=reservation.years_of_experience,
             ),
