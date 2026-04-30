@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     user_id BIGSERIAL PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL,
     avatar VARCHAR(255) DEFAULT '',
-    avatar_updated_at BIGINT,
     "location" VARCHAR(100) DEFAULT '',
     "job_title" VARCHAR(255) DEFAULT '',
     personal_statement TEXT DEFAULT '',
@@ -74,11 +73,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     "language" VARCHAR(10),
     is_mentor BOOLEAN DEFAULT FALSE
 );
-
-
--- Idempotent column add for existing deployments. Safe to re-run on
--- fresh installs because CREATE TABLE above already includes it.
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_updated_at BIGINT;
 
 
 CREATE TABLE IF NOT EXISTS mentor_experiences (
