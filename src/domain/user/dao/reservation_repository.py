@@ -23,9 +23,9 @@ class ReservationRepository:
         stmt = select(exists().where(
             and_(
                 Reservation.my_user_id == user_id,
-                Reservation.dtend >= current_seconds(),
                 Reservation.my_status != BookingStatus.REJECT,
                 Reservation.status != BookingStatus.REJECT,
+                Reservation.dtend >= current_seconds(),
             )
         ))
         result = await db.scalar(stmt)
@@ -83,11 +83,11 @@ class ReservationRepository:
         # excluded here — otherwise re-booking the same slot is blocked.
         stmt: Select = select(Reservation).where(
             and_(
+                Reservation.my_user_id == my_user_id,
                 Reservation.schedule_id == schedule_id,
+                Reservation.user_id == user_id,
                 Reservation.dtstart == dtstart,
                 Reservation.dtend == dtend,
-                Reservation.my_user_id == my_user_id,
-                Reservation.user_id == user_id,
                 Reservation.my_status != BookingStatus.REJECT,
                 Reservation.status != BookingStatus.REJECT,
             )
