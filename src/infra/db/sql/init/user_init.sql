@@ -145,8 +145,13 @@ CREATE TABLE IF NOT EXISTS reservations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX uidx_reservation_user_dtstart_dtend_schedule_id_user_id
-    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id);
+-- Partial unique: only enforce uniqueness for non-cancelled reservations.
+-- Cancellations leave a REJECT row behind; without WHERE, re-booking the
+-- same slot fails the unique constraint even though find_active_duplicate
+-- (reservation_repository.py) already excludes REJECT at the app layer.
+CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
+    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
+    WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
 CREATE INDEX idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
@@ -174,6 +179,32 @@ CREATE TABLE IF NOT EXISTS activities (
 
 CREATE INDEX idx_activities_mentor_reservation_id ON activities(mentor_reservation_id);
 CREATE INDEX idx_activities_mentee_reservation_id ON activities(mentee_reservation_id);
+
+
+-- Idempotent migration for existing deployments: replace the old full unique
+-- index with a partial one so cancelled (REJECT) rows no longer block
+-- re-booking the same slot. Safe to re-run on fresh installs.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND indexname = 'uidx_reservation_user_dtstart_dtend_schedule_id_user_id'
+    ) THEN
+        DROP INDEX public.uidx_reservation_user_dtstart_dtend_schedule_id_user_id;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND indexname = 'uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id'
+    ) THEN
+        CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
+            ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
+            WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
+    END IF;
+END $$;
+
 
 --以下測試用插入資料
 INSERT INTO interests (category, "subject_group", "language", "subject", "desc")
