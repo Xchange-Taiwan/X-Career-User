@@ -19,6 +19,13 @@ server_settings = {}
 if DB_JIT_OFF:
     server_settings["jit"] = "off"
 
+# Apply DB_SCHEMA to the asyncpg session search_path. Without this, queries
+# against unqualified table names hit `public` regardless of DB_SCHEMA, which
+# is broken for the local docker compose dev env (DB_SCHEMA=x-career-dev).
+# Production keeps DB_SCHEMA=public, so this is a no-op there.
+if DB_SCHEMA:
+    server_settings["search_path"] = f'"{DB_SCHEMA}", public'
+
 # 資料庫引擎配置：使用配置參數設置連接池和超時
 engine = create_async_engine(
     DATABASE_URL, 
