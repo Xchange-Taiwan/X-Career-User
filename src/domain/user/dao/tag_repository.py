@@ -1,10 +1,10 @@
 from typing import List, Optional, Type
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import TagKind
-from src.infra.db.orm.init.user_init import Tag
+from src.config.constant import TagIntent, TagKind
+from src.infra.db.orm.init.user_init import Tag, UserTag
 from src.infra.util.convert_util import get_all_template, get_first_template
 
 
@@ -33,3 +33,121 @@ class TagRepository:
         if language is not None:
             stmt = stmt.filter(Tag.language == language)
         return await get_all_template(db, stmt)
+
+    async def find_tag(
+        self,
+        db: AsyncSession,
+        kind: str,
+        subject_group: str,
+        language: str,
+    ) -> Optional[Type[Tag]]:
+        # Match by canonical (kind, subject_group, language). When the catalog
+        # has multiple subjects per group we take the first — v1 stored just
+        # subject_group on profiles.* JSONB, so any matching row preserves the
+        # original write semantics.
+        stmt: Select = (
+            select(Tag)
+            .filter(Tag.kind == kind)
+            .filter(Tag.subject_group == subject_group)
+            .filter(Tag.language == language)
+            .order_by(Tag.id)
+            .limit(1)
+        )
+        return await get_first_template(db, stmt)
+
+    async def create_tag(
+        self,
+        db: AsyncSession,
+        kind: str,
+        subject_group: str,
+        language: str,
+        subject: str = '',
+    ) -> Tag:
+        tag = Tag(
+            kind=kind,
+            subject_group=subject_group,
+            language=language,
+            subject=subject,
+        )
+        db.add(tag)
+        await db.flush()
+        return tag
+
+    async def get_user_tags(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        kind: Optional[TagKind] = None,
+        intent: Optional[TagIntent] = None,
+    ) -> List[Type[UserTag]]:
+        stmt: Select = select(UserTag).filter(UserTag.user_id == user_id)
+        if intent is not None:
+            stmt = stmt.filter(UserTag.intent == intent.value)
+        if kind is not None:
+            # join through Tag to filter by kind
+            stmt = stmt.join(Tag, Tag.id == UserTag.tag_id).filter(
+                Tag.kind == kind.value
+            )
+        return await get_all_template(db, stmt)
+
+    async def get_user_tags_with_tag(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        kind: Optional[TagKind] = None,
+        intent: Optional[TagIntent] = None,
+    ) -> List[tuple]:
+        # Returns list of (UserTag, Tag) tuples for hydrating responses.
+        stmt: Select = (
+            select(UserTag, Tag)
+            .join(Tag, Tag.id == UserTag.tag_id)
+            .filter(UserTag.user_id == user_id)
+        )
+        if intent is not None:
+            stmt = stmt.filter(UserTag.intent == intent.value)
+        if kind is not None:
+            stmt = stmt.filter(Tag.kind == kind.value)
+        result = await db.execute(stmt)
+        return list(result.all())
+
+    async def delete_user_tags_by_kind_intent(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        kind: TagKind,
+        intent: TagIntent,
+    ) -> int:
+        # Delete all user_tags rows for (user_id, intent) where the underlying
+        # tag has the given kind. Returns deleted row count.
+        sub = select(Tag.id).filter(Tag.kind == kind.value)
+        stmt = (
+            delete(UserTag)
+            .where(UserTag.user_id == user_id)
+            .where(UserTag.intent == intent.value)
+            .where(UserTag.tag_id.in_(sub))
+        )
+        result = await db.execute(stmt)
+        return result.rowcount or 0
+
+    async def upsert_user_tag(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        tag_id: int,
+        intent: TagIntent,
+    ) -> None:
+        # PK (user_id, tag_id, intent) — INSERT then ignore if already present.
+        # Postgres ON CONFLICT DO NOTHING via dialect import would be cleaner;
+        # for this codebase's existing patterns we use a simple merge.
+        existing = await db.execute(
+            select(UserTag)
+            .filter(UserTag.user_id == user_id)
+            .filter(UserTag.tag_id == tag_id)
+            .filter(UserTag.intent == intent.value)
+        )
+        if existing.first():
+            return
+        db.add(
+            UserTag(user_id=user_id, tag_id=tag_id, intent=intent.value)
+        )
+        await db.flush()

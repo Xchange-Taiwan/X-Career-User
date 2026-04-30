@@ -24,6 +24,7 @@ from src.domain.user.service.activity_service import ActivityService
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
+from src.domain.user.service.tag_service import TagService
 from src.app.account.delete import DeleteAccount
 from src.app.reservation.booking import Booking
 from src.app.mentor_profile.upsert import MentorProfile
@@ -72,6 +73,12 @@ def get_activity_dao() -> ActivityRepository:
 
 def get_tag_dao() -> TagRepository:
     return TagRepository()
+
+
+def get_tag_service(
+    tag_repository: TagRepository = Depends(get_tag_dao),
+) -> TagService:
+    return TagService(tag_repository)
 
 
 def get_service_api() -> IServiceApi:

@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -14,11 +15,13 @@ from ...domain.user.model import (
     common_model as common,
     user_model as user,
     reservation_model as reservation,
+    tag_model as tag,
 )
 from ...app.reservation.booking import Booking
 from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
+from ...domain.user.service.tag_service import TagService
 from ...infra.databse import get_db, db_session
 
 from ...app._di.injection import (
@@ -34,7 +37,7 @@ from ...app._di.injection import (
     get_profession_service,
     get_profile_service,
     get_mentor_profile_app,
-
+    get_tag_service,
 )
 
 log = logging.getLogger(__name__)
@@ -149,4 +152,38 @@ async def update_reservation_status(
 ):
     body.my_user_id = user_id
     res = await booking_service.update_reservation_status(db, reservation_id, body)
+    return res_success(data=jsonable_encoder(res))
+
+
+############################################################################################
+# Unified tag endpoints (v2 schema — #226 / #229).
+# Frontend cuts each picker over to these incrementally. Old PUT /profile +
+# upsertMentorExperience(WHAT_I_OFFER) paths stay live until #233 cleanup.
+############################################################################################
+@router.get('/{user_id}/tags',
+            responses=idempotent_response('list_user_tags', tag.UserTagListVO))
+async def list_user_tags(
+        user_id: int = Path(...),
+        kind: Optional[TagKind] = Query(default=None),
+        intent: Optional[TagIntent] = Query(default=None),
+        db: AsyncSession = Depends(db_session),
+        tag_service: TagService = Depends(get_tag_service),
+):
+    res: tag.UserTagListVO = await tag_service.list_user_tags(
+        db, user_id, kind=kind, intent=intent
+    )
+    return res_success(data=jsonable_encoder(res))
+
+
+@router.put('/{user_id}/tags',
+            responses=idempotent_response('replace_user_tags', tag.UserTagsUpsertVO))
+async def replace_user_tags(
+        user_id: int = Path(...),
+        body: tag.UserTagsUpsertDTO = Body(...),
+        db: AsyncSession = Depends(db_session),
+        tag_service: TagService = Depends(get_tag_service),
+):
+    res: tag.UserTagsUpsertVO = await tag_service.replace_user_tags(
+        db, user_id, body
+    )
     return res_success(data=jsonable_encoder(res))
