@@ -139,8 +139,13 @@ CREATE TABLE IF NOT EXISTS reservations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX uidx_reservation_user_dtstart_dtend_schedule_id_user_id
-    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id);
+-- Partial unique: only enforce uniqueness for non-cancelled reservations.
+-- Cancellations leave a REJECT row behind; without WHERE, re-booking the
+-- same slot fails the unique constraint even though find_active_duplicate
+-- (reservation_repository.py) already excludes REJECT at the app layer.
+CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
+    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
+    WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
 CREATE INDEX idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
