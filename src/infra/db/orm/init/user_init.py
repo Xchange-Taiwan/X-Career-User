@@ -144,3 +144,21 @@ class Activity(Base):
             mentee_reservation_id={self.mentee_reservation_id}, \
             service={self.service}, \
             status={self.status})>'
+
+
+class Tag(Base):
+    __tablename__ = 'tags'
+    id = Column(BigInteger, primary_key=True)
+    kind = Column(String(20), nullable=False)
+    subject_group = Column(String(40))
+    language = Column(String(10))
+    subject = Column(Text, nullable=False, default='')
+    desc = Column(JSONB)
+
+
+class UserTag(Base):
+    __tablename__ = 'user_tags'
+    user_id = Column(BigInteger, primary_key=True)
+    tag_id = Column(BigInteger, primary_key=True)
+    intent = Column(String(10), primary_key=True)
+    created_at = Column(BigInteger, default=current_seconds())

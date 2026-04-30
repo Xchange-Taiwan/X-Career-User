@@ -75,3 +75,16 @@ class SortingBy(Enum):
 class Sorting(Enum):
     ASC = 1
     DESC = -1
+
+
+class TagKind(Enum):
+    EXPERTISE = 'expertise'
+    SKILL = 'skill'
+    POSITION = 'position'
+    TOPIC = 'topic'
+    WHAT_I_OFFER = 'what_i_offer'
+
+
+class TagIntent(Enum):
+    WANT = 'WANT'
+    OFFER = 'OFFER'
