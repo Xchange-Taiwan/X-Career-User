@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     user_id BIGSERIAL PRIMARY KEY,
     "name" VARCHAR(255) NOT NULL,
     avatar VARCHAR(255) DEFAULT '',
-    avatar_updated_at BIGINT,
     "location" VARCHAR(100) DEFAULT '',
     "job_title" VARCHAR(255) DEFAULT '',
     personal_statement TEXT DEFAULT '',
@@ -74,11 +73,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     "language" VARCHAR(10),
     is_mentor BOOLEAN DEFAULT FALSE
 );
-
-
--- Idempotent column add for existing deployments. Safe to re-run on
--- fresh installs because CREATE TABLE above already includes it.
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_updated_at BIGINT;
 
 
 CREATE TABLE IF NOT EXISTS mentor_experiences (
@@ -145,8 +139,13 @@ CREATE TABLE IF NOT EXISTS reservations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX uidx_reservation_user_dtstart_dtend_schedule_id_user_id
-    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id);
+-- Partial unique: only enforce uniqueness for non-cancelled reservations.
+-- Cancellations leave a REJECT row behind; without WHERE, re-booking the
+-- same slot fails the unique constraint even though find_active_duplicate
+-- (reservation_repository.py) already excludes REJECT at the app layer.
+CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
+    ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
+    WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
 CREATE INDEX idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
