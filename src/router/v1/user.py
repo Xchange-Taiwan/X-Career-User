@@ -195,3 +195,18 @@ async def replace_user_tags(
     # keeps the request latency unaffected.
     background_tasks.add_task(notify_service.notify_updated_user_tags, user_id)
     return res_success(data=jsonable_encoder(res))
+
+
+@router.get('/{language}/tags/catalog',
+            responses=idempotent_response('get_tag_catalog', tag.TagCatalogVO))
+async def get_tag_catalog(
+        language: str = Path(...),
+        kind: TagKind = Query(...),
+        db: AsyncSession = Depends(db_session),
+        tag_service: TagService = Depends(get_tag_service),
+):
+    # Returns the two-layer catalog for `kind` in `language`. Industry comes
+    # back as a flat list of group rows (no leaves) since it is intentionally
+    # single-layer.
+    res: tag.TagCatalogVO = await tag_service.get_catalog(db, kind, language)
+    return res_success(data=jsonable_encoder(res))

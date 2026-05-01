@@ -154,6 +154,10 @@ class Tag(Base):
     language = Column(String(10))
     subject = Column(Text, nullable=False, default='')
     desc = Column(JSONB)
+    # Two-layer hierarchy (#226): NULL = top-level group row (or industry, which
+    # is intentionally single-layer); non-NULL = leaf row whose parent is the
+    # group with `subject_group == parent_subject_group` and the same `kind`.
+    parent_subject_group = Column(String(40), nullable=True, index=True)
 
 
 class UserTag(Base):
