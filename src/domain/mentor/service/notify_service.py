@@ -56,6 +56,7 @@ class NotifyService:
                 "subject": tag.subject,
                 "language": tag.language,
                 "desc": tag.desc,
+                "parent_subject_group": tag.parent_subject_group,
             }
             for ut, tag in rows
         ]

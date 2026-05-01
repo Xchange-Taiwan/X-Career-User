@@ -34,6 +34,22 @@ class TagRepository:
             stmt = stmt.filter(Tag.language == language)
         return await get_all_template(db, stmt)
 
+    async def list_catalog(
+        self,
+        db: AsyncSession,
+        kind: TagKind,
+        language: str,
+    ) -> List[Type[Tag]]:
+        # Returns every tag row for (kind, language) — both groups and leaves.
+        # Service layer groups them into the nested catalog VO.
+        stmt: Select = (
+            select(Tag)
+            .filter(Tag.kind == kind.value)
+            .filter(Tag.language == language)
+            .order_by(Tag.parent_subject_group.nullsfirst(), Tag.subject_group)
+        )
+        return await get_all_template(db, stmt)
+
     async def find_tag(
         self,
         db: AsyncSession,

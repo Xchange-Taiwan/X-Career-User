@@ -130,6 +130,7 @@ def get_mentor_service(
     interest_service: InterestService = Depends(get_interest_service),
     profession_service: ProfessionService = Depends(get_profession_service),
     profile_service: ProfileService = Depends(get_profile_service),
+    tag_service: TagService = Depends(get_tag_service),
 ) -> MentorService:
     return MentorService(
         mentor_repository,
@@ -137,6 +138,7 @@ def get_mentor_service(
         interest_service,
         profession_service,
         profile_service,
+        tag_service,
     )
 
 

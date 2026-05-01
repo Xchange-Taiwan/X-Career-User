@@ -5,6 +5,7 @@ from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
 from ...user.model.common_model import ProfessionListVO
+from ...user.model.tag_model import UserTagVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
 from ....config.conf import *
@@ -62,6 +63,11 @@ class MentorProfileVO(ProfileVO):
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
     expertises: Optional[ProfessionListVO] = None
     experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
+    # #226 two-layer: hydrated unified user-tags view. Includes parent_subject_group
+    # so the frontend can render the two-layer breadcrumb (group → leaf) in one
+    # round trip without a separate GET /tags call. Populated by MentorService
+    # via TagService.list_user_tags. None means the caller did not hydrate.
+    user_tags: Optional[List[UserTagVO]] = None
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
