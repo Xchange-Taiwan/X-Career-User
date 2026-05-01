@@ -40,6 +40,7 @@ class TagService:
                     subject_group=tag.subject_group,
                     language=tag.language,
                     subject=tag.subject,
+                    desc=tag.desc,
                 )
                 for ut, tag in rows
             ]
