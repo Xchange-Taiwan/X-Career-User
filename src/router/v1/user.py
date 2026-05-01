@@ -157,14 +157,6 @@ async def update_reservation_status(
     return res_success(data=jsonable_encoder(res))
 
 
-############################################################################################
-# Tag catalog endpoint (#226). The standalone GET/PUT /{user_id}/tags pair
-# was removed: callers now write user_tags via the buckets payload on PUT
-# /mentor_profile (mentor) or PUT /users/profile (mentee), and read them
-# via the hydrated `user_tags` field on the corresponding GET. TagService's
-# list_user_tags / replace_user_tags methods stay — they back the fan-out
-# inside MentorService / ProfileService.
-############################################################################################
 @router.get('/{language}/tags/catalog',
             responses=idempotent_response('get_tag_catalog', tag.TagCatalogsVO))
 async def get_tag_catalog(
@@ -173,9 +165,6 @@ async def get_tag_catalog(
         db: AsyncSession = Depends(db_session),
         tag_service: TagService = Depends(get_tag_service),
 ):
-    # Multi-kind: pass `?kind=skill&kind=topic`, or omit to get all kinds in
-    # one round-trip. Single-kind callers can still pass `?kind=skill` and
-    # consume `data.catalogs.skill` — the response shape is uniform regardless
-    # of how many kinds were requested.
+    # Pass `?kind=skill&kind=topic` to filter; omit for all kinds.
     res: tag.TagCatalogsVO = await tag_service.get_catalogs(db, kind, language)
     return res_success(data=jsonable_encoder(res))

@@ -29,10 +29,7 @@ class ProfileDTO(BaseModel):
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
     is_mentor: Optional[bool] = False
-    # #226 Option B (mentee parity): caller can write user_tags atomically
-    # with the rest of the profile via PUT /v1/users/profile, mirroring the
-    # mentor path. None = leave user_tags untouched. Mentees typically only
-    # send WANT-side buckets; OFFER buckets are accepted but unusual.
+    # None = leave user_tags untouched; non-None replaces the specified buckets.
     user_tags: Optional[UserTagBucketsInputDTO] = None
 
     model_config = {
@@ -86,8 +83,7 @@ class ProfileVO(BaseModel):
     onboarding: Optional[bool] = False
     is_mentor: Optional[bool] = False
     language: Optional[str] = DEFAULT_LANGUAGE
-    # #226: hydrated user-tags view (same shape as MentorProfileVO.user_tags
-    # so /tags GET can be removed — mentees read their tags from here).
+    # Hydrated tags pre-grouped per (kind, intent) bucket; None = not hydrated.
     user_tags: Optional[UserTagBucketsVO] = None
 
     @staticmethod

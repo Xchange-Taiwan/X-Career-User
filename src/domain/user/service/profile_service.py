@@ -51,9 +51,7 @@ class ProfileService:
     async def __hydrate_user_tags(
         self, db: AsyncSession, vo: ProfileVO, user_id: int
     ) -> None:
-        # Mirror of MentorService.__hydrate_user_tags. Best-effort: failure
-        # leaves an empty buckets object so the caller can still use the
-        # rest of the profile response.
+        # Best-effort: hydration failure shouldn't fail the whole profile read.
         try:
             tag_list = await self.__tag_service.list_user_tags(db, user_id)
             vo.user_tags = UserTagBucketsVO.from_flat(tag_list.user_tags)
@@ -68,8 +66,7 @@ class ProfileService:
         buckets: UserTagBucketsInputDTO,
         profile_language: Optional[str],
     ) -> None:
-        # Same fan-out as MentorService — None = leave bucket alone, [] = clear,
-        # [...] = replace contents. Profile language is the source of truth.
+        # None = leave bucket alone, [] = clear, [...] = replace contents.
         bucket_map = (
             ('want_skills',    TagKind.SKILL,    TagIntent.WANT),
             ('offer_skills',   TagKind.SKILL,    TagIntent.OFFER),

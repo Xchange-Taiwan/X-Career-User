@@ -21,8 +21,7 @@ class MentorRepository:
         return MentorProfileDTO.model_validate(mentor)
 
     async def upsert_mentor(self, db: AsyncSession, mentor_profile_dto: MentorProfileDTO) -> MentorProfileDTO:
-        # `user_tags` lives in a separate table (#226 Option B); strip it from
-        # the Profile model dump so the ORM constructor doesn't choke.
+        # user_tags lives in a separate table; strip it from the Profile dump.
         model: Profile = convert_dto_to_model(mentor_profile_dto, Profile, exclude={'user_tags'})
 
         model = await db.merge(model)

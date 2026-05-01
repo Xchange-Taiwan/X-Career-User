@@ -63,15 +63,10 @@ class TagService:
         user_id: int,
         dto: UserTagsUpsertDTO,
     ) -> UserTagsUpsertVO:
-        # Replace all (user_id, kind, intent) tags with the supplied
-        # subject_groups. find-or-create canonical tag per subject_group,
-        # then delete-existing + insert-new in a single transaction.
-        # Leaf-only: each supplied subject_group must resolve to a row whose
-        # parent_subject_group IS NOT NULL (group rows are catalog scaffolding,
-        # not user selections). Missing rows are auto-created — legacy callers
-        # that arrived before catalog seed still work; the resulting orphan
-        # row carries parent_subject_group=NULL and a follow-up seed pass
-        # links it to its proper parent.
+        # Find-or-create per subject_group, then delete-then-insert in one tx.
+        # Group rows are rejected (must reference leaves); rows missing from
+        # the catalog are auto-created as orphans (parent_subject_group=NULL)
+        # for a later seed pass to link.
         try:
             language = dto.language or DEFAULT_LANGUAGE
             kind_value = dto.kind.value
@@ -125,12 +120,9 @@ class TagService:
         kind: TagKind,
         language: str,
     ) -> TagCatalogVO:
-        # Group rows (is_group=TRUE) anchor the catalog; leaves attach by
-        # matching their parent_subject_group to a group's subject_group
-        # within the same kind. Industry passes through as a flat list of
-        # "group" rows with empty `leaves` arrays. Orphan leaves
-        # (is_group=FALSE, parent_subject_group=NULL) land in a synthetic
-        # catch-all group at the bottom.
+        # Groups (is_group=TRUE) anchor the catalog; leaves attach via
+        # parent_subject_group. Orphan leaves land in a synthetic catch-all
+        # group so they aren't silently dropped.
         try:
             rows = await self.__tag_repository.list_catalog(db, kind, language)
 
@@ -163,10 +155,7 @@ class TagService:
                     else:
                         orphan_leaves.append((tag.parent_subject_group, leaf))
 
-            # Late-arriving leaves whose group came after them in the iteration
-            # already attached above; orphans here truly have no group row in
-            # this language. Surface them under a synthetic catch-all group so
-            # the catalog stays usable rather than silently dropping rows.
+            # Anything still here truly has no group row in this language.
             if orphan_leaves:
                 catchall = TagCatalogGroupVO(
                     subject_group='',
@@ -192,9 +181,8 @@ class TagService:
         kinds: Optional[List[TagKind]],
         language: str,
     ) -> TagCatalogsVO:
-        # None or empty list = all kinds. Sequential rather than gather
-        # because the SQLAlchemy AsyncSession isn't safe for concurrent
-        # operations on the same session.
+        # Sequential — AsyncSession isn't safe for concurrent ops on the
+        # same session, so gather() would race.
         target_kinds = list(kinds) if kinds else list(TagKind)
         catalogs: dict = {}
         for k in target_kinds:
