@@ -14,6 +14,7 @@ from src.domain.user.model.tag_model import (
     TagCatalogGroupVO,
     TagCatalogLeafVO,
     TagCatalogVO,
+    TagCatalogsVO,
     UserTagListVO,
     UserTagsUpsertDTO,
     UserTagsUpsertVO,
@@ -184,3 +185,19 @@ class TagService:
         except Exception as e:
             log.error("get_catalog error: %s", str(e))
             raise_http_exception(e, msg="Internal Server Error")
+
+    async def get_catalogs(
+        self,
+        db: AsyncSession,
+        kinds: Optional[List[TagKind]],
+        language: str,
+    ) -> TagCatalogsVO:
+        # None or empty list = all kinds. Sequential rather than gather
+        # because the SQLAlchemy AsyncSession isn't safe for concurrent
+        # operations on the same session.
+        target_kinds = list(kinds) if kinds else list(TagKind)
+        catalogs: dict = {}
+        for k in target_kinds:
+            vo = await self.get_catalog(db, k, language)
+            catalogs[vo.kind] = vo
+        return TagCatalogsVO(language=language, catalogs=catalogs)

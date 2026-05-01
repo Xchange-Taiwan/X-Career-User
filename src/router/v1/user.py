@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import (
     APIRouter,
@@ -166,15 +166,16 @@ async def update_reservation_status(
 # inside MentorService / ProfileService.
 ############################################################################################
 @router.get('/{language}/tags/catalog',
-            responses=idempotent_response('get_tag_catalog', tag.TagCatalogVO))
+            responses=idempotent_response('get_tag_catalog', tag.TagCatalogsVO))
 async def get_tag_catalog(
         language: str = Path(...),
-        kind: TagKind = Query(...),
+        kind: Optional[List[TagKind]] = Query(default=None),
         db: AsyncSession = Depends(db_session),
         tag_service: TagService = Depends(get_tag_service),
 ):
-    # Returns the two-layer catalog for `kind` in `language`. Industry comes
-    # back as a flat list of group rows (no leaves) since it is intentionally
-    # single-layer.
-    res: tag.TagCatalogVO = await tag_service.get_catalog(db, kind, language)
+    # Multi-kind: pass `?kind=skill&kind=topic`, or omit to get all kinds in
+    # one round-trip. Single-kind callers can still pass `?kind=skill` and
+    # consume `data.catalogs.skill` — the response shape is uniform regardless
+    # of how many kinds were requested.
+    res: tag.TagCatalogsVO = await tag_service.get_catalogs(db, kind, language)
     return res_success(data=jsonable_encoder(res))
