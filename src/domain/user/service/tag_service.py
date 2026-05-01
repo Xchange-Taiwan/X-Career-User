@@ -85,7 +85,7 @@ class TagService:
                     tag = await self.__tag_repository.create_tag(
                         db, kind_value, subject_group, language
                     )
-                elif tag.parent_subject_group is None:
+                elif tag.is_group:
                     raise ClientException(
                         msg=(
                             f"subject_group '{subject_group}' is a top-level "
@@ -124,10 +124,12 @@ class TagService:
         kind: TagKind,
         language: str,
     ) -> TagCatalogVO:
-        # Group rows (parent_subject_group IS NULL) anchor the catalog;
-        # leaves attach by matching their parent_subject_group to a group's
-        # subject_group within the same kind. Industry passes through as
-        # a flat list of "group" rows with empty `leaves` arrays.
+        # Group rows (is_group=TRUE) anchor the catalog; leaves attach by
+        # matching their parent_subject_group to a group's subject_group
+        # within the same kind. Industry passes through as a flat list of
+        # "group" rows with empty `leaves` arrays. Orphan leaves
+        # (is_group=FALSE, parent_subject_group=NULL) land in a synthetic
+        # catch-all group at the bottom.
         try:
             rows = await self.__tag_repository.list_catalog(db, kind, language)
 
@@ -136,7 +138,7 @@ class TagService:
             orphan_leaves: List = []
 
             for tag in rows:
-                if tag.parent_subject_group is None:
+                if tag.is_group:
                     if tag.subject_group not in groups_by_key:
                         groups_by_key[tag.subject_group] = TagCatalogGroupVO(
                             subject_group=tag.subject_group,
