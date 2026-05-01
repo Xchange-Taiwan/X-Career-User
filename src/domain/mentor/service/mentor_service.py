@@ -7,6 +7,7 @@ from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
+from src.domain.user.model.tag_model import UserTagBucketsVO
 from src.domain.user.service.tag_service import TagService
 import logging
 
@@ -30,10 +31,10 @@ class MentorService:
         # /mentor_profile read — caller can still do a separate GET /tags.
         try:
             tag_list = await self.__tag_service.list_user_tags(db, user_id)
-            vo.user_tags = tag_list.user_tags
+            vo.user_tags = UserTagBucketsVO.from_flat(tag_list.user_tags)
         except Exception as e:
             log.warning("hydrate user_tags failed for user %s: %s", user_id, e)
-            vo.user_tags = []
+            vo.user_tags = UserTagBucketsVO()
 
     async def upsert_mentor_profile(self, db: AsyncSession, profile_dto: MentorProfileDTO) -> MentorProfileVO:
         try:
