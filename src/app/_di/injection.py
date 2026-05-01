@@ -174,8 +174,11 @@ def get_notify_service(
     mentor_service: MentorService = Depends(get_mentor_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     mq_adapter: SqsMqAdapter = Depends(get_sqs_mq_adapter),
+    tag_repository: TagRepository = Depends(get_tag_dao),
 ):
-    return NotifyService(mentor_service, experience_service, mq_adapter)
+    return NotifyService(
+        mentor_service, experience_service, mq_adapter, tag_repository
+    )
 
 
 def get_mentor_profile_app(

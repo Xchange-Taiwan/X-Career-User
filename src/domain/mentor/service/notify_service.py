@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 from fastapi import BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.infra.template.service_api import IServiceApi
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.infra.databse import SessionLocal
+from src.domain.user.dao.tag_repository import TagRepository
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.model import user_model as user
 from src.domain.mentor.service.mentor_service import MentorService
@@ -32,10 +33,31 @@ class NotifyService:
         mentor_service: MentorService,
         experience_service: ExperienceService,
         mq_adapter: SqsMqAdapter,
+        tag_repository: TagRepository,
     ):
         self.mentor_service = mentor_service
         self.exp_service: ExperienceService = experience_service
         self.mq_adapter = mq_adapter
+        self.tag_repository = tag_repository
+
+    async def _serialize_user_tags(
+        self, db: AsyncSession, user_id: int
+    ) -> List[Dict]:
+        # Hydrates current user_tags rows into the SQS-friendly shape the
+        # Search service expects on `profiles_v2.user_tags`. Joins to Tag so
+        # kind / subject_group / language travel with the row.
+        rows = await self.tag_repository.get_user_tags_with_tag(db, user_id)
+        return [
+            {
+                "tag_id": ut.tag_id,
+                "kind": tag.kind,
+                "intent": ut.intent,
+                "subject_group": tag.subject_group,
+                "subject": tag.subject,
+                "language": tag.language,
+            }
+            for ut, tag in rows
+        ]
 
     async def updated_user_profile(self, user_id: int):
         """Triggered by PUT /users/profile — syncs the full mentor profile document."""
@@ -46,8 +68,9 @@ class NotifyService:
                         db, user_id, DEFAULT_LANGUAGE
                     )
                 )
+                user_tags = await self._serialize_user_tags(db, user_id)
             payload = {
-                **mentor_profile.to_dto_json(),
+                **mentor_profile.to_dto_json(user_tags=user_tags),
                 "action": "UPSERT_MENTOR_PROFILE",
             }
             await self.mq_adapter.publish_message(payload, group_id=str(user_id))
@@ -60,8 +83,10 @@ class NotifyService:
         """Triggered by PUT /mentors/mentor_profile — updates mentor-specific fields."""
         try:
             user_id = mentor_profile.user_id
+            async with SessionLocal() as db:
+                user_tags = await self._serialize_user_tags(db, user_id)
             payload = {
-                **mentor_profile.to_dto_json(),
+                **mentor_profile.to_dto_json(user_tags=user_tags),
                 "action": "PUT_MENTOR_PROFILE",
             }
             await self.mq_adapter.publish_message(payload, group_id=str(user_id))
@@ -87,8 +112,10 @@ class NotifyService:
                 mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
                     user_id=user_id, experiences=experiences
                 )
+                async with SessionLocal() as db:
+                    user_tags = await self._serialize_user_tags(db, user_id)
                 payload = {
-                    **mentor_profile.to_dto_json(),
+                    **mentor_profile.to_dto_json(user_tags=user_tags),
                     "action": "PATCH_MENTOR_PROFILE",
                 }
                 await self.mq_adapter.publish_message(payload, group_id=str(user_id))
@@ -96,6 +123,27 @@ class NotifyService:
 
         except Exception as e:
             log.error(f"[NotifyService] failed to publish experience update, user_id={user_id}: {e}")
+
+    async def notify_updated_user_tags(self, user_id: int):
+        """Triggered by PUT /v1/users/{id}/tags — fires a fresh full UPSERT
+        so Search re-syncs both v1 (legacy nested arrays, unchanged) and v2
+        (`profiles_v2.user_tags`, populated from the freshly-written tags)."""
+        try:
+            async with SessionLocal() as db:
+                mentor_profile: mentor.MentorProfileVO = (
+                    await self.mentor_service.get_mentor_profile_by_id(
+                        db, user_id, DEFAULT_LANGUAGE
+                    )
+                )
+                user_tags = await self._serialize_user_tags(db, user_id)
+            payload = {
+                **mentor_profile.to_dto_json(user_tags=user_tags),
+                "action": "UPSERT_MENTOR_PROFILE",
+            }
+            await self.mq_adapter.publish_message(payload, group_id=str(user_id))
+            log.info(f"[NotifyService] published UPSERT_MENTOR_PROFILE (tags), user_id={user_id}")
+        except Exception as e:
+            log.error(f"[NotifyService] failed to publish user tags update, user_id={user_id}: {e}")
 
     async def notify_delete_mentor_profile(self, user_id: int) -> None:
         try:

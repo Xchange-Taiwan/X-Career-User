@@ -102,10 +102,16 @@ class MentorProfileVO(ProfileVO):
             is_mentor=self.is_mentor,
         )
 
-    def to_dto_json(self):
+    def to_dto_json(self, user_tags: Optional[List[Dict]] = None):
+        # `user_tags` is grafted in alongside `experiences` so the SQS payload
+        # carries everything Search needs to populate `profiles_v2.user_tags`.
+        # Caller passes the list; None or omitted leaves it out (legacy callers
+        # are unaffected — Search treats absence as "no v2 update needed").
         dto = self.from_dto()
         dto_dict = jsonable_encoder(dto)
         dto_dict.update({'experiences': jsonable_encoder(self.experiences)})
+        if user_tags is not None:
+            dto_dict['user_tags'] = jsonable_encoder(user_tags)
         return dto_dict
 
 
