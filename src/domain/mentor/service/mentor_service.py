@@ -67,11 +67,13 @@ class MentorService:
         db: AsyncSession,
         user_id: int,
         buckets: UserTagBucketsInputDTO,
-        fallback_language: Optional[str],
+        profile_language: Optional[str],
     ) -> None:
         # Each bucket maps 1:1 to a (kind, intent) pair. None = leave bucket
         # alone, [] = clear it, [...] = replace contents. Mirror of
         # UserTagBucketsVO.from_flat so request and response stay symmetric.
+        # Language is always the profile's — see UserTagBucketsInputDTO
+        # docstring for why caller can't override it.
         bucket_map = (
             ('want_skills',    TagKind.SKILL,    TagIntent.WANT),
             ('offer_skills',   TagKind.SKILL,    TagIntent.OFFER),
@@ -79,7 +81,6 @@ class MentorService:
             ('offer_topics',   TagKind.TOPIC,    TagIntent.OFFER),
             ('want_positions', TagKind.POSITION, TagIntent.WANT),
         )
-        language = buckets.language or fallback_language
         for bucket_name, kind, intent in bucket_map:
             subject_groups = getattr(buckets, bucket_name)
             if subject_groups is None:
@@ -91,7 +92,7 @@ class MentorService:
                     kind=kind,
                     intent=intent,
                     subject_groups=subject_groups,
-                    language=language,
+                    language=profile_language,
                 ),
             )
 

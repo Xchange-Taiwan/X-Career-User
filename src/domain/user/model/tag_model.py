@@ -89,13 +89,19 @@ class UserTagBucketsInputDTO(BaseModel):
 
     Bucket → (kind, intent) mapping mirrors UserTagBucketsVO so request
     and response are symmetric.
+
+    Language is intentionally NOT settable here — server always uses the
+    user's profile language. The current schema conflates concept and
+    translation (`tags.UNIQUE(kind, subject_group, language, subject)`),
+    so a per-write language override would silently fork a user's tag
+    selections across languages. Until the schema is split into concept +
+    translation tables, profile language is the single source of truth.
     """
     want_skills: Optional[List[str]] = None
     offer_skills: Optional[List[str]] = None
     want_topics: Optional[List[str]] = None
     offer_topics: Optional[List[str]] = None
     want_positions: Optional[List[str]] = None
-    language: Optional[str] = None  # falls back to profile language
 
 
 class UserTagsUpsertDTO(BaseModel):
