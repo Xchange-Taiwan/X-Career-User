@@ -77,6 +77,27 @@ class UserTagBucketsVO(BaseModel):
         return buckets
 
 
+class UserTagBucketsInputDTO(BaseModel):
+    """Input shape for replacing multiple user-tag buckets in one shot
+    (e.g. PUT mentor_profile — caller fills the picker selections and the
+    server fans out to one replace_user_tags call per non-None bucket).
+
+    Per-bucket semantics:
+      None   → leave that (kind, intent) untouched
+      []     → clear all tags in that bucket
+      [...]  → replace bucket contents with these LEAF subject_groups
+
+    Bucket → (kind, intent) mapping mirrors UserTagBucketsVO so request
+    and response are symmetric.
+    """
+    want_skills: Optional[List[str]] = None
+    offer_skills: Optional[List[str]] = None
+    want_topics: Optional[List[str]] = None
+    offer_topics: Optional[List[str]] = None
+    want_positions: Optional[List[str]] = None
+    language: Optional[str] = None  # falls back to profile language
+
+
 class UserTagsUpsertDTO(BaseModel):
     # Replace all of (user_id, kind, intent) with the supplied subject_groups.
     # `subject_groups` items must be LEAF subject_groups for kind ∈

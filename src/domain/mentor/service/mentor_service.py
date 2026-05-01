@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.exception import NotFoundException, ServerException, raise_http_exception
@@ -7,7 +9,12 @@ from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
-from src.domain.user.model.tag_model import UserTagBucketsVO
+from src.config.constant import TagIntent, TagKind
+from src.domain.user.model.tag_model import (
+    UserTagBucketsInputDTO,
+    UserTagBucketsVO,
+    UserTagsUpsertDTO,
+)
 from src.domain.user.service.tag_service import TagService
 import logging
 
@@ -39,6 +46,14 @@ class MentorService:
     async def upsert_mentor_profile(self, db: AsyncSession, profile_dto: MentorProfileDTO) -> MentorProfileVO:
         try:
             res_dto: MentorProfileDTO = await self.__mentor_repository.upsert_mentor(db, profile_dto)
+            # #226 Option B: when caller supplies user_tags, fan it out to one
+            # replace_user_tags call per non-None bucket. Runs after legacy
+            # upsert succeeds so the SQS notify (fired as background task by
+            # the orchestrator) re-reads a consistent snapshot.
+            if profile_dto.user_tags is not None:
+                await self.__write_user_tag_buckets(
+                    db, res_dto.user_id, profile_dto.user_tags, profile_dto.language
+                )
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(db, res_dto, language=profile_dto.language)
             await self.__hydrate_user_tags(db, res_vo, res_dto.user_id)
             return res_vo
@@ -46,6 +61,39 @@ class MentorService:
             log.error(f'upsert_mentor_profile error: %s', str(e))
             err_msg = getattr(e, 'msg', 'upsert mentor profile response failed')
             raise ServerException(msg=err_msg)
+
+    async def __write_user_tag_buckets(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        buckets: UserTagBucketsInputDTO,
+        fallback_language: Optional[str],
+    ) -> None:
+        # Each bucket maps 1:1 to a (kind, intent) pair. None = leave bucket
+        # alone, [] = clear it, [...] = replace contents. Mirror of
+        # UserTagBucketsVO.from_flat so request and response stay symmetric.
+        bucket_map = (
+            ('want_skills',    TagKind.SKILL,    TagIntent.WANT),
+            ('offer_skills',   TagKind.SKILL,    TagIntent.OFFER),
+            ('want_topics',    TagKind.TOPIC,    TagIntent.WANT),
+            ('offer_topics',   TagKind.TOPIC,    TagIntent.OFFER),
+            ('want_positions', TagKind.POSITION, TagIntent.WANT),
+        )
+        language = buckets.language or fallback_language
+        for bucket_name, kind, intent in bucket_map:
+            subject_groups = getattr(buckets, bucket_name)
+            if subject_groups is None:
+                continue
+            await self.__tag_service.replace_user_tags(
+                db,
+                user_id,
+                UserTagsUpsertDTO(
+                    kind=kind,
+                    intent=intent,
+                    subject_groups=subject_groups,
+                    language=language,
+                ),
+            )
 
     async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int, language: str) \
             -> MentorProfileVO:
