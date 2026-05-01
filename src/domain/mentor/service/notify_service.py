@@ -45,7 +45,7 @@ class NotifyService:
     ) -> List[Dict]:
         # Hydrates current user_tags rows into the SQS-friendly shape the
         # Search service expects on `profiles_v2.user_tags`. Joins to Tag so
-        # kind / subject_group / language travel with the row.
+        # kind / subject_group / language / desc travel with the row.
         rows = await self.tag_repository.get_user_tags_with_tag(db, user_id)
         return [
             {
@@ -55,6 +55,7 @@ class NotifyService:
                 "subject_group": tag.subject_group,
                 "subject": tag.subject,
                 "language": tag.language,
+                "desc": tag.desc,
             }
             for ut, tag in rows
         ]

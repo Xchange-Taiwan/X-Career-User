@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -11,6 +11,9 @@ class TagVO(BaseModel):
     subject_group: Optional[str] = None
     language: Optional[str] = None
     subject: Optional[str] = ''
+    # Free-form per-tag metadata (icon, color, display hints, etc.) — mirrors
+    # the v1 `_INTEREST_NESTED_PROPS.desc` JSONB field. Stored as Tag.desc.
+    desc: Optional[Dict[str, Any]] = None
 
     model_config = {"from_attributes": True}
 
@@ -22,6 +25,7 @@ class UserTagVO(BaseModel):
     subject_group: Optional[str] = None
     language: Optional[str] = None
     subject: Optional[str] = ''
+    desc: Optional[Dict[str, Any]] = None
 
 
 class UserTagListVO(BaseModel):
