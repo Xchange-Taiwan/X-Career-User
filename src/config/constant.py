@@ -78,12 +78,8 @@ class Sorting(Enum):
 
 
 class TagKind(Enum):
-    # Two intent axes share the same kind:
-    #   skill   — WANT (mentee wants to learn) or OFFER (mentor can teach)
-    #   topic   — WANT (mentee wants to discuss) or OFFER (mentor can mentor on)
-    #   position — WANT (mentee interested in this role)
-    # `expertise` and `what_i_offer` were collapsed into `skill` / `topic`
-    # respectively under the two-layer redesign — intent flag does the work.
+    # Combined with TagIntent (WANT/OFFER) on UserTag rows:
+    # skill/topic accept both intents; position is WANT-only.
     SKILL = 'skill'
     POSITION = 'position'
     TOPIC = 'topic'

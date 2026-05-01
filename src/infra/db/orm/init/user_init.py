@@ -154,16 +154,12 @@ class Tag(Base):
     language = Column(String(10))
     subject = Column(Text, nullable=False, default='')
     desc = Column(JSONB)
-    # Two-layer hierarchy (#226): NULL on top-level group rows AND on
-    # auto-created orphan leaves (callers wrote a subject_group before the
-    # catalog seed knew about it; a follow-up seed pass links it to its
-    # proper parent). Non-NULL = leaf row attached to that group.
+    # NULL on group rows AND on orphan leaves (subject_group written before
+    # the catalog knew about it); non-NULL on properly linked leaves.
     parent_subject_group = Column(String(40), nullable=True, index=True)
-    # Distinguishes catalog group rows from leaf rows. Required because
-    # parent_subject_group=NULL alone can't tell a real group apart from an
-    # orphan leaf, which broke replace_user_tags' "leaf-only" validation
-    # and get_catalog's group/leaf split. Group rows: TRUE; everything else
-    # (catalog leaves AND orphans): FALSE.
+    # Needed because parent_subject_group=NULL alone can't distinguish a real
+    # group from an orphan leaf — required for leaf-only validation and the
+    # catalog's group/leaf split.
     is_group = Column(Boolean, nullable=False, default=False, server_default='false')
 
 

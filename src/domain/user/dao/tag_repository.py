@@ -40,8 +40,7 @@ class TagRepository:
         kind: TagKind,
         language: str,
     ) -> List[Type[Tag]]:
-        # Returns every tag row for (kind, language) — both groups and leaves.
-        # Service layer groups them into the nested catalog VO.
+        # Returns both group and leaf rows; service layer nests them.
         stmt: Select = (
             select(Tag)
             .filter(Tag.kind == kind.value)
@@ -57,10 +56,8 @@ class TagRepository:
         subject_group: str,
         language: str,
     ) -> Optional[Type[Tag]]:
-        # Match by canonical (kind, subject_group, language). When the catalog
-        # has multiple subjects per group we take the first — v1 stored just
-        # subject_group on profiles.* JSONB, so any matching row preserves the
-        # original write semantics.
+        # When multiple subjects share a (kind, subject_group, language),
+        # take the first — legacy writes only carried subject_group.
         stmt: Select = (
             select(Tag)
             .filter(Tag.kind == kind)
@@ -113,7 +110,6 @@ class TagRepository:
         kind: Optional[TagKind] = None,
         intent: Optional[TagIntent] = None,
     ) -> List[tuple]:
-        # Returns list of (UserTag, Tag) tuples for hydrating responses.
         stmt: Select = (
             select(UserTag, Tag)
             .join(Tag, Tag.id == UserTag.tag_id)
@@ -133,8 +129,6 @@ class TagRepository:
         kind: TagKind,
         intent: TagIntent,
     ) -> int:
-        # Delete all user_tags rows for (user_id, intent) where the underlying
-        # tag has the given kind. Returns deleted row count.
         sub = select(Tag.id).filter(Tag.kind == kind.value)
         stmt = (
             delete(UserTag)
@@ -152,9 +146,7 @@ class TagRepository:
         tag_id: int,
         intent: TagIntent,
     ) -> None:
-        # PK (user_id, tag_id, intent) — INSERT then ignore if already present.
-        # Postgres ON CONFLICT DO NOTHING via dialect import would be cleaner;
-        # for this codebase's existing patterns we use a simple merge.
+        # PK is (user_id, tag_id, intent); insert if absent, otherwise no-op.
         existing = await db.execute(
             select(UserTag)
             .filter(UserTag.user_id == user_id)

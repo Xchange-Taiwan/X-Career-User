@@ -34,8 +34,7 @@ class MentorService:
     async def __hydrate_user_tags(
         self, db: AsyncSession, vo: MentorProfileVO, user_id: int
     ) -> None:
-        # Best-effort: failure to hydrate user_tags should not fail the whole
-        # /mentor_profile read — caller can still do a separate GET /tags.
+        # Best-effort: hydration failure shouldn't fail the whole profile read.
         try:
             tag_list = await self.__tag_service.list_user_tags(db, user_id)
             vo.user_tags = UserTagBucketsVO.from_flat(tag_list.user_tags)
@@ -46,10 +45,8 @@ class MentorService:
     async def upsert_mentor_profile(self, db: AsyncSession, profile_dto: MentorProfileDTO) -> MentorProfileVO:
         try:
             res_dto: MentorProfileDTO = await self.__mentor_repository.upsert_mentor(db, profile_dto)
-            # #226 Option B: when caller supplies user_tags, fan it out to one
-            # replace_user_tags call per non-None bucket. Runs after legacy
-            # upsert succeeds so the SQS notify (fired as background task by
-            # the orchestrator) re-reads a consistent snapshot.
+            # Run tag fan-out after legacy upsert so the downstream SQS notify
+            # re-reads a consistent snapshot.
             if profile_dto.user_tags is not None:
                 await self.__write_user_tag_buckets(
                     db, res_dto.user_id, profile_dto.user_tags, profile_dto.language
@@ -69,11 +66,7 @@ class MentorService:
         buckets: UserTagBucketsInputDTO,
         profile_language: Optional[str],
     ) -> None:
-        # Each bucket maps 1:1 to a (kind, intent) pair. None = leave bucket
-        # alone, [] = clear it, [...] = replace contents. Mirror of
-        # UserTagBucketsVO.from_flat so request and response stay symmetric.
-        # Language is always the profile's — see UserTagBucketsInputDTO
-        # docstring for why caller can't override it.
+        # None = leave bucket alone, [] = clear, [...] = replace contents.
         bucket_map = (
             ('want_skills',    TagKind.SKILL,    TagIntent.WANT),
             ('offer_skills',   TagKind.SKILL,    TagIntent.OFFER),

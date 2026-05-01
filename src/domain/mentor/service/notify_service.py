@@ -43,9 +43,7 @@ class NotifyService:
     async def _serialize_user_tags(
         self, db: AsyncSession, user_id: int
     ) -> List[Dict]:
-        # Hydrates current user_tags rows into the SQS-friendly shape the
-        # Search service expects on `profiles_v2.user_tags`. Joins to Tag so
-        # kind / subject_group / language / desc travel with the row.
+        # Shape matches what Search expects on profiles_v2.user_tags.
         rows = await self.tag_repository.get_user_tags_with_tag(db, user_id)
         return [
             {
@@ -127,9 +125,7 @@ class NotifyService:
             log.error(f"[NotifyService] failed to publish experience update, user_id={user_id}: {e}")
 
     async def notify_updated_user_tags(self, user_id: int):
-        """Triggered by PUT /v1/users/{id}/tags — fires a fresh full UPSERT
-        so Search re-syncs both v1 (legacy nested arrays, unchanged) and v2
-        (`profiles_v2.user_tags`, populated from the freshly-written tags)."""
+        """Fires a full UPSERT so Search re-syncs the user_tags array."""
         try:
             async with SessionLocal() as db:
                 mentor_profile: mentor.MentorProfileVO = (

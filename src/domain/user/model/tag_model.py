@@ -11,12 +11,10 @@ class TagVO(BaseModel):
     subject_group: Optional[str] = None
     language: Optional[str] = None
     subject: Optional[str] = ''
-    # Free-form per-tag metadata (icon, color, display hints, etc.) — mirrors
-    # the v1 `_INTEREST_NESTED_PROPS.desc` JSONB field. Stored as Tag.desc.
+    # Free-form display metadata (icon, color, etc.).
     desc: Optional[Dict[str, Any]] = None
-    # Two-layer hierarchy: NULL on top-level group rows (and on industry, which
-    # is intentionally single-layer); non-NULL on leaf rows, where it points at
-    # the group's `subject_group` within the same `kind`.
+    # NULL on group rows (and on flat-kind rows like industry); non-NULL on
+    # leaves, pointing at the group's subject_group within the same kind.
     parent_subject_group: Optional[str] = None
 
     model_config = {"from_attributes": True}
@@ -38,16 +36,13 @@ class UserTagListVO(BaseModel):
 
 
 class UserTagBucketsVO(BaseModel):
-    """Pre-grouped view of a user's tags, keyed by the (kind, intent) pair
-    that each frontend picker maps to. Saves the consumer from filtering the
-    flat array by hand. The bucket names align with the existing form-field
-    semantics so frontend reads/writes stay symmetric:
+    """User's tags pre-grouped by (kind, intent) — one bucket per frontend picker.
 
-      want_skills    ↔  picker "想多了解、加強的技能"  (kind=skill,    intent=WANT)
-      offer_skills   ↔  picker "我能教的 expertise"  (kind=skill,    intent=OFFER)
-      want_topics    ↔  picker "想多了解的主題"     (kind=topic,    intent=WANT)
-      offer_topics   ↔  picker "我能聊的主題"       (kind=topic,    intent=OFFER)
-      want_positions ↔  picker "有興趣多了解的職位" (kind=position, intent=WANT)
+      want_skills    → (skill,    WANT)
+      offer_skills   → (skill,    OFFER)
+      want_topics    → (topic,    WANT)
+      offer_topics   → (topic,    OFFER)
+      want_positions → (position, WANT)
     """
     want_skills: List[UserTagVO] = []
     offer_skills: List[UserTagVO] = []
@@ -71,31 +66,19 @@ class UserTagBucketsVO(BaseModel):
                 buckets.offer_topics.append(t)
             elif kind == 'position' and intent == 'WANT':
                 buckets.want_positions.append(t)
-            # Unknown (kind, intent) pairs are dropped — the bucket model
-            # exhaustively covers the supported axes; new pairs require an
-            # explicit field addition here.
+            # Unknown (kind, intent) pairs are dropped.
         return buckets
 
 
 class UserTagBucketsInputDTO(BaseModel):
-    """Input shape for replacing multiple user-tag buckets in one shot
-    (e.g. PUT mentor_profile — caller fills the picker selections and the
-    server fans out to one replace_user_tags call per non-None bucket).
+    """Replace-multiple-buckets payload. Per bucket:
+      None   → leave untouched
+      []     → clear
+      [...]  → replace with these leaf subject_groups
 
-    Per-bucket semantics:
-      None   → leave that (kind, intent) untouched
-      []     → clear all tags in that bucket
-      [...]  → replace bucket contents with these LEAF subject_groups
-
-    Bucket → (kind, intent) mapping mirrors UserTagBucketsVO so request
-    and response are symmetric.
-
-    Language is intentionally NOT settable here — server always uses the
-    user's profile language. The current schema conflates concept and
-    translation (`tags.UNIQUE(kind, subject_group, language, subject)`),
-    so a per-write language override would silently fork a user's tag
-    selections across languages. Until the schema is split into concept +
-    translation tables, profile language is the single source of truth.
+    Language is intentionally not settable — server uses the profile's
+    language so a write can't fork a user's tags across languages
+    (current schema conflates concept and translation).
     """
     want_skills: Optional[List[str]] = None
     offer_skills: Optional[List[str]] = None
@@ -105,10 +88,8 @@ class UserTagBucketsInputDTO(BaseModel):
 
 
 class UserTagsUpsertDTO(BaseModel):
-    # Replace all of (user_id, kind, intent) with the supplied subject_groups.
-    # `subject_groups` items must be LEAF subject_groups for kind ∈
-    # {skill, position, topic} (group-level rows are catalog scaffolding,
-    # not user selections). The service rejects non-leaf entries.
+    # subject_groups must be leaves; group rows are catalog scaffolding,
+    # not user selections, and the service rejects them.
     kind: TagKind
     intent: TagIntent
     subject_groups: List[str] = []
@@ -146,10 +127,7 @@ class TagCatalogVO(BaseModel):
 
 
 class TagCatalogsVO(BaseModel):
-    """Multi-kind catalog response. `catalogs` is keyed by kind so callers
-    can do `data.catalogs[kind]` without branching on whether they asked
-    for a single kind or all of them. Returned by GET /{lang}/tags/catalog
-    regardless of how many kinds the caller filtered for.
-    """
+    """Catalog response keyed by kind, so callers index `catalogs[kind]`
+    uniformly whether they asked for one kind or all."""
     language: str
     catalogs: Dict[str, TagCatalogVO] = {}

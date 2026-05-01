@@ -1,7 +1,4 @@
--- Foundation schema for the unified tag model (#226 / #228).
--- Additive only: no existing table is modified or referenced for write here.
--- Run after user_init.sql (this file does not depend on it for DDL,
--- but the catalog mirror script tags_catalog_migration.sql does).
+-- Foundation schema for the unified tag model.
 
 CREATE TABLE IF NOT EXISTS tags (
     id BIGSERIAL PRIMARY KEY,
@@ -10,12 +7,10 @@ CREATE TABLE IF NOT EXISTS tags (
     "language" VARCHAR(10),
     "subject" TEXT NOT NULL DEFAULT '',
     "desc" JSONB,
-    -- Two-layer hierarchy (#226): NULL on top-level group rows AND on
-    -- auto-created orphan leaves; non-NULL on properly-linked leaf rows.
+    -- NULL on group rows AND on orphan leaves; non-NULL on linked leaves.
     parent_subject_group VARCHAR(40),
-    -- TRUE on real catalog group rows, FALSE on leaves and orphans. Needed
-    -- because parent_subject_group=NULL alone can't distinguish a real group
-    -- from an orphan leaf (which broke replace_user_tags / get_catalog).
+    -- Distinguishes real group rows from orphan leaves (parent_subject_group
+    -- is NULL on both); needed for leaf-only validation and catalog grouping.
     is_group BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uq_tags_canonical UNIQUE (kind, subject_group, "language", "subject")
 );
