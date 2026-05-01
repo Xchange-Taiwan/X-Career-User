@@ -5,7 +5,7 @@ from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
 from ...user.model.common_model import ProfessionListVO
-from ...user.model.tag_model import UserTagBucketsVO, UserTagVO
+from ...user.model.tag_model import UserTagBucketsInputDTO, UserTagBucketsVO, UserTagVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
 from ....config.conf import *
@@ -38,6 +38,13 @@ class MentorProfileDTO(ProfileDTO):
     about: Optional[str] = None
     seniority_level: Optional[SeniorityLevel] = None
     expertises: Optional[List[str]] = None
+    # #226 Option B: caller can write user_tags atomically with the rest of
+    # the mentor profile via PUT /mentor_profile, instead of N separate
+    # PUT /v1/users/{id}/tags round-trips. None means "do not touch any
+    # user_tags bucket" (legacy-only write); a non-None object replaces the
+    # specified buckets. Legacy `interested_positions / skills / topics /
+    # expertises` writes are unaffected — both paths run additively until #233.
+    user_tags: Optional[UserTagBucketsInputDTO] = None
 
     class Config:
         from_attributes = True # orm_mode = True

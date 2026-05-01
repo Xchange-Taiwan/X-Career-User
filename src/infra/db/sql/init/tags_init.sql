@@ -10,9 +10,13 @@ CREATE TABLE IF NOT EXISTS tags (
     "language" VARCHAR(10),
     "subject" TEXT NOT NULL DEFAULT '',
     "desc" JSONB,
-    -- Two-layer hierarchy (#226): NULL on top-level group rows / industry,
-    -- non-NULL on leaf rows pointing at the group's subject_group.
+    -- Two-layer hierarchy (#226): NULL on top-level group rows AND on
+    -- auto-created orphan leaves; non-NULL on properly-linked leaf rows.
     parent_subject_group VARCHAR(40),
+    -- TRUE on real catalog group rows, FALSE on leaves and orphans. Needed
+    -- because parent_subject_group=NULL alone can't distinguish a real group
+    -- from an orphan leaf (which broke replace_user_tags / get_catalog).
+    is_group BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uq_tags_canonical UNIQUE (kind, subject_group, "language", "subject")
 );
 
