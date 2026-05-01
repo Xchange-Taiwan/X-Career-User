@@ -37,6 +37,46 @@ class UserTagListVO(BaseModel):
     user_tags: List[UserTagVO] = []
 
 
+class UserTagBucketsVO(BaseModel):
+    """Pre-grouped view of a user's tags, keyed by the (kind, intent) pair
+    that each frontend picker maps to. Saves the consumer from filtering the
+    flat array by hand. The bucket names align with the existing form-field
+    semantics so frontend reads/writes stay symmetric:
+
+      want_skills    ↔  picker "想多了解、加強的技能"  (kind=skill,    intent=WANT)
+      offer_skills   ↔  picker "我能教的 expertise"  (kind=skill,    intent=OFFER)
+      want_topics    ↔  picker "想多了解的主題"     (kind=topic,    intent=WANT)
+      offer_topics   ↔  picker "我能聊的主題"       (kind=topic,    intent=OFFER)
+      want_positions ↔  picker "有興趣多了解的職位" (kind=position, intent=WANT)
+    """
+    want_skills: List[UserTagVO] = []
+    offer_skills: List[UserTagVO] = []
+    want_topics: List[UserTagVO] = []
+    offer_topics: List[UserTagVO] = []
+    want_positions: List[UserTagVO] = []
+
+    @staticmethod
+    def from_flat(tags: List[UserTagVO]) -> 'UserTagBucketsVO':
+        buckets = UserTagBucketsVO()
+        for t in tags:
+            kind = t.kind
+            intent = t.intent
+            if kind == 'skill' and intent == 'WANT':
+                buckets.want_skills.append(t)
+            elif kind == 'skill' and intent == 'OFFER':
+                buckets.offer_skills.append(t)
+            elif kind == 'topic' and intent == 'WANT':
+                buckets.want_topics.append(t)
+            elif kind == 'topic' and intent == 'OFFER':
+                buckets.offer_topics.append(t)
+            elif kind == 'position' and intent == 'WANT':
+                buckets.want_positions.append(t)
+            # Unknown (kind, intent) pairs are dropped — the bucket model
+            # exhaustively covers the supported axes; new pairs require an
+            # explicit field addition here.
+        return buckets
+
+
 class UserTagsUpsertDTO(BaseModel):
     # Replace all of (user_id, kind, intent) with the supplied subject_groups.
     # `subject_groups` items must be LEAF subject_groups for kind ∈

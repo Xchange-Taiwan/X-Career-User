@@ -10,10 +10,14 @@ CREATE TABLE IF NOT EXISTS tags (
     "language" VARCHAR(10),
     "subject" TEXT NOT NULL DEFAULT '',
     "desc" JSONB,
+    -- Two-layer hierarchy (#226): NULL on top-level group rows / industry,
+    -- non-NULL on leaf rows pointing at the group's subject_group.
+    parent_subject_group VARCHAR(40),
     CONSTRAINT uq_tags_canonical UNIQUE (kind, subject_group, "language", "subject")
 );
 
 CREATE INDEX IF NOT EXISTS idx_tags_kind ON tags(kind);
+CREATE INDEX IF NOT EXISTS ix_tags_parent_subject_group ON tags(parent_subject_group);
 
 
 CREATE TABLE IF NOT EXISTS user_tags (
