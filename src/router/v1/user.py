@@ -158,45 +158,13 @@ async def update_reservation_status(
 
 
 ############################################################################################
-# Unified tag endpoints (v2 schema — #226 / #229).
-# Frontend cuts each picker over to these incrementally. Old PUT /profile +
-# upsertMentorExperience(WHAT_I_OFFER) paths stay live until #233 cleanup.
+# Tag catalog endpoint (#226). The standalone GET/PUT /{user_id}/tags pair
+# was removed: callers now write user_tags via the buckets payload on PUT
+# /mentor_profile (mentor) or PUT /users/profile (mentee), and read them
+# via the hydrated `user_tags` field on the corresponding GET. TagService's
+# list_user_tags / replace_user_tags methods stay — they back the fan-out
+# inside MentorService / ProfileService.
 ############################################################################################
-@router.get('/{user_id}/tags',
-            responses=idempotent_response('list_user_tags', tag.UserTagListVO))
-async def list_user_tags(
-        user_id: int = Path(...),
-        kind: Optional[TagKind] = Query(default=None),
-        intent: Optional[TagIntent] = Query(default=None),
-        db: AsyncSession = Depends(db_session),
-        tag_service: TagService = Depends(get_tag_service),
-):
-    res: tag.UserTagListVO = await tag_service.list_user_tags(
-        db, user_id, kind=kind, intent=intent
-    )
-    return res_success(data=jsonable_encoder(res))
-
-
-@router.put('/{user_id}/tags',
-            responses=idempotent_response('replace_user_tags', tag.UserTagsUpsertVO))
-async def replace_user_tags(
-        background_tasks: BackgroundTasks,
-        user_id: int = Path(...),
-        body: tag.UserTagsUpsertDTO = Body(...),
-        db: AsyncSession = Depends(db_session),
-        tag_service: TagService = Depends(get_tag_service),
-        notify_service: NotifyService = Depends(get_notify_service),
-):
-    res: tag.UserTagsUpsertVO = await tag_service.replace_user_tags(
-        db, user_id, body
-    )
-    # Fire after the DB commit inside replace_user_tags so the SQS payload
-    # serializer reads the freshly-written rows. Background-task dispatch
-    # keeps the request latency unaffected.
-    background_tasks.add_task(notify_service.notify_updated_user_tags, user_id)
-    return res_success(data=jsonable_encoder(res))
-
-
 @router.get('/{language}/tags/catalog',
             responses=idempotent_response('get_tag_catalog', tag.TagCatalogVO))
 async def get_tag_catalog(
