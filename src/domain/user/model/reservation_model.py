@@ -147,6 +147,7 @@ class RUserInfoVO(BaseModel):
     name: Optional[str] = ''
     avatar: Optional[str] = ''
     job_title: Optional[str] = ''
+    company: Optional[str] = ''
     years_of_experience: Optional[str] = '0'
 
 
@@ -243,6 +244,11 @@ class ReservationInfoVO(BaseModel):
                 user_id=reservation.my_user_id,
                 role=sender_role.value if sender_role else None,
                 status=reservation.my_status,
+                name=reservation.sender_name,
+                avatar=reservation.sender_avatar,
+                job_title=reservation.sender_job_title,
+                company=reservation.sender_company,
+                years_of_experience=reservation.sender_years_of_experience,
             ),
             participant=RUserInfoVO(
                 user_id=reservation.user_id,
@@ -251,6 +257,7 @@ class ReservationInfoVO(BaseModel):
                 name=reservation.name,
                 avatar=reservation.avatar,
                 job_title=reservation.job_title,
+                company=reservation.company,
                 years_of_experience=reservation.years_of_experience,
             ),
             schedule_id=reservation.schedule_id,

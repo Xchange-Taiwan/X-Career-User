@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict
 from sqlalchemy import func, Integer, Select, select, update, insert, join, and_, bindparam, exists
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 from src.config.conf import BATCH, RESERVATION_ISOLAION_LEVEL
 from src.domain.user.model.reservation_model import *
 from src.infra.db.orm.init.user_init import *
@@ -237,6 +238,7 @@ class ReservationRepository:
     async def get_user_reservations(self, db: AsyncSession,
                                     user_id: int,
                                     query: ReservationQueryDTO) -> Optional[List[ReservationDTO]]:
+        SenderProfile = aliased(Profile)
         stmt = select(
             Reservation.id,
             Reservation.schedule_id,
@@ -252,14 +254,21 @@ class ReservationRepository:
             Profile.name,
             Profile.avatar,
             Profile.job_title,
+            Profile.company,
             Profile.years_of_experience,
+            SenderProfile.name.label('sender_name'),
+            SenderProfile.avatar.label('sender_avatar'),
+            SenderProfile.job_title.label('sender_job_title'),
+            SenderProfile.company.label('sender_company'),
+            SenderProfile.years_of_experience.label('sender_years_of_experience'),
         ).select_from(
-            join(
-                Reservation,
-                Profile,
-                Reservation.user_id == Profile.user_id,
-                isouter=True,
-            )
+            Reservation
+        ).outerjoin(
+            Profile,
+            Reservation.user_id == Profile.user_id,
+        ).outerjoin(
+            SenderProfile,
+            Reservation.my_user_id == SenderProfile.user_id,
         )
         # for key, value in query.items():
         #     stmt = stmt.where(getattr(Reservation, key) == value)
