@@ -143,3 +143,13 @@ class TagCatalogVO(BaseModel):
     kind: str
     language: str
     groups: List[TagCatalogGroupVO] = []
+
+
+class TagCatalogsVO(BaseModel):
+    """Multi-kind catalog response. `catalogs` is keyed by kind so callers
+    can do `data.catalogs[kind]` without branching on whether they asked
+    for a single kind or all of them. Returned by GET /{lang}/tags/catalog
+    regardless of how many kinds the caller filtered for.
+    """
+    language: str
+    catalogs: Dict[str, TagCatalogVO] = {}

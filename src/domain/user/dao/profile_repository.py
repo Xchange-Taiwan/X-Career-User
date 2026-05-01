@@ -31,7 +31,8 @@ class ProfileRepository:
             raise NotFoundException(msg="not a valid user")
         # directly upsert since the user_id should be pre dedined in auth service
 
-        model: Profile = convert_dto_to_model(dto, Profile)
+        # `user_tags` lives in a separate table; strip from Profile model dump.
+        model: Profile = convert_dto_to_model(dto, Profile, exclude={'user_tags'})
         model = await db.merge(model)
 
         await db.commit()

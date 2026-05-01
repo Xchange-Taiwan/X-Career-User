@@ -4,7 +4,7 @@ from typing import Optional, Coroutine, Any, Set, Dict, List, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import InterestCategory, ExperienceCategory
+from src.config.constant import InterestCategory, ExperienceCategory, TagIntent, TagKind
 from src.config.exception import (
     NotAcceptableException,
     NotFoundException,
@@ -21,9 +21,15 @@ from src.domain.user.model.common_model import (
     InterestListVO,
     ProfessionListVO,
 )
+from src.domain.user.model.tag_model import (
+    UserTagBucketsInputDTO,
+    UserTagBucketsVO,
+    UserTagsUpsertDTO,
+)
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
+from src.domain.user.service.tag_service import TagService
 
 log = logging.getLogger(__name__)
 
@@ -34,11 +40,57 @@ class ProfileService:
         profession_service: ProfessionService,
         experience_service: ExperienceService,
         profile_repository: ProfileRepository,
+        tag_service: TagService,
     ):
         self.__interest_service: InterestService = interest_service
         self.__profession_service: ProfessionService = profession_service
         self.__exp_service: ExperienceService = experience_service
         self.__profile_repository: ProfileRepository = profile_repository
+        self.__tag_service: TagService = tag_service
+
+    async def __hydrate_user_tags(
+        self, db: AsyncSession, vo: ProfileVO, user_id: int
+    ) -> None:
+        # Mirror of MentorService.__hydrate_user_tags. Best-effort: failure
+        # leaves an empty buckets object so the caller can still use the
+        # rest of the profile response.
+        try:
+            tag_list = await self.__tag_service.list_user_tags(db, user_id)
+            vo.user_tags = UserTagBucketsVO.from_flat(tag_list.user_tags)
+        except Exception as e:
+            log.warning("hydrate user_tags failed for user %s: %s", user_id, e)
+            vo.user_tags = UserTagBucketsVO()
+
+    async def __write_user_tag_buckets(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        buckets: UserTagBucketsInputDTO,
+        profile_language: Optional[str],
+    ) -> None:
+        # Same fan-out as MentorService — None = leave bucket alone, [] = clear,
+        # [...] = replace contents. Profile language is the source of truth.
+        bucket_map = (
+            ('want_skills',    TagKind.SKILL,    TagIntent.WANT),
+            ('offer_skills',   TagKind.SKILL,    TagIntent.OFFER),
+            ('want_topics',    TagKind.TOPIC,    TagIntent.WANT),
+            ('offer_topics',   TagKind.TOPIC,    TagIntent.OFFER),
+            ('want_positions', TagKind.POSITION, TagIntent.WANT),
+        )
+        for bucket_name, kind, intent in bucket_map:
+            subject_groups = getattr(buckets, bucket_name)
+            if subject_groups is None:
+                continue
+            await self.__tag_service.replace_user_tags(
+                db,
+                user_id,
+                UserTagsUpsertDTO(
+                    kind=kind,
+                    intent=intent,
+                    subject_groups=subject_groups,
+                    language=profile_language,
+                ),
+            )
 
     async def get_by_user_id(
         self, db: AsyncSession, user_id: int, language: Optional[str] = None
@@ -50,7 +102,9 @@ class ProfileService:
             dto: ProfileDTO = await self.__profile_repository.get_by_user_id(
                 db, user_id
             )
-            return await self.convert_to_profile_vo(db, dto, language=language)
+            vo = await self.convert_to_profile_vo(db, dto, language=language)
+            await self.__hydrate_user_tags(db, vo, user_id)
+            return vo
         except Exception as e:
             log.error(f"get_by_user_id error: %s", str(e))
             err_msg = getattr(e, "msg", "get profile response failed")
@@ -61,7 +115,13 @@ class ProfileService:
             res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(
                 db, dto
             )
-            return await self.convert_to_profile_vo(db, res)
+            if dto.user_tags is not None:
+                await self.__write_user_tag_buckets(
+                    db, res.user_id, dto.user_tags, dto.language
+                )
+            vo = await self.convert_to_profile_vo(db, res)
+            await self.__hydrate_user_tags(db, vo, res.user_id)
+            return vo
         except Exception as e:
             log.error(f"upsert_profile error: %s", str(e))
             err_msg = getattr(e, "msg", "upsert profile response failed")
