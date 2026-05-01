@@ -37,8 +37,10 @@ from ...app._di.injection import (
     get_profession_service,
     get_profile_service,
     get_mentor_profile_app,
+    get_notify_service,
     get_tag_service,
 )
+from ...domain.mentor.service.notify_service import NotifyService
 
 log = logging.getLogger(__name__)
 
@@ -178,12 +180,18 @@ async def list_user_tags(
 @router.put('/{user_id}/tags',
             responses=idempotent_response('replace_user_tags', tag.UserTagsUpsertVO))
 async def replace_user_tags(
+        background_tasks: BackgroundTasks,
         user_id: int = Path(...),
         body: tag.UserTagsUpsertDTO = Body(...),
         db: AsyncSession = Depends(db_session),
         tag_service: TagService = Depends(get_tag_service),
+        notify_service: NotifyService = Depends(get_notify_service),
 ):
     res: tag.UserTagsUpsertVO = await tag_service.replace_user_tags(
         db, user_id, body
     )
+    # Fire after the DB commit inside replace_user_tags so the SQS payload
+    # serializer reads the freshly-written rows. Background-task dispatch
+    # keeps the request latency unaffected.
+    background_tasks.add_task(notify_service.notify_updated_user_tags, user_id)
     return res_success(data=jsonable_encoder(res))
