@@ -1,19 +1,12 @@
 from typing import List, Optional
-from fastapi import BackgroundTasks
-from fastapi.encoders import jsonable_encoder
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.infra.template.service_api import IServiceApi
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.infra.databse import SessionLocal
-from src.domain.user.service.profile_service import ProfileService
-from src.domain.user.model import user_model as user
 from src.domain.mentor.service.mentor_service import MentorService
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.mentor.model import (
     experience_model as exp,
     mentor_model as mentor,
 )
-from src.config.constant import ExperienceCategory
 from src.config.conf import (
     SEARCH_SERVICE_URL,
     DEFAULT_LANGUAGE,
@@ -46,6 +39,9 @@ class NotifyService:
                         db, user_id, DEFAULT_LANGUAGE
                     )
                 )
+            # to_dto_json flattens the 5 hydrated tag buckets into top-level
+            # subject_group arrays — Search filters by canonical key, so the
+            # full TagVO would be wasted bytes on the wire.
             payload = {
                 **mentor_profile.to_dto_json(),
                 "action": "UPSERT_MENTOR_PROFILE",
