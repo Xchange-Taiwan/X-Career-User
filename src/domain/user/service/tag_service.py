@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import TagIntent, TagKind
+from src.config.constant import TagKind
 from src.config.exception import (
     ClientException,
     raise_http_exception,
@@ -20,16 +20,19 @@ from src.domain.user.model.tag_model import (
 log = logging.getLogger(__name__)
 
 
-# Maps every (kind, intent) we accept to the field name used on
-# MentorProfileDTO/VO. position/HAVE is intentionally absent — mentors offer
-# skills/topics, not positions. Order is the canonical bucket order used in
-# both API responses and the SQS payload.
-_BUCKET_BY_KIND_INTENT: Dict[Tuple[str, str], str] = {
-    (TagKind.POSITION.value, TagIntent.WANT.value): 'want_position',
-    (TagKind.SKILL.value,    TagIntent.WANT.value): 'want_skill',
-    (TagKind.TOPIC.value,    TagIntent.WANT.value): 'want_topic',
-    (TagKind.SKILL.value,    TagIntent.HAVE.value): 'have_skill',
-    (TagKind.TOPIC.value,    TagIntent.HAVE.value): 'have_topic',
+# Two intent-side maps replace what was a (kind, intent) tuple lookup —
+# intent now means "which array (want_tags vs have_tags) the subject_group
+# is stored in", so it never needs to round-trip through an enum.
+# position/HAVE is intentionally absent — mentors offer skills/topics, not
+# positions.
+_WANT_BUCKET_BY_KIND: Dict[str, str] = {
+    TagKind.POSITION.value: 'want_position',
+    TagKind.SKILL.value:    'want_skill',
+    TagKind.TOPIC.value:    'want_topic',
+}
+_HAVE_BUCKET_BY_KIND: Dict[str, str] = {
+    TagKind.SKILL.value: 'have_skill',
+    TagKind.TOPIC.value: 'have_topic',
 }
 
 _WANT_BUCKETS = ('want_position', 'want_skill', 'want_topic')
@@ -57,18 +60,17 @@ class TagService:
         kind: TagKind,
         language: str,
     ) -> TagCatalogVO:
-        # Groups (is_group=TRUE) anchor the catalog; leaves attach via
-        # parent_subject_group. Orphan leaves land in a synthetic catch-all
-        # group so they aren't silently dropped.
+        # Strict invariant: parent_subject_group IS NULL ⇔ group row;
+        # NOT NULL ⇔ leaf. _validate_leaves rejects writes that would
+        # break this, so orphan leaves can't accumulate.
         try:
             rows = await self.__tag_repository.list_catalog(db, kind, language)
 
             groups_by_key: dict = {}
             ordered_keys: List[str] = []
-            orphan_leaves: List = []
 
             for tag in rows:
-                if tag.is_group:
+                if tag.parent_subject_group is None:
                     if tag.subject_group not in groups_by_key:
                         groups_by_key[tag.subject_group] = TagCatalogGroupVO(
                             subject_group=tag.subject_group,
@@ -89,19 +91,9 @@ class TagService:
                     parent = groups_by_key.get(tag.parent_subject_group)
                     if parent is not None:
                         parent.leaves.append(leaf)
-                    else:
-                        orphan_leaves.append((tag.parent_subject_group, leaf))
-
-            # Anything still here truly has no group row in this language.
-            if orphan_leaves:
-                catchall = TagCatalogGroupVO(
-                    subject_group='',
-                    subject='',
-                    language=language,
-                    leaves=[leaf for _, leaf in orphan_leaves],
-                )
-                groups_by_key[''] = catchall
-                ordered_keys.append('')
+                    # Leaf whose parent isn't in this language gets dropped —
+                    # the catalog is mis-seeded and pretending otherwise hides
+                    # the bug.
 
             return TagCatalogVO(
                 kind=kind.value,
@@ -163,16 +155,13 @@ class TagService:
 
             new_want = self._preserve_unreplaced(
                 current_want_tags, existing_kind_by_sg,
-                intent=TagIntent.WANT, replaced=replaced_buckets,
+                bucket_by_kind=_WANT_BUCKET_BY_KIND, replaced=replaced_buckets,
             )
             new_have = self._preserve_unreplaced(
                 current_have_tags, existing_kind_by_sg,
-                intent=TagIntent.HAVE, replaced=replaced_buckets,
+                bucket_by_kind=_HAVE_BUCKET_BY_KIND, replaced=replaced_buckets,
             )
 
-            # Validate + append new items per replaced bucket. Validation runs
-            # inside the same transaction so auto-created orphan leaves are
-            # rolled back on failure together with the profile upsert.
             for bucket in _WANT_BUCKETS:
                 if inputs[bucket] is not None:
                     leaves = await self._validate_leaves(
@@ -202,9 +191,12 @@ class TagService:
         language: str,
     ) -> Dict[str, List[TagVO]]:
         # Single bulk JOIN of all tagged subject_groups, then bucketed by
-        # (intent=array origin, kind=catalog row). Items not found in the
-        # catalog drop out — they don't belong to any bucket.
-        result: Dict[str, List[TagVO]] = {b: [] for b in _BUCKET_BY_KIND_INTENT.values()}
+        # (which-array, kind=catalog row). Items not found in the catalog
+        # drop out — they don't belong to any bucket.
+        result: Dict[str, List[TagVO]] = {
+            'want_position': [], 'want_skill': [], 'want_topic': [],
+            'have_skill': [], 'have_topic': [],
+        }
         all_sgs = list(set(want_tags) | set(have_tags))
         if not all_sgs:
             return result
@@ -215,14 +207,18 @@ class TagService:
             )
             tag_by_sg: Dict[str, object] = {row.subject_group: row for row in rows}
 
-            for intent, source in ((TagIntent.WANT, want_tags), (TagIntent.HAVE, have_tags)):
+            for source, bucket_by_kind in (
+                (want_tags, _WANT_BUCKET_BY_KIND),
+                (have_tags, _HAVE_BUCKET_BY_KIND),
+            ):
                 for sg in source:
                     tag = tag_by_sg.get(sg)
                     if tag is None:
                         continue
-                    bucket = _BUCKET_BY_KIND_INTENT.get((tag.kind, intent.value))
+                    bucket = bucket_by_kind.get(tag.kind)
                     if bucket is None:
-                        # e.g. position/HAVE — not a valid combination; skip.
+                        # e.g. position written into have_tags somehow —
+                        # not a valid combination; skip rather than crash.
                         continue
                     result[bucket].append(TagVO.model_validate(tag))
             return result
@@ -240,18 +236,20 @@ class TagService:
         subject_groups: List[str],
         language: str,
     ) -> List[object]:
-        # Find-or-create per subject_group inside the caller's transaction.
-        # Group rows are catalog scaffolding — reject them so user selections
-        # always reference leaves; rows missing from the catalog are
-        # auto-created as orphans for a later seed pass to link.
+        # Strict: subject_groups must already exist as leaves in the catalog
+        # (parent_subject_group is set). Unknown rows or top-level groups
+        # are rejected so user writes can't drift the catalog.
         leaves: List[object] = []
         for sg in subject_groups:
             tag = await self.__tag_repository.find_tag(db, kind.value, sg, language)
             if tag is None:
-                tag = await self.__tag_repository.create_tag(
-                    db, kind.value, sg, language,
+                raise ClientException(
+                    msg=(
+                        f"unknown subject_group '{sg}' for kind={kind.value}; "
+                        f"seed the catalog first."
+                    )
                 )
-            elif tag.is_group:
+            if tag.parent_subject_group is None:
                 raise ClientException(
                     msg=(
                         f"subject_group '{sg}' is a top-level group; "
@@ -278,16 +276,13 @@ class TagService:
     def _preserve_unreplaced(
         current: List[str],
         kind_by_sg: Dict[str, str],
-        intent: TagIntent,
+        bucket_by_kind: Dict[str, str],
         replaced: set,
     ) -> List[str]:
         kept: List[str] = []
         for sg in current:
             kind = kind_by_sg.get(sg)
-            bucket = (
-                _BUCKET_BY_KIND_INTENT.get((kind, intent.value))
-                if kind is not None else None
-            )
+            bucket = bucket_by_kind.get(kind) if kind is not None else None
             # Unresolvable items (no catalog match) stay put — don't lose
             # user data on lookup misses.
             if bucket is None or bucket not in replaced:

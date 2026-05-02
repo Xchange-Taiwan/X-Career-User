@@ -78,14 +78,10 @@ class Sorting(Enum):
 
 
 class TagKind(Enum):
-    # Pairs with TagIntent (WANT/HAVE) to form 5 mentor profile buckets:
-    # want_position / want_skill / want_topic / have_skill / have_topic.
-    # position is WANT-only; skill/topic accept both intents.
+    # The 5 mentor profile buckets are (kind × array): want_tags carries
+    # position/skill/topic; have_tags carries skill/topic. Intent is
+    # implicit in *which* array a subject_group lives in — no separate
+    # enum needed.
     SKILL = 'skill'
     POSITION = 'position'
     TOPIC = 'topic'
-
-
-class TagIntent(Enum):
-    WANT = 'WANT'
-    HAVE = 'HAVE'

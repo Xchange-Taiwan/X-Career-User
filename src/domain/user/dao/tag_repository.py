@@ -75,33 +75,16 @@ class TagRepository:
         language: str,
     ) -> List[Type[Tag]]:
         # Bulk lookup for hydrating profile.want_tags/have_tags arrays at GET
-        # time. Excludes group rows so callers can bucket by kind without
-        # filtering scaffolding back out.
+        # time. parent_subject_group IS NOT NULL is the leaf marker — group
+        # rows are catalog scaffolding and never appear in user arrays under
+        # the strict-validation invariant.
         if not subject_groups:
             return []
         stmt: Select = (
             select(Tag)
             .filter(Tag.subject_group.in_(subject_groups))
             .filter(Tag.language == language)
-            .filter(Tag.is_group == False)  # noqa: E712
+            .filter(Tag.parent_subject_group.is_not(None))
             .order_by(Tag.id)
         )
         return await get_all_template(db, stmt)
-
-    async def create_tag(
-        self,
-        db: AsyncSession,
-        kind: str,
-        subject_group: str,
-        language: str,
-        subject: str = '',
-    ) -> Tag:
-        tag = Tag(
-            kind=kind,
-            subject_group=subject_group,
-            language=language,
-            subject=subject,
-        )
-        db.add(tag)
-        await db.flush()
-        return tag

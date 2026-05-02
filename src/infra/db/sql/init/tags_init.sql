@@ -11,11 +11,11 @@ CREATE TABLE IF NOT EXISTS tags (
     "language" VARCHAR(10),
     "subject" TEXT NOT NULL DEFAULT '',
     "desc" JSONB,
-    -- NULL on group rows AND on orphan leaves; non-NULL on linked leaves.
+    -- NULL ⇔ group row (catalog scaffolding); NOT NULL ⇔ leaf row.
+    -- Strict invariant — _validate_leaves rejects writes that would
+    -- create orphan leaves (no parent), so this single column is enough
+    -- to tell groups and leaves apart.
     parent_subject_group VARCHAR(40),
-    -- Distinguishes real group rows from orphan leaves (parent_subject_group
-    -- is NULL on both); needed for leaf-only validation and catalog grouping.
-    is_group BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT uq_tags_canonical UNIQUE (kind, subject_group, "language", "subject")
 );
 

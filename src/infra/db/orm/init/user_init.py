@@ -159,10 +159,7 @@ class Tag(Base):
     language = Column(String(10))
     subject = Column(Text, nullable=False, default='')
     desc = Column(JSONB)
-    # NULL on group rows AND on orphan leaves (subject_group written before
-    # the catalog knew about it); non-NULL on properly linked leaves.
+    # parent_subject_group IS NULL ⇔ group row (catalog scaffolding);
+    # NOT NULL ⇔ leaf. _validate_leaves enforces this as a write-time
+    # invariant so orphan leaves can't accumulate.
     parent_subject_group = Column(String(40), nullable=True, index=True)
-    # Needed because parent_subject_group=NULL alone can't distinguish a real
-    # group from an orphan leaf — required for leaf-only validation and the
-    # catalog's group/leaf split.
-    is_group = Column(Boolean, nullable=False, default=False, server_default='false')
