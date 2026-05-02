@@ -42,18 +42,14 @@ class MentorProfileDTO(ProfileDTO):
     # Input buckets — leaf subject_groups grouped by (intent, kind). Per
     # bucket: None = leave that bucket alone, [] = clear, [...] = replace.
     # Server validates leaves against the tags catalog and merges with
-    # untouched buckets to produce want_tags/have_tags below.
+    # the existing storage arrays to produce profiles.want_tags / have_tags
+    # — those columns intentionally never appear on this dto so the API
+    # contract stays small.
     want_position: Optional[List[str]] = None
     want_skill: Optional[List[str]] = None
     want_topic: Optional[List[str]] = None
     have_skill: Optional[List[str]] = None
     have_topic: Optional[List[str]] = None
-
-    # Mirrors profiles.want_tags / have_tags — server-computed from the
-    # buckets above before persistence; round-trips through model_validate
-    # so the GET path can read them back from the ORM row.
-    want_tags: Optional[List[str]] = None
-    have_tags: Optional[List[str]] = None
 
     class Config:
         from_attributes = True # orm_mode = True

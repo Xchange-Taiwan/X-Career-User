@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.conf import DEFAULT_LANGUAGE
-from src.config.exception import NotFoundException, ServerException, raise_http_exception
+from src.config.exception import NotFoundException, raise_http_exception
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
 from src.domain.user.dao.profile_repository import ProfileRepository
@@ -30,14 +30,16 @@ class MentorService:
         try:
             language = profile_dto.language or DEFAULT_LANGUAGE
 
-            # Read existing arrays first so untouched buckets survive the
+            # Pull existing arrays first so untouched buckets survive the
             # per-bucket replace semantics (None = leave alone, [] = clear).
             # First-time mentors won't have a row yet — fall back to empty.
             existing = await self.__mentor_repository.find_profile_by_user_id(
                 db, profile_dto.user_id,
             )
-            existing_want = list(existing.want_tags or []) if existing else []
-            existing_have = list(existing.have_tags or []) if existing else []
+            if existing is None:
+                existing_want, existing_have = [], []
+            else:
+                _, existing_want, existing_have = existing
 
             new_want, new_have = await self.__tag_service.merge_buckets_to_arrays(
                 db,
@@ -50,34 +52,35 @@ class MentorService:
                 have_skill=profile_dto.have_skill,
                 have_topic=profile_dto.have_topic,
             )
-            # Stamp the merged arrays back onto the dto so the upsert's
-            # convert_dto_to_model picks them up — Profile.want_tags/have_tags
-            # are 1:1 columns, the 5 input buckets aren't.
-            profile_dto.want_tags = new_want
-            profile_dto.have_tags = new_have
 
-            res_dto: MentorProfileDTO = await self.__mentor_repository.upsert_mentor(db, profile_dto)
+            # Storage arrays travel as kwargs — they're state, not API.
+            res_dto, res_want, res_have = await self.__mentor_repository.upsert_mentor(
+                db, profile_dto, want_tags=new_want, have_tags=new_have,
+            )
 
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(
                 db, res_dto, language=language,
             )
-            await self.__hydrate_buckets(db, res_vo, res_dto, language)
+            await self.__hydrate_buckets(db, res_vo, res_want, res_have, language)
             return res_vo
         except Exception as e:
             log.error(f'upsert_mentor_profile error: %s', str(e))
             err_msg = getattr(e, 'msg', 'upsert mentor profile response failed')
-            raise ServerException(msg=err_msg)
+            # raise_http_exception preserves ClientException as 400; other
+            # failures still surface as 500 via ServerException.
+            raise_http_exception(e, msg=err_msg)
 
     async def get_mentor_profile_by_id(self, db: AsyncSession, user_id: int, language: str) \
             -> MentorProfileVO:
         try:
-            mentor_dto: MentorProfileDTO = await self.__mentor_repository.get_mentor_profile_by_id(db, user_id)
-            if mentor_dto is None:
+            row = await self.__mentor_repository.get_mentor_profile_by_id(db, user_id)
+            if row is None:
                 raise NotFoundException(msg=f"No such user with id: {user_id}")
+            mentor_dto, want_tags, have_tags = row
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(
                 db, mentor_dto, language=language,
             )
-            await self.__hydrate_buckets(db, res_vo, mentor_dto, language)
+            await self.__hydrate_buckets(db, res_vo, want_tags, have_tags, language)
             return res_vo
         except Exception as e:
             log.error(f'get_mentor_profile_by_id error: %s', str(e))
@@ -88,7 +91,8 @@ class MentorService:
         self,
         db: AsyncSession,
         vo: MentorProfileVO,
-        dto: MentorProfileDTO,
+        want_tags: List[str],
+        have_tags: List[str],
         language: str,
     ) -> None:
         # Best-effort: hydration failure shouldn't fail the whole profile read.
@@ -97,12 +101,12 @@ class MentorService:
         try:
             buckets = await self.__tag_service.hydrate_buckets(
                 db,
-                want_tags=list(dto.want_tags or []),
-                have_tags=list(dto.have_tags or []),
+                want_tags=want_tags,
+                have_tags=have_tags,
                 language=language,
             )
         except Exception as e:
-            log.warning("hydrate buckets failed for user %s: %s", dto.user_id, e)
+            log.warning("hydrate buckets failed for user %s: %s", vo.user_id, e)
             buckets = {
                 'want_position': [], 'want_skill': [], 'want_topic': [],
                 'have_skill': [], 'have_topic': [],
