@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 from fastapi import (
     APIRouter,
@@ -15,13 +14,11 @@ from ...domain.user.model import (
     common_model as common,
     user_model as user,
     reservation_model as reservation,
-    tag_model as tag,
 )
 from ...app.reservation.booking import Booking
 from ...domain.user.service.interest_service import InterestService
 from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
-from ...domain.user.service.tag_service import TagService
 from ...infra.databse import get_db, db_session
 
 from ...app._di.injection import (
@@ -30,10 +27,15 @@ from ...app._di.injection import (
     get_profile_service,
     get_reservation_service,
     get_booking_service,
-    get_mentor_profile_app,
-    get_tag_service,
 )
 from ...app.mentor_profile.upsert import MentorProfile
+from ...app._di.injection import (
+    get_interest_service,
+    get_profession_service,
+    get_profile_service,
+    get_mentor_profile_app,
+
+)
 
 log = logging.getLogger(__name__)
 
@@ -147,17 +149,4 @@ async def update_reservation_status(
 ):
     body.my_user_id = user_id
     res = await booking_service.update_reservation_status(db, reservation_id, body)
-    return res_success(data=jsonable_encoder(res))
-
-
-@router.get('/{language}/tags/catalog',
-            responses=idempotent_response('get_tag_catalog', tag.TagCatalogsVO))
-async def get_tag_catalog(
-        language: str = Path(...),
-        kind: Optional[List[TagKind]] = Query(default=None),
-        db: AsyncSession = Depends(db_session),
-        tag_service: TagService = Depends(get_tag_service),
-):
-    # Pass `?kind=skill&kind=topic` to filter; omit for all kinds.
-    res: tag.TagCatalogsVO = await tag_service.get_catalogs(db, kind, language)
     return res_success(data=jsonable_encoder(res))

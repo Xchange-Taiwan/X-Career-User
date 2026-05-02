@@ -75,13 +75,3 @@ class SortingBy(Enum):
 class Sorting(Enum):
     ASC = 1
     DESC = -1
-
-
-class TagKind(Enum):
-    # The 5 mentor profile buckets are (kind × array): want_tags carries
-    # position/skill/topic; have_tags carries skill/topic. Intent is
-    # implicit in *which* array a subject_group lives in — no separate
-    # enum needed.
-    SKILL = 'skill'
-    POSITION = 'position'
-    TOPIC = 'topic'
