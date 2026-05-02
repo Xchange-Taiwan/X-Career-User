@@ -2,7 +2,7 @@ from profile import Profile
 
 import sqlalchemy.dialects.postgresql
 from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean, func
-from sqlalchemy.dialects.postgresql import JSONB, ENUM
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
 
@@ -33,6 +33,11 @@ class Profile(Base):
     expertises = Column(JSONB)
     language = Column(String(10), default='')
     is_mentor = Column(Boolean, default=False)
+    # Mentor-side tag selections, stored as flat subject_group arrays. Kind
+    # comes from the tags catalog (a JOIN at read time buckets these into
+    # want_position / want_skill / want_topic / have_skill / have_topic).
+    want_tags = Column(ARRAY(String), nullable=False, server_default='{}')
+    have_tags = Column(ARRAY(String), nullable=False, server_default='{}')
 
 
 class MentorExperience(Base):
@@ -144,3 +149,17 @@ class Activity(Base):
             mentee_reservation_id={self.mentee_reservation_id}, \
             service={self.service}, \
             status={self.status})>'
+
+
+class Tag(Base):
+    __tablename__ = 'tags'
+    id = Column(BigInteger, primary_key=True)
+    kind = Column(String(20), nullable=False)
+    subject_group = Column(String(40))
+    language = Column(String(10))
+    subject = Column(Text, nullable=False, default='')
+    desc = Column(JSONB)
+    # parent_subject_group IS NULL ⇔ group row (catalog scaffolding);
+    # NOT NULL ⇔ leaf. _validate_leaves enforces this as a write-time
+    # invariant so orphan leaves can't accumulate.
+    parent_subject_group = Column(String(40), nullable=True, index=True)

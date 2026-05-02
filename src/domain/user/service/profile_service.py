@@ -1,14 +1,12 @@
-import asyncio
 import logging
-from typing import Optional, Coroutine, Any, Set, Dict, List, Union
+from typing import Optional, Dict, List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import InterestCategory, ExperienceCategory
+from src.config.constant import InterestCategory
 from src.config.exception import (
     NotAcceptableException,
     NotFoundException,
-    ServerException,
     raise_http_exception,
 )
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
@@ -16,7 +14,6 @@ from src.domain.mentor.model.experience_model import ExperienceVO
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.model.common_model import (
-    ProfessionVO,
     InterestVO,
     InterestListVO,
     ProfessionListVO,
