@@ -9,7 +9,6 @@ from src.config.constant import InterestCategory
 from .common_model import (
     InterestVO, InterestListVO, ProfessionListVO, ProfessionVO,
 )
-from .tag_model import UserTagBucketsInputDTO, UserTagBucketsVO
 
 log = logging.getLogger(__name__)
 
@@ -29,8 +28,6 @@ class ProfileDTO(BaseModel):
     industry: Optional[str] = ''
     language: Optional[str] = DEFAULT_LANGUAGE
     is_mentor: Optional[bool] = False
-    # None = leave user_tags untouched; non-None replaces the specified buckets.
-    user_tags: Optional[UserTagBucketsInputDTO] = None
 
     model_config = {
         "from_attributes": True
@@ -83,8 +80,6 @@ class ProfileVO(BaseModel):
     onboarding: Optional[bool] = False
     is_mentor: Optional[bool] = False
     language: Optional[str] = DEFAULT_LANGUAGE
-    # Hydrated tags pre-grouped per (kind, intent) bucket; None = not hydrated.
-    user_tags: Optional[UserTagBucketsVO] = None
 
     @staticmethod
     def of(model: ProfileDTO) -> 'ProfileVO':

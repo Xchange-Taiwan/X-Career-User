@@ -1,10 +1,10 @@
 from typing import List, Optional, Type
 
-from sqlalchemy import Select, delete, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import TagIntent, TagKind
-from src.infra.db.orm.init.user_init import Tag, UserTag
+from src.config.constant import TagKind
+from src.infra.db.orm.init.user_init import Tag
 from src.infra.util.convert_util import get_all_template, get_first_template
 
 
@@ -68,6 +68,26 @@ class TagRepository:
         )
         return await get_first_template(db, stmt)
 
+    async def find_leaves_by_subject_groups(
+        self,
+        db: AsyncSession,
+        subject_groups: List[str],
+        language: str,
+    ) -> List[Type[Tag]]:
+        # Bulk lookup for hydrating profile.want_tags/have_tags arrays at GET
+        # time. Excludes group rows so callers can bucket by kind without
+        # filtering scaffolding back out.
+        if not subject_groups:
+            return []
+        stmt: Select = (
+            select(Tag)
+            .filter(Tag.subject_group.in_(subject_groups))
+            .filter(Tag.language == language)
+            .filter(Tag.is_group == False)  # noqa: E712
+            .order_by(Tag.id)
+        )
+        return await get_all_template(db, stmt)
+
     async def create_tag(
         self,
         db: AsyncSession,
@@ -85,77 +105,3 @@ class TagRepository:
         db.add(tag)
         await db.flush()
         return tag
-
-    async def get_user_tags(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        kind: Optional[TagKind] = None,
-        intent: Optional[TagIntent] = None,
-    ) -> List[Type[UserTag]]:
-        stmt: Select = select(UserTag).filter(UserTag.user_id == user_id)
-        if intent is not None:
-            stmt = stmt.filter(UserTag.intent == intent.value)
-        if kind is not None:
-            # join through Tag to filter by kind
-            stmt = stmt.join(Tag, Tag.id == UserTag.tag_id).filter(
-                Tag.kind == kind.value
-            )
-        return await get_all_template(db, stmt)
-
-    async def get_user_tags_with_tag(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        kind: Optional[TagKind] = None,
-        intent: Optional[TagIntent] = None,
-    ) -> List[tuple]:
-        stmt: Select = (
-            select(UserTag, Tag)
-            .join(Tag, Tag.id == UserTag.tag_id)
-            .filter(UserTag.user_id == user_id)
-        )
-        if intent is not None:
-            stmt = stmt.filter(UserTag.intent == intent.value)
-        if kind is not None:
-            stmt = stmt.filter(Tag.kind == kind.value)
-        result = await db.execute(stmt)
-        return list(result.all())
-
-    async def delete_user_tags_by_kind_intent(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        kind: TagKind,
-        intent: TagIntent,
-    ) -> int:
-        sub = select(Tag.id).filter(Tag.kind == kind.value)
-        stmt = (
-            delete(UserTag)
-            .where(UserTag.user_id == user_id)
-            .where(UserTag.intent == intent.value)
-            .where(UserTag.tag_id.in_(sub))
-        )
-        result = await db.execute(stmt)
-        return result.rowcount or 0
-
-    async def upsert_user_tag(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        tag_id: int,
-        intent: TagIntent,
-    ) -> None:
-        # PK is (user_id, tag_id, intent); insert if absent, otherwise no-op.
-        existing = await db.execute(
-            select(UserTag)
-            .filter(UserTag.user_id == user_id)
-            .filter(UserTag.tag_id == tag_id)
-            .filter(UserTag.intent == intent.value)
-        )
-        if existing.first():
-            return
-        db.add(
-            UserTag(user_id=user_id, tag_id=tag_id, intent=intent.value)
-        )
-        await db.flush()

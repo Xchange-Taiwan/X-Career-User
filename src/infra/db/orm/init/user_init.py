@@ -2,7 +2,7 @@ from profile import Profile
 
 import sqlalchemy.dialects.postgresql
 from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean, func
-from sqlalchemy.dialects.postgresql import JSONB, ENUM
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, ENUM
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
 
@@ -33,6 +33,11 @@ class Profile(Base):
     expertises = Column(JSONB)
     language = Column(String(10), default='')
     is_mentor = Column(Boolean, default=False)
+    # Mentor-side tag selections, stored as flat subject_group arrays. Kind
+    # comes from the tags catalog (a JOIN at read time buckets these into
+    # want_position / want_skill / want_topic / have_skill / have_topic).
+    want_tags = Column(ARRAY(String), nullable=False, server_default='{}')
+    have_tags = Column(ARRAY(String), nullable=False, server_default='{}')
 
 
 class MentorExperience(Base):
@@ -161,11 +166,3 @@ class Tag(Base):
     # group from an orphan leaf — required for leaf-only validation and the
     # catalog's group/leaf split.
     is_group = Column(Boolean, nullable=False, default=False, server_default='false')
-
-
-class UserTag(Base):
-    __tablename__ = 'user_tags'
-    user_id = Column(BigInteger, primary_key=True)
-    tag_id = Column(BigInteger, primary_key=True)
-    intent = Column(String(10), primary_key=True)
-    created_at = Column(BigInteger, default=current_seconds())

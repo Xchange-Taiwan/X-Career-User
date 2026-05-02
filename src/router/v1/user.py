@@ -30,17 +30,10 @@ from ...app._di.injection import (
     get_profile_service,
     get_reservation_service,
     get_booking_service,
-)
-from ...app.mentor_profile.upsert import MentorProfile
-from ...app._di.injection import (
-    get_interest_service,
-    get_profession_service,
-    get_profile_service,
     get_mentor_profile_app,
-    get_notify_service,
     get_tag_service,
 )
-from ...domain.mentor.service.notify_service import NotifyService
+from ...app.mentor_profile.upsert import MentorProfile
 
 log = logging.getLogger(__name__)
 

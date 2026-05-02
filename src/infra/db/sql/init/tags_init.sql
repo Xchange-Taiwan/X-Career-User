@@ -1,4 +1,8 @@
 -- Foundation schema for the unified tag model.
+--
+-- User selections are stored directly on profiles.want_tags / profiles.have_tags
+-- (see profiles ORM), keyed by subject_group; the catalog below maps each
+-- subject_group to its kind and display metadata.
 
 CREATE TABLE IF NOT EXISTS tags (
     id BIGSERIAL PRIMARY KEY,
@@ -17,14 +21,3 @@ CREATE TABLE IF NOT EXISTS tags (
 
 CREATE INDEX IF NOT EXISTS idx_tags_kind ON tags(kind);
 CREATE INDEX IF NOT EXISTS ix_tags_parent_subject_group ON tags(parent_subject_group);
-
-
-CREATE TABLE IF NOT EXISTS user_tags (
-    user_id BIGINT NOT NULL,
-    tag_id BIGINT NOT NULL,
-    intent VARCHAR(10) NOT NULL,
-    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    PRIMARY KEY (user_id, tag_id, intent)
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_tags_tag_intent ON user_tags(tag_id, intent);

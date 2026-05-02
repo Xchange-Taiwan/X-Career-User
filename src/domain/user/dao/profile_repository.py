@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.exception import NotFoundException
 from src.domain.user.model.user_model import ProfileDTO
 from src.infra.db.orm.init.user_init import Profile
-from src.infra.util.convert_util import convert_dto_to_model, get_first_template
+from src.infra.util.convert_util import get_first_template
 
 
 class ProfileRepository:
@@ -29,17 +29,25 @@ class ProfileRepository:
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileDTO:
         if (dto is None) or (dto.user_id is None):
             raise NotFoundException(msg="not a valid user")
-        # directly upsert since the user_id should be pre dedined in auth service
 
-        # `user_tags` lives in a separate table; strip from Profile model dump.
-        model: Profile = convert_dto_to_model(dto, Profile, exclude={'user_tags'})
-        model = await db.merge(model)
+        # Load-or-create instead of db.merge — ProfileDTO no longer covers
+        # every Profile column (mentor-only want_tags/have_tags live on the
+        # row but not the mentee dto), and merge would copy unset attrs as
+        # NULL, clobbering existing tag arrays.
+        existing: Optional[Profile] = await db.get(Profile, dto.user_id)
+        if existing is None:
+            model = Profile(**dto.model_dump())
+            db.add(model)
+            await db.commit()
+            await db.refresh(model)
+            return ProfileDTO.model_validate(model)
 
+        for key, value in dto.model_dump().items():
+            setattr(existing, key, value)
         await db.commit()
-        await db.refresh(model)
-        return ProfileDTO.model_validate(model)
+        await db.refresh(existing)
+        return ProfileDTO.model_validate(existing)
 
     async def delete_profile(self, db: AsyncSession, user_id: int) -> None:
         stmt = sa_delete(Profile).where(Profile.user_id == user_id)
         await db.execute(stmt)
-

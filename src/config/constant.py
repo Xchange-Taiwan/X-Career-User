@@ -78,8 +78,9 @@ class Sorting(Enum):
 
 
 class TagKind(Enum):
-    # Combined with TagIntent (WANT/OFFER) on UserTag rows:
-    # skill/topic accept both intents; position is WANT-only.
+    # Pairs with TagIntent (WANT/HAVE) to form 5 mentor profile buckets:
+    # want_position / want_skill / want_topic / have_skill / have_topic.
+    # position is WANT-only; skill/topic accept both intents.
     SKILL = 'skill'
     POSITION = 'position'
     TOPIC = 'topic'
@@ -87,4 +88,4 @@ class TagKind(Enum):
 
 class TagIntent(Enum):
     WANT = 'WANT'
-    OFFER = 'OFFER'
+    HAVE = 'HAVE'

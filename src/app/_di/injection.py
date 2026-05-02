@@ -115,14 +115,12 @@ def get_profile_service(
     profession_service: ProfessionService = Depends(get_profession_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
-    tag_service: TagService = Depends(get_tag_service),
 ) -> ProfileService:
     return ProfileService(
         interest_service=interest_service,
         profession_service=profession_service,
         experience_service=experience_service,
         profile_repository=profile_repository,
-        tag_service=tag_service,
     )
 
 
@@ -178,11 +176,8 @@ def get_notify_service(
     mentor_service: MentorService = Depends(get_mentor_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     mq_adapter: SqsMqAdapter = Depends(get_sqs_mq_adapter),
-    tag_repository: TagRepository = Depends(get_tag_dao),
 ):
-    return NotifyService(
-        mentor_service, experience_service, mq_adapter, tag_repository
-    )
+    return NotifyService(mentor_service, experience_service, mq_adapter)
 
 
 def get_mentor_profile_app(
