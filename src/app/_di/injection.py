@@ -16,7 +16,6 @@ from src.domain.mentor.service.notify_service import NotifyService
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.dao.reservation_repository import ReservationRepository
-from src.domain.user.dao.tag_repository import TagRepository
 from src.domain.user.service.delete_account_service import DeleteAccountService
 from src.domain.user.dao.activity_repository import ActivityRepository
 from src.domain.user.service.reservation_service import ReservationService
@@ -24,7 +23,6 @@ from src.domain.user.service.activity_service import ActivityService
 from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
-from src.domain.user.service.tag_service import TagService
 from src.app.account.delete import DeleteAccount
 from src.app.reservation.booking import Booking
 from src.app.mentor_profile.upsert import MentorProfile
@@ -69,16 +67,6 @@ def get_reservation_dao() -> ReservationRepository:
 
 def get_activity_dao() -> ActivityRepository:
     return ActivityRepository()
-
-
-def get_tag_dao() -> TagRepository:
-    return TagRepository()
-
-
-def get_tag_service(
-    tag_repository: TagRepository = Depends(get_tag_dao),
-) -> TagService:
-    return TagService(tag_repository)
 
 
 def get_service_api() -> IServiceApi:
@@ -130,7 +118,6 @@ def get_mentor_service(
     interest_service: InterestService = Depends(get_interest_service),
     profession_service: ProfessionService = Depends(get_profession_service),
     profile_service: ProfileService = Depends(get_profile_service),
-    tag_service: TagService = Depends(get_tag_service),
 ) -> MentorService:
     return MentorService(
         mentor_repository,
@@ -138,7 +125,6 @@ def get_mentor_service(
         interest_service,
         profession_service,
         profile_service,
-        tag_service,
     )
 
 
