@@ -44,10 +44,12 @@ class ProfileService:
             if user_id is None:
                 raise NotAcceptableException(msg="No user interest_id is provided")
 
-            dto: ProfileDTO = await self.__profile_repository.get_by_user_id(
+            dto, want_tags, _ = await self.__profile_repository.get_by_user_id(
                 db, user_id
             )
-            return await self.convert_to_profile_vo(db, dto, language=language)
+            return await self.convert_to_profile_vo(
+                db, dto, language=language, want_tags=want_tags,
+            )
         except Exception as e:
             log.error(f"get_by_user_id error: %s", str(e))
             err_msg = getattr(e, "msg", "get profile response failed")
@@ -55,17 +57,22 @@ class ProfileService:
 
     async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileVO:
         try:
-            res: Optional[ProfileDTO] = await self.__profile_repository.upsert_profile(
+            res, want_tags, _ = await self.__profile_repository.upsert_profile(
                 db, dto
             )
-            return await self.convert_to_profile_vo(db, res)
+            return await self.convert_to_profile_vo(db, res, want_tags=want_tags)
         except Exception as e:
             log.error(f"upsert_profile error: %s", str(e))
             err_msg = getattr(e, "msg", "upsert profile response failed")
             raise_http_exception(e, msg=err_msg)
 
     async def convert_to_profile_vo(
-        self, db: AsyncSession, dto: ProfileDTO, language: Optional[str] = None
+        self,
+        db: AsyncSession,
+        dto: ProfileDTO,
+        language: Optional[str] = None,
+        *,
+        want_tags: Optional[List[str]] = None,
     ) -> ProfileVO:
         if dto is None:
             raise NotFoundException(msg="no data found")
@@ -102,8 +109,10 @@ class ProfileService:
                     interests=all_interests[InterestCategory.TOPIC.value]
                 )
 
-            # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
-            res.onboarding = ExperienceService.is_onboarding(all_interests)
+            # Onboarding completion is now derived from profiles.want_tags
+            # (mentee onboarding's only required write); the legacy
+            # interested_positions/skills/topics columns are NULL post-#226.
+            res.onboarding = ExperienceService.is_onboarded(want_tags)
             # 是否為 Mentor, 直接使用 dto 的 is_mentor 欄位
             res.is_mentor = dto.is_mentor
             res.language = language
@@ -115,7 +124,12 @@ class ProfileService:
             raise_http_exception(e, msg=err_msg)
 
     async def convert_to_mentor_profile_vo(
-        self, db: AsyncSession, dto: MentorProfileDTO, language: Optional[str] = None
+        self,
+        db: AsyncSession,
+        dto: MentorProfileDTO,
+        language: Optional[str] = None,
+        *,
+        want_tags: Optional[List[str]] = None,
     ) -> MentorProfileVO:
         if dto is None:
             raise NotFoundException(msg="no data found")
@@ -161,8 +175,9 @@ class ProfileService:
 
             # mentor experiences
             res.experiences = experiences
-            # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
-            res.onboarding = ExperienceService.is_onboarding(all_interests)
+            # Same as convert_to_profile_vo — onboarding now derives from
+            # profiles.want_tags rather than the legacy interest fields.
+            res.onboarding = ExperienceService.is_onboarded(want_tags)
             # 是否為 Mentor, 直接使用 dto 的 is_mentor 欄位
             res.is_mentor = dto.is_mentor
             res.language = language

@@ -59,7 +59,7 @@ class MentorService:
             )
 
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(
-                db, res_dto, language=language,
+                db, res_dto, language=language, want_tags=res_want,
             )
             await self.__hydrate_buckets(db, res_vo, res_want, res_have, language)
             return res_vo
@@ -78,7 +78,7 @@ class MentorService:
                 raise NotFoundException(msg=f"No such user with id: {user_id}")
             mentor_dto, want_tags, have_tags = row
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(
-                db, mentor_dto, language=language,
+                db, mentor_dto, language=language, want_tags=want_tags,
             )
             await self.__hydrate_buckets(db, res_vo, want_tags, have_tags, language)
             return res_vo

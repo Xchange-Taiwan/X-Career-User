@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from sqlalchemy import select, Select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,15 +9,28 @@ from src.infra.db.orm.init.user_init import Profile
 from src.infra.util.convert_util import get_first_template
 
 
+def _row_to_tuple(row: Profile) -> Tuple[ProfileDTO, List[str], List[str]]:
+    # want_tags / have_tags live on the row but not on ProfileDTO, so
+    # they ride alongside the dto for callers that need them (e.g.
+    # onboarding completion check).
+    return (
+        ProfileDTO.model_validate(row),
+        list(row.want_tags or []),
+        list(row.have_tags or []),
+    )
+
+
 class ProfileRepository:
 
-    async def get_by_user_id(self, db: AsyncSession, user_id: int) -> ProfileDTO:
+    async def get_by_user_id(
+        self, db: AsyncSession, user_id: int,
+    ) -> Tuple[ProfileDTO, List[str], List[str]]:
         stmt: Select = select(Profile).filter(Profile.user_id == user_id)
 
         query: Optional[Profile] = await get_first_template(db, stmt)
         if query is None:
             raise NotFoundException(msg=f"No such user with id: {user_id}")
-        return ProfileDTO.model_validate(query)
+        return _row_to_tuple(query)
 
     async def find_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[ProfileDTO]:
         stmt: Select = select(Profile).filter(Profile.user_id == user_id)
@@ -26,7 +39,9 @@ class ProfileRepository:
             return None
         return ProfileDTO.model_validate(query)
 
-    async def upsert_profile(self, db: AsyncSession, dto: ProfileDTO) -> ProfileDTO:
+    async def upsert_profile(
+        self, db: AsyncSession, dto: ProfileDTO,
+    ) -> Tuple[ProfileDTO, List[str], List[str]]:
         if (dto is None) or (dto.user_id is None):
             raise NotFoundException(msg="not a valid user")
 
@@ -40,13 +55,13 @@ class ProfileRepository:
             db.add(model)
             await db.commit()
             await db.refresh(model)
-            return ProfileDTO.model_validate(model)
+            return _row_to_tuple(model)
 
         for key, value in dto.model_dump().items():
             setattr(existing, key, value)
         await db.commit()
         await db.refresh(existing)
-        return ProfileDTO.model_validate(existing)
+        return _row_to_tuple(existing)
 
     async def delete_profile(self, db: AsyncSession, user_id: int) -> None:
         stmt = sa_delete(Profile).where(Profile.user_id == user_id)
