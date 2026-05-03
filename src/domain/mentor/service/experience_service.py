@@ -70,7 +70,16 @@ class ExperienceService:
             raise ServerException(msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}')
 
 
-    # 是否為 Onboarding, 透過是否有填寫完個人資料判斷
+    # Onboarding completion gate. Post-#226 the mentee onboarding flow
+    # writes profiles.want_tags; have_tags is mentor-only and stays empty
+    # for plain mentees, so we only check want_tags.
+    @staticmethod
+    def is_onboarded(want_tags: Optional[List[str]]) -> bool:
+        return bool(want_tags)
+
+    # Legacy onboarding check based on the dropped interested_positions /
+    # skills / topics fields. Kept for any external callers; new code
+    # should use is_onboarded(want_tags) instead.
     @staticmethod
     def is_onboarding(all_interests: Optional[Dict[str, List[InterestVO]]]) -> bool:
         if all_interests is None:
