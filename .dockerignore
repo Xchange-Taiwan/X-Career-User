@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.serverless/
+.vscode/
+.idea/
+node_modules/
+.git/
+.env
+.env.*

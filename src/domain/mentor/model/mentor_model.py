@@ -5,6 +5,7 @@ from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
 from ...user.model.common_model import ProfessionListVO
+from ...user.model.tag_model import TagVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
 from ....config.conf import *
@@ -38,6 +39,18 @@ class MentorProfileDTO(ProfileDTO):
     seniority_level: Optional[SeniorityLevel] = None
     expertises: Optional[List[str]] = None
 
+    # Input buckets — leaf subject_groups grouped by (intent, kind). Per
+    # bucket: None = leave that bucket alone, [] = clear, [...] = replace.
+    # Server validates leaves against the tags catalog and merges with
+    # the existing storage arrays to produce profiles.want_tags / have_tags
+    # — those columns intentionally never appear on this dto so the API
+    # contract stays small.
+    want_position: Optional[List[str]] = None
+    want_skill: Optional[List[str]] = None
+    want_topic: Optional[List[str]] = None
+    have_skill: Optional[List[str]] = None
+    have_topic: Optional[List[str]] = None
+
     class Config:
         from_attributes = True # orm_mode = True
 
@@ -62,6 +75,15 @@ class MentorProfileVO(ProfileVO):
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
     expertises: Optional[ProfessionListVO] = None
     experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
+
+    # Hydrated tag buckets — each element is a full TagVO joined from the
+    # catalog (subject, desc, parent_subject_group, etc.). None = not yet
+    # hydrated; [] = no tags in that bucket.
+    want_position: Optional[List[TagVO]] = None
+    want_skill: Optional[List[TagVO]] = None
+    want_topic: Optional[List[TagVO]] = None
+    have_skill: Optional[List[TagVO]] = None
+    have_topic: Optional[List[TagVO]] = None
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -103,10 +125,26 @@ class MentorProfileVO(ProfileVO):
         )
 
     def to_dto_json(self):
+        # Search consumes flat subject_group arrays per bucket — no need to
+        # ship the full TagVO over SQS, the Search side only filters on the
+        # canonical key.
         dto = self.from_dto()
         dto_dict = jsonable_encoder(dto)
-        dto_dict.update({'experiences': jsonable_encoder(self.experiences)})
+        dto_dict.update({
+            'experiences': jsonable_encoder(self.experiences),
+            'want_position': self._tag_subject_groups(self.want_position),
+            'want_skill': self._tag_subject_groups(self.want_skill),
+            'want_topic': self._tag_subject_groups(self.want_topic),
+            'have_skill': self._tag_subject_groups(self.have_skill),
+            'have_topic': self._tag_subject_groups(self.have_topic),
+        })
         return dto_dict
+
+    @staticmethod
+    def _tag_subject_groups(tags: Optional[List[TagVO]]) -> List[str]:
+        if not tags:
+            return []
+        return [t.subject_group for t in tags if t.subject_group]
 
 
 class TimeSlotDTO(BaseModel):

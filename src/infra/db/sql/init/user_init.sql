@@ -71,7 +71,11 @@ CREATE TABLE IF NOT EXISTS profiles (
     topics JSONB,
     expertises JSONB,
     "language" VARCHAR(10),
-    is_mentor BOOLEAN DEFAULT FALSE
+    is_mentor BOOLEAN DEFAULT FALSE,
+    -- Mentor tag selections, flat subject_group arrays. Kind comes from the
+    -- tags catalog (JOIN at read time buckets these into the 5 API fields).
+    want_tags TEXT[] NOT NULL DEFAULT '{}',
+    have_tags TEXT[] NOT NULL DEFAULT '{}'
 );
 
 
