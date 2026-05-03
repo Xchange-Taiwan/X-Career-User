@@ -19,6 +19,11 @@ server_settings = {}
 if DB_JIT_OFF:
     server_settings["jit"] = "off"
 
+# Without this, unqualified table names hit `public` regardless of DB_SCHEMA.
+# No-op when DB_SCHEMA=public.
+if DB_SCHEMA:
+    server_settings["search_path"] = f'"{DB_SCHEMA}", public'
+
 # 資料庫引擎配置：使用配置參數設置連接池和超時
 engine = create_async_engine(
     DATABASE_URL, 
