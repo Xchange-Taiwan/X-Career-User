@@ -12,19 +12,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..res.response import *
 from ...config.constant import *
 from ...domain.user.model import (
-    common_model as common,
     user_model as user,
     reservation_model as reservation,
     tag_model as tag,
 )
 from ...app.reservation.booking import Booking
-from ...domain.user.service.profession_service import ProfessionService
 from ...domain.user.service.profile_service import ProfileService
 from ...domain.user.service.tag_service import TagService
 from ...infra.databse import get_db, db_session
 
 from ...app._di.injection import (
-    get_profession_service,
     get_profile_service,
     get_reservation_service,
     get_booking_service,
@@ -68,29 +65,6 @@ async def get_profile(
         profile_service: ProfileService = Depends(get_profile_service)
 ):
     res: user.ProfileVO = await profile_service.get_by_user_id(db, user_id, language.value)
-    return res_success(data=jsonable_encoder(res))
-
-
-@router.get('/{language}/industries',
-            responses=idempotent_response('get_industries', common.ProfessionListVO))
-async def get_industries(
-        language: Language = Path(...),
-        db: AsyncSession = Depends(db_session),
-        tag_service: TagService = Depends(get_tag_service),
-):
-    # Source of truth for industry catalog is the unified `tags` table
-    # (kind='industry'). Response shape stays as ProfessionListVO so the
-    # legacy frontend keeps working — drops in #233 when /tags?kinds=industry
-    # is the only consumer.
-    tags = await tag_service.list_tags_by_kind(
-        db, TagKind.INDUSTRY, language.value,
-    )
-    res: common.ProfessionListVO = common.ProfessionListVO(
-        professions=[
-            common.ProfessionVO.from_tag(t, ProfessionCategory.INDUSTRY)
-            for t in tags
-        ]
-    )
     return res_success(data=jsonable_encoder(res))
 
 

@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 from src.config.conf import DEFAULT_LANGUAGE
-from .common_model import ProfessionVO
+from .tag_model import TagVO
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class ProfileVO(BaseModel):
     company: Optional[str] = ''
     years_of_experience: Optional[str] = '0'
     location: Optional[str] = ''
-    industry: Optional[ProfessionVO] = None
+    industry: Optional[TagVO] = None
     onboarding: Optional[bool] = False
     is_mentor: Optional[bool] = False
     language: Optional[str] = DEFAULT_LANGUAGE

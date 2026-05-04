@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import ProfessionCategory, TagKind
+from src.config.constant import TagKind
 from src.config.exception import (
     NotAcceptableException,
     NotFoundException,
@@ -13,7 +13,7 @@ from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfile
 from src.domain.mentor.model.experience_model import ExperienceVO
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
-from src.domain.user.model.common_model import ProfessionVO
+from src.domain.user.model.tag_model import TagVO
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
 from src.domain.user.service.tag_service import TagService
 
@@ -122,15 +122,9 @@ class ProfileService:
         db: AsyncSession,
         subject_group: Optional[str],
         language: str,
-    ) -> Optional[ProfessionVO]:
-        # Industry catalog now lives in `tags` (kind='industry'); the
-        # ProfessionVO shape is preserved on the wire so the frontend
-        # cutover in Tracker #249 can happen without an API contract change.
+    ) -> Optional[TagVO]:
         # Returns None when industry isn't set or the subject_group doesn't
-        # resolve — same behavior as the legacy professions lookup.
-        tag = await self.__tag_service.hydrate_flat_tag(
+        # resolve in the catalog — callers treat both as "no industry".
+        return await self.__tag_service.hydrate_flat_tag(
             db, TagKind.INDUSTRY, subject_group, language,
         )
-        if tag is None:
-            return None
-        return ProfessionVO.from_tag(tag, ProfessionCategory.INDUSTRY)
