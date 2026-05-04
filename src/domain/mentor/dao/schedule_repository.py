@@ -50,8 +50,6 @@ class ScheduleRepository:
         window_end_ts: int,
     ) -> List[Reservation]:
         # mentor 自己這一側為 ACCEPT/PENDING 的預約都要回傳到 schedule segments
-        # 但對方若已 REJECT 就視同預約結束,不該佔住時段
-        # (對方取消時只會更新 status,不會動到 mentor 的 my_status)
         # 條件命中 idx_reservation_user_my_status_dtstart_dtend
         stmt: Select = select(Reservation).filter(
             Reservation.my_user_id == mentor_user_id,
@@ -60,7 +58,6 @@ class ScheduleRepository:
                 BookingStatus.ACCEPT.value,
                 BookingStatus.PENDING.value,
             ]),
-            Reservation.status != BookingStatus.REJECT.value,
             Reservation.dtend > window_start_ts,
             Reservation.dtstart < window_end_ts,
         )
