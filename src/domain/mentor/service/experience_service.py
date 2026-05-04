@@ -54,6 +54,66 @@ class ExperienceService:
             log.error(f'upsert_exp error: %s', str(e))
             raise ServerException(msg='upsert experience response failed')
 
+    async def sync_experiences(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        experiences: List[ExperienceDTO],
+    ) -> List[ExperienceVO]:
+        # Replace semantics: the provided list IS the new full set.
+        # Items with id are upserted; items without id are inserted; any
+        # existing experience whose id isn't in the kept set is deleted.
+        # Single commit at the end so the batch is internally atomic — a
+        # mid-batch failure rolls back to the pre-call state.
+        try:
+            current: List[MentorExperience] = (
+                await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
+            )
+            current_ids = {e.id for e in current if e.id is not None}
+
+            # Reject ids that aren't owned by this user — db.merge would
+            # otherwise reassign another user's row to user_id (cross-user
+            # clobber). Treat foreign ids as new inserts.
+            sanitized_ids: List[Optional[int]] = []
+            for exp_dto in experiences:
+                if exp_dto.id is not None and exp_dto.id not in current_ids:
+                    log.warning(
+                        'sync_experiences: dropping foreign exp id %s for user %s',
+                        exp_dto.id, user_id,
+                    )
+                    sanitized_ids.append(None)
+                else:
+                    sanitized_ids.append(exp_dto.id)
+
+            kept_ids = {sid for sid in sanitized_ids if sid is not None}
+            ids_to_delete = current_ids - kept_ids
+
+            if ids_to_delete:
+                await self.__exp_dao.delete_by_user_id_in_ids(
+                    db, user_id, ids_to_delete,
+                )
+
+            merged_rows: List[MentorExperience] = []
+            for exp_dto, exp_id in zip(experiences, sanitized_ids):
+                row = MentorExperience(
+                    id=exp_id,
+                    user_id=user_id,
+                    category=exp_dto.category,
+                    order=exp_dto.order,
+                    mentor_experiences_metadata=exp_dto.mentor_experiences_metadata,
+                )
+                merged_rows.append(await db.merge(row))
+
+            await db.commit()
+            for row in merged_rows:
+                await db.refresh(row)
+
+            return [ExperienceVO.model_validate(row) for row in merged_rows]
+        except Exception as e:
+            await db.rollback()
+            log.error(f'sync_experiences error: %s', str(e))
+            raise ServerException(msg='sync experiences response failed')
+
     async def delete_exp_by_user_and_exp_id(self, db: AsyncSession,
                                             user_id: int,
                                             experience_dto: ExperienceDTO) -> bool:

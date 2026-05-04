@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterable, List
 from sqlalchemy import Select, select, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,6 +48,22 @@ class MentorExperienceRepository:
 
     async def delete_all_by_user_id(self, db: AsyncSession, user_id: int) -> int:
         stmt = delete(MentorExperience).where(MentorExperience.user_id == user_id)
+        result = await db.execute(stmt)
+        return result.rowcount
+
+    async def delete_by_user_id_in_ids(
+        self, db: AsyncSession, user_id: int, ids: Iterable[int]
+    ) -> int:
+        # No commit — caller batches with other writes (sync_experiences).
+        ids_list = [i for i in ids if i is not None]
+        if not ids_list:
+            return 0
+        stmt = delete(MentorExperience).where(
+            and_(
+                MentorExperience.user_id == user_id,
+                MentorExperience.id.in_(ids_list),
+            )
+        )
         result = await db.execute(stmt)
         return result.rowcount
 

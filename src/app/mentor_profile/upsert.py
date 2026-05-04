@@ -65,7 +65,24 @@ class MentorProfile:
         res: mentor.MentorProfileVO = await self.mentor_service.upsert_mentor_profile(
             db, profile_dto
         )
-        # 若為 is_mentor 狀態，則需通知 Search Service
+        # Inline experiences sync — replace semantics. None means "leave
+        # alone"; [] clears all; [...] becomes the new full set. Each
+        # operation (profile upsert, experiences sync) is internally atomic;
+        # they do not share a single transaction, so a profile-success +
+        # experiences-failure leaves the profile updated. That mirrors
+        # today's separate-endpoint behaviour and is acceptable until a
+        # broader transaction refactor is justified.
+        if profile_dto.experiences is not None:
+            synced_experiences = await self.exp_service.sync_experiences(
+                db=db,
+                user_id=res.user_id,
+                experiences=profile_dto.experiences,
+            )
+            res.experiences = synced_experiences
+        # 若為 is_mentor 狀態，則需通知 Search Service. Single notify
+        # carries both profile and experiences (to_dto_json includes
+        # experiences), replacing the old PUT_MENTOR_PROFILE +
+        # PATCH_MENTOR_PROFILE pair when experiences are inlined.
         if res.is_mentor:
             background_tasks.add_task(
                 self.notify_service.updated_mentor_profile, mentor_profile=res

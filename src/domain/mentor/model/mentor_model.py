@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi.encoders import jsonable_encoder
 from ...user.model.tag_model import TagVO
 from ...user.model.user_model import *
-from .experience_model import ExperienceVO
+from .experience_model import ExperienceDTO, ExperienceVO
 from ....config.conf import *
 from ....config.constant import *
 from ....config.exception import ClientException, UnprocessableClientException
@@ -33,6 +33,14 @@ class MentorProfileDTO(ProfileDTO):
     want_topic: Optional[List[str]] = None
     have_skill: Optional[List[str]] = None
     have_topic: Optional[List[str]] = None
+
+    # Inline experiences batch — replace semantics matching tag buckets:
+    # None = leave alone, [] = clear all, [...] = replace full set.
+    # Items with id are upserted in place; items without id are inserted;
+    # existing experiences whose id isn't in the provided list are deleted.
+    # Stored in mentor_experiences (not on Profile), so the repository
+    # strips this field before mapping the dto onto Profile columns.
+    experiences: Optional[List[ExperienceDTO]] = None
 
     class Config:
         from_attributes = True # orm_mode = True

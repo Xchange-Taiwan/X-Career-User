@@ -14,6 +14,11 @@ _INPUT_BUCKET_FIELDS = {
     'want_position', 'want_skill', 'want_topic', 'have_skill', 'have_topic',
 }
 
+# `experiences` rides on MentorProfileDTO as an optional batch payload but
+# lives in mentor_experiences (synced by ExperienceService.sync_experiences).
+# Strip it before mapping the dto onto Profile columns.
+_NON_PROFILE_FIELDS = _INPUT_BUCKET_FIELDS | {'experiences'}
+
 
 # (dto, want_tags, have_tags) — the storage arrays travel alongside the dto
 # rather than on it, so the API-facing dto stays free of plumbing fields.
@@ -54,7 +59,7 @@ class MentorRepository:
         # Profile columns, and merge would clobber want_tags/have_tags
         # columns the dto doesn't carry. The merged storage arrays come in
         # as kwargs because they're storage state, not API surface.
-        payload = mentor_profile_dto.model_dump(exclude=_INPUT_BUCKET_FIELDS)
+        payload = mentor_profile_dto.model_dump(exclude=_NON_PROFILE_FIELDS)
         payload['want_tags'] = want_tags
         payload['have_tags'] = have_tags
 
