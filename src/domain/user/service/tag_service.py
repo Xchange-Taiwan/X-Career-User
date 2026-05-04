@@ -14,7 +14,6 @@ from src.domain.user.model.tag_model import (
     TagCatalogLeafVO,
     TagCatalogVO,
     TagCatalogsVO,
-    TagVO,
 )
 
 log = logging.getLogger(__name__)
@@ -189,11 +188,12 @@ class TagService:
         want_tags: List[str],
         have_tags: List[str],
         language: str,
-    ) -> Dict[str, List[TagVO]]:
+    ) -> Dict[str, List[str]]:
         # Single bulk JOIN of all tagged subject_groups, then bucketed by
         # (which-array, kind=catalog row). Items not found in the catalog
-        # drop out — they don't belong to any bucket.
-        result: Dict[str, List[TagVO]] = {
+        # drop out — they don't belong to any bucket. Returns subject_group
+        # keys only; frontend resolves display metadata on its side.
+        result: Dict[str, List[str]] = {
             'want_position': [], 'want_skill': [], 'want_topic': [],
             'have_skill': [], 'have_topic': [],
         }
@@ -220,7 +220,7 @@ class TagService:
                         # e.g. position written into have_tags somehow —
                         # not a valid combination; skip rather than crash.
                         continue
-                    result[bucket].append(TagVO.model_validate(tag))
+                    result[bucket].append(sg)
             return result
         except Exception as e:
             log.error("hydrate_buckets error: %s", str(e))
