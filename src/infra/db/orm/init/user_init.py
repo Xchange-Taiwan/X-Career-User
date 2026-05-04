@@ -27,10 +27,6 @@ class Profile(Base):
 
     years_of_experience = Column(String(100), default='0')
     industry = Column(String(255))
-    interested_positions = Column(JSONB)
-    skills = Column(JSONB)
-    topics = Column(JSONB)
-    expertises = Column(JSONB)
     language = Column(String(10), default='')
     is_mentor = Column(Boolean, default=False)
     # Mentor-side tag selections, stored as flat subject_group arrays. Kind
@@ -121,17 +117,6 @@ class Reservation(Base):
     messages = Column(JSONB, default=[])
     previous_reserve = Column(JSONB, nullable=True) # nullable while updating
 
-
-class Interest(Base):
-    __tablename__ = 'interests'
-    id = Column(Integer, primary_key=True)
-    category = Column(
-        ENUM(InterestCategory, name="interest_category"),  # Map to PostgreSQL enum
-        nullable=False)
-    subject_group = Column(String)
-    subject = Column(String)
-    desc = Column(JSONB)
-    language = Column(String, nullable=False)
 
 class Activity(Base):
     __tablename__ = 'activities'

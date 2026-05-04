@@ -1,9 +1,8 @@
 import logging
-from typing import Optional, Dict, List
+from typing import Optional, List
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import InterestCategory
 from src.config.exception import (
     NotAcceptableException,
     NotFoundException,
@@ -13,13 +12,8 @@ from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfile
 from src.domain.mentor.model.experience_model import ExperienceVO
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
-from src.domain.user.model.common_model import (
-    InterestVO,
-    InterestListVO,
-    ProfessionListVO,
-)
+from src.domain.user.model.common_model import ProfessionListVO
 from src.domain.user.model.user_model import ProfileDTO, ProfileVO
-from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 
 log = logging.getLogger(__name__)
@@ -27,12 +21,10 @@ log = logging.getLogger(__name__)
 class ProfileService:
     def __init__(
         self,
-        interest_service: InterestService,
         profession_service: ProfessionService,
         experience_service: ExperienceService,
         profile_repository: ProfileRepository,
     ):
-        self.__interest_service: InterestService = interest_service
         self.__profession_service: ProfessionService = profession_service
         self.__exp_service: ExperienceService = experience_service
         self.__profile_repository: ProfileRepository = profile_repository
@@ -42,7 +34,7 @@ class ProfileService:
     ) -> ProfileVO:
         try:
             if user_id is None:
-                raise NotAcceptableException(msg="No user interest_id is provided")
+                raise NotAcceptableException(msg="No user_id is provided")
 
             dto, want_tags, _ = await self.__profile_repository.get_by_user_id(
                 db, user_id
@@ -80,40 +72,17 @@ class ProfileService:
             language = dto.language
 
         try:
-            user_id = dto.user_id
-            experiences: List[ExperienceVO] = (
-                await self.__exp_service.get_exp_list_by_user_id(db, user_id)
-            )
             industries: ProfessionListVO = (
                 await self.__profession_service.get_industries_by_subjects(
                     db, [dto.industry], language
                 )
             )
 
-            # get all interests: interest_positions, skills, topics
-            all_interests: Optional[Dict[str, List[InterestVO]]] = (
-                await self.get_all_interests(db, dto, language)
-            )
-
             res: ProfileVO = ProfileVO.of(dto)
             if len(industries.professions) > 0:
                 res.industry = industries.professions[0]
-            if all_interests:
-                res.interested_positions = InterestListVO(
-                    interests=all_interests[InterestCategory.INTERESTED_POSITION.value]
-                )
-                res.skills = InterestListVO(
-                    interests=all_interests[InterestCategory.SKILL.value]
-                )
-                res.topics = InterestListVO(
-                    interests=all_interests[InterestCategory.TOPIC.value]
-                )
 
-            # Onboarding completion is now derived from profiles.want_tags
-            # (mentee onboarding's only required write); the legacy
-            # interested_positions/skills/topics columns are NULL post-#226.
             res.onboarding = ExperienceService.is_onboarded(want_tags)
-            # 是否為 Mentor, 直接使用 dto 的 is_mentor 欄位
             res.is_mentor = dto.is_mentor
             res.language = language
             return res
@@ -146,39 +115,14 @@ class ProfileService:
                     db, [dto.industry], language=language
                 )
             )
-            expertises: ProfessionListVO = (
-                await self.__profession_service.get_expertise_by_subjects(
-                    db, dto.expertises, language=language
-                )
-            )
-
-            # get all interests: interest_positions, skills, topics
-            all_interests: Optional[Dict[str, List[InterestVO]]] = (
-                await self.get_all_interests(db, dto, language)
-            )
 
             res: MentorProfileVO = MentorProfileVO.of(dto)
-            res.expertises = expertises
 
             if len(industries.professions) > 0:
                 res.industry = industries.professions[0]
-            if all_interests:
-                res.interested_positions = InterestListVO(
-                    interests=all_interests[InterestCategory.INTERESTED_POSITION.value]
-                )
-                res.skills = InterestListVO(
-                    interests=all_interests[InterestCategory.SKILL.value]
-                )
-                res.topics = InterestListVO(
-                    interests=all_interests[InterestCategory.TOPIC.value]
-                )
 
-            # mentor experiences
             res.experiences = experiences
-            # Same as convert_to_profile_vo — onboarding now derives from
-            # profiles.want_tags rather than the legacy interest fields.
             res.onboarding = ExperienceService.is_onboarded(want_tags)
-            # 是否為 Mentor, 直接使用 dto 的 is_mentor 欄位
             res.is_mentor = dto.is_mentor
             res.language = language
             return res
@@ -187,22 +131,3 @@ class ProfileService:
             log.error(f"convert_to_mentor_profile_vo error: %s", str(e))
             err_msg = getattr(e, "msg", "mentor profile response failed")
             raise_http_exception(e, msg=err_msg)
-
-    async def get_all_interests(
-        self, db: AsyncSession, dto: ProfileDTO, language: str
-    ) -> Optional[Dict[str, List[InterestVO]]]:
-        all_subject_groups: List = dto.get_all_subject_groups()
-        # don't need to query DB if there is no subject group
-        if not all_subject_groups:
-            return None
-
-        all_interests: InterestListVO = (
-            await self.__interest_service.get_by_subject_group_and_language(
-                db, all_subject_groups, language=language
-            )
-        )
-        # don't need to convert if there is no interest
-        if not all_interests.interests:
-            return None
-
-        return dto.get_all_interest_details(all_interests)

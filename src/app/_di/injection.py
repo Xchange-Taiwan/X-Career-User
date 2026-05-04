@@ -6,7 +6,6 @@ from src.domain.file.dao.file_repository import FileRepository
 from src.domain.file.service.file_service import FileService
 from src.domain.mentor.dao.canned_message_repository import CannedMessageRepository
 from src.domain.mentor.dao.profession_repository import ProfessionRepository
-from src.domain.mentor.dao.interest_repository import InterestRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.mentor.service.mentor_service import MentorService
@@ -21,7 +20,6 @@ from src.domain.user.service.delete_account_service import DeleteAccountService
 from src.domain.user.dao.activity_repository import ActivityRepository
 from src.domain.user.service.reservation_service import ReservationService
 from src.domain.user.service.activity_service import ActivityService
-from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.service.tag_service import TagService
@@ -41,10 +39,6 @@ def get_experience_dao() -> MentorExperienceRepository:
 
 def get_mentor_dao() -> MentorRepository:
     return MentorRepository()
-
-
-def get_interest_dao() -> InterestRepository:
-    return InterestRepository()
 
 
 def get_profile_dao() -> ProfileRepository:
@@ -89,12 +83,6 @@ def get_sqs_mq_adapter() -> SqsMqAdapter:
     return SqsMqAdapter(sqs_rsc=sqs_rsc)
 
 
-def get_interest_service(
-    interest_repo: InterestRepository = Depends(get_interest_dao),
-) -> InterestService:
-    return InterestService(interest_repo, _local_cache)
-
-
 def get_profession_service(
     profession_repository: ProfessionRepository = Depends(get_profession_dao),
 ) -> ProfessionService:
@@ -111,13 +99,11 @@ def get_experience_service(
 
 
 def get_profile_service(
-    interest_service: InterestService = Depends(get_interest_service),
     profession_service: ProfessionService = Depends(get_profession_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
 ) -> ProfileService:
     return ProfileService(
-        interest_service=interest_service,
         profession_service=profession_service,
         experience_service=experience_service,
         profile_repository=profile_repository,
@@ -127,7 +113,6 @@ def get_profile_service(
 def get_mentor_service(
     mentor_repository: MentorRepository = Depends(get_mentor_dao),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
-    interest_service: InterestService = Depends(get_interest_service),
     profession_service: ProfessionService = Depends(get_profession_service),
     profile_service: ProfileService = Depends(get_profile_service),
     tag_service: TagService = Depends(get_tag_service),
@@ -135,7 +120,6 @@ def get_mentor_service(
     return MentorService(
         mentor_repository,
         profile_repository,
-        interest_service,
         profession_service,
         profile_service,
         tag_service,

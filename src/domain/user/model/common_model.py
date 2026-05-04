@@ -7,24 +7,6 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class InterestVO(BaseModel):
-    id: int
-    category: InterestCategory = None
-    language: Optional[str] = None
-    subject_group: str = 'unknown'
-    subject: Optional[str] = ''
-    desc: Optional[Dict] = {}
-
-
-class InterestListVO(BaseModel):
-    interests: List[InterestVO] = []
-    language: Optional[str] = None
-
-    def to_json(self):
-        result = self.json()
-        return json.loads(result)
-
-
 class ProfessionDTO(BaseModel):
     id: int
     category: ProfessionCategory = None
