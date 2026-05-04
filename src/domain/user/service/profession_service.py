@@ -52,13 +52,6 @@ class ProfessionService:
             db, ProfessionCategory.INDUSTRY, subject_groups, language
         )
 
-    async def get_expertise_by_subjects(
-        self, db: AsyncSession, subject_groups: List[str], language: str
-    ) -> ProfessionListVO:
-        return await self.get_professions_by_subject_groups(
-            db, ProfessionCategory.EXPERTISE, subject_groups, language
-        )
-
     async def get_professions_by_subject_groups(
         self,
         db: AsyncSession,

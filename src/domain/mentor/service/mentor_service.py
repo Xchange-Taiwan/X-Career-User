@@ -7,7 +7,6 @@ from src.config.exception import NotFoundException, raise_http_exception
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
 from src.domain.user.dao.profile_repository import ProfileRepository
-from src.domain.user.service.interest_service import InterestService
 from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.service.tag_service import TagService
@@ -17,10 +16,9 @@ log = logging.getLogger(__name__)
 
 class MentorService:
     def __init__(self, mentor_repository: MentorRepository, profile_repository: ProfileRepository,
-                 interest_service: InterestService, profession_service: ProfessionService,
+                 profession_service: ProfessionService,
                  profile_service: ProfileService, tag_service: TagService):
         self.__mentor_repository: MentorRepository = mentor_repository
-        self.__interest_service: InterestService = interest_service
         self.__profession_service: ProfessionService = profession_service
         self.__profile_repository: ProfileRepository = profile_repository
         self.__profile_service: ProfileService = profile_service

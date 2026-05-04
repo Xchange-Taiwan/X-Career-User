@@ -31,8 +31,3 @@ class ProfessionRepository:
             .filter(Profession.language == language)
         res: List[Type[Profession]] = await get_all_template(db, stmt)
         return res
-
-    async def get_all_expertise(self, db: AsyncSession) -> List[Type[Profession]]:
-        stmt: Select = select(Profession).filter(Profession.category == ProfessionCategory.EXPERTISE)
-        res: List[Type[Profession]] = await get_all_template(db, stmt)
-        return res

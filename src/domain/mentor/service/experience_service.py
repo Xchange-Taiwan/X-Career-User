@@ -1,11 +1,9 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.constant import ExperienceCategory
 from src.config.exception import NotFoundException, ServerException
 from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO, ExperienceListVO
-from src.domain.user.model.common_model import InterestVO
 from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.infra.db.orm.init.user_init import MentorExperience
 import logging
@@ -70,27 +68,12 @@ class ExperienceService:
             raise ServerException(msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}')
 
 
-    # Onboarding completion gate. Post-#226 the mentee onboarding flow
-    # writes profiles.want_tags; have_tags is mentor-only and stays empty
-    # for plain mentees, so we only check want_tags.
+    # Onboarding completion gate. Mentee onboarding writes profiles.want_tags;
+    # have_tags is mentor-only and stays empty for plain mentees, so checking
+    # want_tags alone is sufficient.
     @staticmethod
     def is_onboarded(want_tags: Optional[List[str]]) -> bool:
         return bool(want_tags)
-
-    # Legacy onboarding check based on the dropped interested_positions /
-    # skills / topics fields. Kept for any external callers; new code
-    # should use is_onboarded(want_tags) instead.
-    @staticmethod
-    def is_onboarding(all_interests: Optional[Dict[str, List[InterestVO]]]) -> bool:
-        if all_interests is None:
-            return False
-
-        for interest_category, interests in all_interests.items():
-            if len(interests) == 0:
-                log.info(f'{interest_category} is not filled')
-                return False
-
-        return True
 
     # 是否為 Mentor, 透過是否有填寫足夠的經驗類別判斷
     @staticmethod

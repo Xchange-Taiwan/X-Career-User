@@ -1,10 +1,8 @@
-import stat
-from typing import Any, Dict, Tuple
-from pydantic import Field
+from typing import Any, Dict, List, Optional, Tuple
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
-from ...user.model.common_model import ProfessionListVO
 from ...user.model.tag_model import TagVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
@@ -19,25 +17,10 @@ from src.infra.util.time_util import (
 log = logging.getLogger(__name__)
 
 
-# class MentorProfileDTO(BaseModel):
-#     mentor_profile_id: Optional[int]
-#     avatar: Optional[str]
-#     location: Optional[str]
-#     timezone: Optional[int]
-#     experience: Optional[int]
-#
-#     personal_statement: Optional[str]
-#     about: Optional[str]
-#     # TODO: enum
-#     seniority_level: Optional[str] = ''
-#     expertises: Optional[List[ProfessionDTO]] = []
-
-
 class MentorProfileDTO(ProfileDTO):
     personal_statement: Optional[str] = None
     about: Optional[str] = None
     seniority_level: Optional[SeniorityLevel] = None
-    expertises: Optional[List[str]] = None
 
     # Input buckets — leaf subject_groups grouped by (intent, kind). Per
     # bucket: None = leave that bucket alone, [] = clear, [...] = replace.
@@ -55,13 +38,6 @@ class MentorProfileDTO(ProfileDTO):
         from_attributes = True # orm_mode = True
 
 
-class ProfessionDTO(BaseModel):
-    professions_id: int
-    category: Optional[str]
-    subject: Optional[str] = ''
-    profession_metadata: Optional[Dict] = {}
-
-
 class CannedMessageDTO(BaseModel):
     canned_messages_id: int
     user_id: int
@@ -73,7 +49,6 @@ class MentorProfileVO(ProfileVO):
     personal_statement: Optional[str] = ""
     about: Optional[str] = ""
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
-    expertises: Optional[ProfessionListVO] = None
     experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
 
     # Hydrated tag buckets — each element is a full TagVO joined from the
@@ -102,43 +77,30 @@ class MentorProfileVO(ProfileVO):
             is_mentor=mentor_profile_dto.is_mentor,
         )
 
-    def from_dto(self):
-        return MentorProfileDTO(
-            user_id=self.user_id,
-            name=self.name,
-            avatar=self.avatar,
-            job_title=self.job_title,
-            company=self.company,
-            years_of_experience=self.years_of_experience,
-            location=self.location,
-            interested_positions=self.i_to_subject_groups(self.interested_positions),
-            skills=self.i_to_subject_groups(self.skills),
-            topics=self.i_to_subject_groups(self.topics),
-            # TODO: use 'industry' instead of ARRAY
-            industry=getattr(self.industry, 'subject_group', None),
-            language=self.language,
-            personal_statement=self.personal_statement,
-            about=self.about,
-            seniority_level=self.seniority_level,
-            expertises=self.p_to_subject_groups(self.expertises),
-            is_mentor=self.is_mentor,
-        )
-
     def to_dto_json(self):
-        # Search consumes flat subject_group arrays per bucket — no need to
-        # ship the full TagVO over SQS, the Search side only filters on the
-        # canonical key.
-        dto = self.from_dto()
-        dto_dict = jsonable_encoder(dto)
-        dto_dict.update({
+        # Search consumes flat subject_group arrays per bucket — full TagVO
+        # would be wasted bytes on the wire (Search only filters by key).
+        return {
+            'user_id': self.user_id,
+            'name': self.name,
+            'avatar': self.avatar,
+            'job_title': self.job_title,
+            'company': self.company,
+            'years_of_experience': self.years_of_experience,
+            'location': self.location,
+            'industry': getattr(self.industry, 'subject_group', None),
+            'language': self.language,
+            'is_mentor': self.is_mentor,
+            'personal_statement': self.personal_statement,
+            'about': self.about,
+            'seniority_level': self.seniority_level.value if self.seniority_level else None,
             'experiences': jsonable_encoder(self.experiences),
             'want_position': self._tag_subject_groups(self.want_position),
             'want_skill': self._tag_subject_groups(self.want_skill),
             'want_topic': self._tag_subject_groups(self.want_topic),
             'have_skill': self._tag_subject_groups(self.have_skill),
             'have_topic': self._tag_subject_groups(self.have_topic),
-        })
-        return dto_dict
+        }
 
     @staticmethod
     def _tag_subject_groups(tags: Optional[List[TagVO]]) -> List[str]:
