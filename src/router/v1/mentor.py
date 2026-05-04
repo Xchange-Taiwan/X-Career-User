@@ -24,17 +24,11 @@ from ...domain.mentor.model import (
 )
 from ...domain.mentor.model.mentor_model import MentorProfileVO
 from ...domain.mentor.service.experience_service import ExperienceService
-from ...domain.user.model import (
-    common_model as common,
-)
-from ...domain.user.model.common_model import ProfessionListVO
-from ...domain.user.service.profession_service import ProfessionService
 from ...infra.databse import get_db, db_session
 from ...app.mentor_profile.upsert import MentorProfile
 from ...app._di.injection import (
     get_mentor_service,
     get_experience_service,
-    get_profession_service,
     get_schedule_service,
     get_mentor_profile_app,
 )
@@ -128,21 +122,6 @@ async def delete_experience(
                                                            background_tasks=background_tasks,
                                                            is_mentor=is_mentor,)
     return res_success(data=res)
-
-
-@router.get('/{language}/expertises',
-            responses=idempotent_response('get_expertises', common.ProfessionListVO))
-async def get_expertises(
-        db: AsyncSession = Depends(db_session),
-        language: Language = Path(...),
-        # category = ProfessionCategory.EXPERTISE = Query(...),
-        profession_service: ProfessionService = Depends(get_profession_service)
-):
-    res: ProfessionListVO = \
-        await profession_service.get_all_profession_by_category_and_language(db,
-                                                                             ProfessionCategory.EXPERTISE,
-                                                                             language)
-    return res_success(data=jsonable_encoder(res))
 
 
 @router.get(
