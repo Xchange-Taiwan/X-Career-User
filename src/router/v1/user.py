@@ -75,15 +75,22 @@ async def get_profile(
             responses=idempotent_response('get_industries', common.ProfessionListVO))
 async def get_industries(
         language: Language = Path(...),
-        # category = ProfessionCategory.INDUSTRY = Query(...),
         db: AsyncSession = Depends(db_session),
-        profession_service: ProfessionService = Depends(get_profession_service)
+        tag_service: TagService = Depends(get_tag_service),
 ):
-    # 需確認是不是返回全部還是可以查詢特定
-    res: common.ProfessionListVO = \
-        await profession_service.get_all_profession_by_category_and_language(db,
-                                                                             ProfessionCategory.INDUSTRY,
-                                                                             language)
+    # Source of truth for industry catalog is the unified `tags` table
+    # (kind='industry'). Response shape stays as ProfessionListVO so the
+    # legacy frontend keeps working — drops in #233 when /tags?kinds=industry
+    # is the only consumer.
+    tags = await tag_service.list_tags_by_kind(
+        db, TagKind.INDUSTRY, language.value,
+    )
+    res: common.ProfessionListVO = common.ProfessionListVO(
+        professions=[
+            common.ProfessionVO.from_tag(t, ProfessionCategory.INDUSTRY)
+            for t in tags
+        ]
+    )
     return res_success(data=jsonable_encoder(res))
 
 

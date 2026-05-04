@@ -99,12 +99,12 @@ def get_experience_service(
 
 
 def get_profile_service(
-    profession_service: ProfessionService = Depends(get_profession_service),
+    tag_service: TagService = Depends(get_tag_service),
     experience_service: ExperienceService = Depends(get_experience_service),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
 ) -> ProfileService:
     return ProfileService(
-        profession_service=profession_service,
+        tag_service=tag_service,
         experience_service=experience_service,
         profile_repository=profile_repository,
     )
