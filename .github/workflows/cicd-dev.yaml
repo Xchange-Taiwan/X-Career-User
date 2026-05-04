@@ -1,0 +1,115 @@
+# dev 分支推送時部署至 AWS Lambda（Serverless Framework）
+# 部署後的 Lambda 環境變數對齊 dev-env-deploy.sh
+# GitHub Repository secrets 請使用 _DEV 結尾命名（見檔內 secrets.*_DEV）
+name: X-Career-User Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install Node dependencies (Serverless)
+        run: npm install
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to AWS Lambda
+        run: npx sls deploy --stage dev --region ${{ secrets.AWS_REGION }}
+        env:
+          STAGE: dev
+          THE_REGION: ${{ secrets.AWS_REGION }}
+          ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+      - name: Update Lambda environment variables
+        env:
+          XC_BUCKET: ${{ secrets.XC_BUCKET_DEV }}
+          XC_USER_BUCKET: ${{ secrets.XC_USER_BUCKET_DEV }}
+          DB_HOST: ${{ secrets.DB_HOST_DEV }}
+          DB_PORT: ${{ secrets.DB_PORT_DEV }}
+          DB_USER: ${{ secrets.DB_USER_DEV }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD_DEV }}
+          DB_NAME: ${{ secrets.DB_NAME_DEV }}
+          DB_SCHEMA: ${{ secrets.DB_SCHEMA_DEV }}
+          SEARCH_SERVICE_URL: ${{ secrets.SEARCH_SERVICE_URL_DEV }}
+          AUTH_SERVICE_URL: ${{ secrets.AUTH_SERVICE_URL_DEV }}
+          SQS_QUEUE_URL: ${{ secrets.SQS_QUEUE_URL_DEV }}
+        run: |
+          jq -n \
+            --arg XC_BUCKET "$XC_BUCKET" \
+            --arg XC_USER_BUCKET "$XC_USER_BUCKET" \
+            --arg DB_HOST "$DB_HOST" \
+            --arg DB_PORT "$DB_PORT" \
+            --arg DB_USER "$DB_USER" \
+            --arg DB_PASSWORD "$DB_PASSWORD" \
+            --arg DB_NAME "$DB_NAME" \
+            --arg DB_SCHEMA "$DB_SCHEMA" \
+            --arg SEARCH_SERVICE_URL "$SEARCH_SERVICE_URL" \
+            --arg AUTH_SERVICE_URL "$AUTH_SERVICE_URL" \
+            --arg SQS_QUEUE_URL "$SQS_QUEUE_URL" \
+            '{
+              FunctionName: "x-career-user-dev-app",
+              Environment: {
+                Variables: {
+                  STAGE: "dev",
+                  TESTING: "dev",
+                  XC_BUCKET: $XC_BUCKET,
+                  XC_USER_BUCKET: $XC_USER_BUCKET,
+                  BATCH: "20",
+                  MAX_PERIOD_SECS: "2678400",
+                  DATETIME_FORMAT: "%Y-%m-%dT%H:%M:%Z",
+                  DEFAULT_LANGUAGE: "zh_TW",
+                  PROBE_CYCLE_SECS: "3",
+                  CACHE_TTL: "300",
+                  DB_HOST: $DB_HOST,
+                  DB_PORT: $DB_PORT,
+                  DB_USER: $DB_USER,
+                  DB_PASSWORD: $DB_PASSWORD,
+                  DB_NAME: $DB_NAME,
+                  DB_SCHEMA: $DB_SCHEMA,
+                  RESERVATION_ISOLAION_LEVEL: "SERIALIZABLE",
+                  DB_POOL_SIZE: "20",
+                  DB_MAX_OVERFLOW: "4",
+                  DB_POOL_TIMEOUT: "30",
+                  DB_POOL_RECYCLE: "3600",
+                  DB_POOL_PRE_PING: "1",
+                  DB_COMMAND_TIMEOUT: "60",
+                  DB_JIT_OFF: "1",
+                  SEARCH_SERVICE_URL: $SEARCH_SERVICE_URL,
+                  AUTH_SERVICE_URL: $AUTH_SERVICE_URL,
+                  MQ_CONNECT_TIMEOUT: "10",
+                  MQ_READ_TIMEOUT: "10",
+                  MQ_MAX_ATTEMPTS: "3",
+                  SQS_QUEUE_URL: $SQS_QUEUE_URL
+                }
+              }
+            }' > /tmp/user-lambda-update.json
+          aws lambda update-function-configuration --cli-input-json file:///tmp/user-lambda-update.json
