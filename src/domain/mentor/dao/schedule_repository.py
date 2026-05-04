@@ -55,12 +55,15 @@ class ScheduleRepository:
         # 條件命中 idx_reservation_user_my_status_dtstart_dtend
         stmt: Select = select(Reservation).filter(
             Reservation.my_user_id == mentor_user_id,
-            Reservation.my_role == RoleType.MENTOR.value,
             Reservation.my_status.in_([
                 BookingStatus.ACCEPT.value,
                 BookingStatus.PENDING.value,
             ]),
-            Reservation.status != BookingStatus.REJECT.value,
+            Reservation.status.in_([
+                BookingStatus.ACCEPT.value,
+                BookingStatus.PENDING.value,
+            ]),
+            Reservation.my_role == RoleType.MENTOR.value,
             Reservation.dtend > window_start_ts,
             Reservation.dtstart < window_end_ts,
         )
