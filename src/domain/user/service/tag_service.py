@@ -14,6 +14,7 @@ from src.domain.user.model.tag_model import (
     TagCatalogLeafVO,
     TagCatalogVO,
     TagCatalogsVO,
+    TagVO,
 )
 
 log = logging.getLogger(__name__)
