@@ -154,6 +154,15 @@ CREATE TABLE IF NOT EXISTS reservations (
 CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
     ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
     WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
+-- Race-safe overbooking guard: from the mentor's perspective only one
+-- non-REJECT reservation may exist per (schedule_id, dtstart, dtend).
+-- Without this, two mentees racing on the same slot both succeed because
+-- the index above is keyed on my_user_id (which differs per mentee). The
+-- app-level find_active_for_mentor_slot pre-check gives a friendlier error;
+-- this index is the authoritative race guard.
+CREATE UNIQUE INDEX uidx_reservation_active_mentor_slot
+    ON reservations(my_user_id, schedule_id, dtstart, dtend)
+    WHERE my_role = 'MENTOR' AND my_status <> 'REJECT' AND "status" <> 'REJECT';
 CREATE INDEX idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend

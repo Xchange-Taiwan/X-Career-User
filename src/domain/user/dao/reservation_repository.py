@@ -98,6 +98,37 @@ class ReservationRepository:
         return ReservationVO.model_validate(reservation)
 
 
+    async def find_active_for_mentor_slot(
+        self,
+        db: AsyncSession,
+        mentor_user_id: int,
+        schedule_id: int,
+        dtstart: int,
+        dtend: int,
+    ) -> Optional[ReservationVO]:
+        # Used as a friendly pre-check before insert — gives a clear "already
+        # booked" error when the slot is taken by another mentee. The DB-level
+        # partial unique index on (my_user_id, schedule_id, dtstart, dtend)
+        # WHERE my_role='MENTOR' AND not REJECT remains the authoritative race
+        # guard; this query is just to surface a better message than a raw
+        # IntegrityError.
+        stmt: Select = select(Reservation).where(
+            and_(
+                Reservation.my_user_id == mentor_user_id,
+                Reservation.my_role == RoleType.MENTOR,
+                Reservation.schedule_id == schedule_id,
+                Reservation.dtstart == dtstart,
+                Reservation.dtend == dtend,
+                Reservation.my_status != BookingStatus.REJECT,
+                Reservation.status != BookingStatus.REJECT,
+            )
+        )
+        reservation = await get_first_template(db, stmt)
+        if not reservation:
+            return None
+        return ReservationVO.model_validate(reservation)
+
+
     async def find_all(self, db: AsyncSession,
                        query: Dict,
                        dtstart: Optional[int] = None,
