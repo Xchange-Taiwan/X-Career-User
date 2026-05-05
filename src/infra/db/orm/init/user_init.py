@@ -47,19 +47,6 @@ class MentorExperience(Base):
     mentor_experiences_metadata = Column(JSONB)
 
 
-class Profession(Base):
-    __tablename__ = 'professions'
-    id = Column(Integer, primary_key=True)
-    category = Column(
-        ENUM(ProfessionCategory, name="profession_category"),  # Map to PostgreSQL enum
-        nullable=False)
-    subject_group = Column(String)
-    subject = Column(String)
-    profession_metadata = Column(JSONB)
-    language = Column(String, nullable=False)
-
-
-
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
 

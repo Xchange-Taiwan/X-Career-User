@@ -6,10 +6,6 @@ class Language(Enum):
     ZH_TW = 'zh_TW'
 
 
-class ProfessionCategory(Enum):
-    INDUSTRY = 'INDUSTRY'
-
-
 class ExperienceCategory(Enum):
     WORK = 'WORK'
     EDUCATION = 'EDUCATION'

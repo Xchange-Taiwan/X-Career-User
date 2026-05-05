@@ -8,9 +8,6 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'interest_category') THEN
         CREATE TYPE INTEREST_CATEGORY AS ENUM('INTERESTED_POSITION', 'SKILL', 'TOPIC');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'profession_category') THEN
-        CREATE TYPE PROFESSION_CATEGORY AS ENUM('EXPERTISE', 'INDUSTRY');
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'experience_category') THEN
         CREATE TYPE EXPERIENCE_CATEGORY AS ENUM('WORK', 'EDUCATION', 'LINK', 'WHAT_I_OFFER');
     END IF;
@@ -86,16 +83,6 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
     "order" INT NOT NULL,
     mentor_experiences_metadata JSONB
     --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
-);
-
-
-CREATE TABLE IF NOT EXISTS professions (
-    "id" SERIAL PRIMARY KEY,
-    category PROFESSION_CATEGORY ,
-    subject_group VARCHAR(40),
-    "language" VARCHAR(10),
-    "subject" TEXT DEFAULT '',
-    profession_metadata JSONB
 );
 
 
@@ -188,11 +175,3 @@ VALUES (
     '{"difficulty": "beginner", "duration": "short"}'::jsonb -- desc (JSONB 格式)
 );
 
-INSERT INTO professions (category, "subject_group", "language", "subject", profession_metadata)
-VALUES (
-    'EXPERTISE',                            -- category
-    'Software Development',                 -- subject_group
-    'en_US',                                -- language
-    'Introduction to Software Engineering', -- subject
-    '{"skills": ["programming", "problem-solving"], "experience_required": 3}'::jsonb -- profession_metadata (JSONB 格式)
-);

@@ -5,7 +5,6 @@ from fastapi import Depends
 from src.domain.file.dao.file_repository import FileRepository
 from src.domain.file.service.file_service import FileService
 from src.domain.mentor.dao.canned_message_repository import CannedMessageRepository
-from src.domain.mentor.dao.profession_repository import ProfessionRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
 from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.mentor.service.mentor_service import MentorService
@@ -20,7 +19,6 @@ from src.domain.user.service.delete_account_service import DeleteAccountService
 from src.domain.user.dao.activity_repository import ActivityRepository
 from src.domain.user.service.reservation_service import ReservationService
 from src.domain.user.service.activity_service import ActivityService
-from src.domain.user.service.profession_service import ProfessionService
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.service.tag_service import TagService
 from src.app.account.delete import DeleteAccount
@@ -43,10 +41,6 @@ def get_mentor_dao() -> MentorRepository:
 
 def get_profile_dao() -> ProfileRepository:
     return ProfileRepository()
-
-
-def get_profession_dao() -> ProfessionRepository:
-    return ProfessionRepository()
 
 
 def get_file_dao() -> FileRepository:
@@ -83,12 +77,6 @@ def get_sqs_mq_adapter() -> SqsMqAdapter:
     return SqsMqAdapter(sqs_rsc=sqs_rsc)
 
 
-def get_profession_service(
-    profession_repository: ProfessionRepository = Depends(get_profession_dao),
-) -> ProfessionService:
-    return ProfessionService(profession_repository, _local_cache)
-
-
 def get_experience_service(
     experience_repository: MentorExperienceRepository = Depends(get_experience_dao),
 ) -> ExperienceService:
@@ -113,14 +101,12 @@ def get_profile_service(
 def get_mentor_service(
     mentor_repository: MentorRepository = Depends(get_mentor_dao),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
-    profession_service: ProfessionService = Depends(get_profession_service),
     profile_service: ProfileService = Depends(get_profile_service),
     tag_service: TagService = Depends(get_tag_service),
 ) -> MentorService:
     return MentorService(
         mentor_repository,
         profile_repository,
-        profession_service,
         profile_service,
         tag_service,
     )
