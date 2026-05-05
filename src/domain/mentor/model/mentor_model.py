@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 from fastapi.encoders import jsonable_encoder
-from ...user.model.tag_model import TagVO
 from ...user.model.user_model import *
 from .experience_model import ExperienceVO
 from ....config.conf import *
@@ -51,14 +50,15 @@ class MentorProfileVO(ProfileVO):
     seniority_level: Optional[SeniorityLevel] = SeniorityLevel.NO_REVEAL
     experiences: Optional[List[ExperienceVO]] = Field(default_factory=list)
 
-    # Hydrated tag buckets — each element is a full TagVO joined from the
-    # catalog (subject, desc, parent_subject_group, etc.). None = not yet
-    # hydrated; [] = no tags in that bucket.
-    want_position: Optional[List[TagVO]] = None
-    want_skill: Optional[List[TagVO]] = None
-    want_topic: Optional[List[TagVO]] = None
-    have_skill: Optional[List[TagVO]] = None
-    have_topic: Optional[List[TagVO]] = None
+    # Bucketed tag subject_groups. Catalog still does the kind lookup
+    # to assign each tag to a bucket, but we send the canonical key only —
+    # frontend resolves display metadata (subject/desc/etc.) on its side
+    # to keep the wire payload small. None = not yet bucketed; [] = empty.
+    want_position: Optional[List[str]] = None
+    want_skill: Optional[List[str]] = None
+    want_topic: Optional[List[str]] = None
+    have_skill: Optional[List[str]] = None
+    have_topic: Optional[List[str]] = None
 
     @staticmethod
     def of(mentor_profile_dto: MentorProfileDTO) -> 'MentorProfileVO':
@@ -78,8 +78,9 @@ class MentorProfileVO(ProfileVO):
         )
 
     def to_dto_json(self):
-        # Search consumes flat subject_group arrays per bucket — full TagVO
-        # would be wasted bytes on the wire (Search only filters by key).
+        # Search consumes flat subject_group arrays per bucket — same shape
+        # the API now exposes to the frontend, so the buckets pass through
+        # unchanged.
         return {
             'user_id': self.user_id,
             'name': self.name,
@@ -95,18 +96,12 @@ class MentorProfileVO(ProfileVO):
             'about': self.about,
             'seniority_level': self.seniority_level.value if self.seniority_level else None,
             'experiences': jsonable_encoder(self.experiences),
-            'want_position': self._tag_subject_groups(self.want_position),
-            'want_skill': self._tag_subject_groups(self.want_skill),
-            'want_topic': self._tag_subject_groups(self.want_topic),
-            'have_skill': self._tag_subject_groups(self.have_skill),
-            'have_topic': self._tag_subject_groups(self.have_topic),
+            'want_position': self.want_position or [],
+            'want_skill': self.want_skill or [],
+            'want_topic': self.want_topic or [],
+            'have_skill': self.have_skill or [],
+            'have_topic': self.have_topic or [],
         }
-
-    @staticmethod
-    def _tag_subject_groups(tags: Optional[List[TagVO]]) -> List[str]:
-        if not tags:
-            return []
-        return [t.subject_group for t in tags if t.subject_group]
 
 
 class TimeSlotDTO(BaseModel):
