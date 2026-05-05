@@ -9,7 +9,8 @@ from src.infra.db.orm.init.user_init import (
     Reservation,
 )
 from src.infra.util.convert_util import (
-    get_all_template, 
+    get_all_template,
+    get_first_template,
     bulk_insert,
     convert_dto_to_model,
 )
@@ -17,6 +18,28 @@ from src.domain.mentor.model.mentor_model import TimeSlotDTO
 
 
 class ScheduleRepository:
+
+    async def get_by_id(self, db: AsyncSession, schedule_id: int) -> Optional[Schedule]:
+        # ORM row, not the Pydantic projection — booking validation needs the
+        # raw fields (rrule, exdate, meeting_duration_minutes) to expand the
+        # legal sub-slot set for this schedule.
+        stmt: Select = select(Schedule).where(Schedule.id == schedule_id)
+        return await get_first_template(db, stmt)
+
+    async def get_forbidden_for_user(
+        self, db: AsyncSession, user_id: int,
+    ) -> List[Schedule]:
+        # FORBIDDEN rows are typically a small per-user set (one-off blocks),
+        # so we fetch them all and let the caller do precise overlap+rrule
+        # expansion. Keeping this coarse avoids missing rows whose stored
+        # (dtstart,dtend) underestimates the actual reach of an rrule.
+        stmt: Select = select(Schedule).where(
+            and_(
+                Schedule.user_id == user_id,
+                Schedule.dt_type == ScheduleType.FORBIDDEN.value,
+            )
+        )
+        return list(await get_all_template(db, stmt))
 
     async def get_month_schedules_all_types(
         self,

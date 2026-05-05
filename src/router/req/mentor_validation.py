@@ -38,6 +38,22 @@ def upsert_mentor_schedule_check(
         if timeslot.dtstart >= timeslot.dtend:
             raise ClientException(msg=f'dtstart:{timeslot.dtstart} should smaller then dtend:{timeslot.dtend}')
 
+        # New-format invariants: meeting_duration_minutes carries sub-slot length,
+        # so rrule (if any) must be true recurrence — never the legacy MINUTELY
+        # divider — and the block must fit at least one sub-slot.
+        mdm = timeslot.meeting_duration_minutes
+        if mdm is not None:
+            if mdm <= 0:
+                raise ClientException(msg='meeting_duration_minutes must be positive')
+            if timeslot.rrule and 'FREQ=MINUTELY' in timeslot.rrule.upper():
+                raise ClientException(
+                    msg='meeting_duration_minutes is incompatible with FREQ=MINUTELY rrule',
+                )
+            if timeslot.dtend - timeslot.dtstart < mdm * 60:
+                raise ClientException(
+                    msg='block length (dtend-dtstart) must fit at least one meeting_duration_minutes sub-slot',
+                )
+
     # CHECK: 所有"事件"的時間區間中(不展開 rrule)，最早(dtstart)和最晚(dtend)時間區間相差不超過 MAX_PERIOD
     (min_dtstart, max_dtend) = schedule_dto.min_dtstart_to_max_dtend()
     if max_dtend - min_dtstart > MAX_PERIOD_SECS:

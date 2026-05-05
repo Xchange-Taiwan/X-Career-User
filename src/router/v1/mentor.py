@@ -132,7 +132,10 @@ async def delete_experience(
         'All schedule timestamps use Unix seconds in UTC (GMT+0). '
         'The backend returns raw schedule rules (ALLOW/FORBIDDEN with rrule/exdate) '
         'and BOOKED/PENDING segments (mentor reservations by my_status). '
-        'Rrule expansion and calendar rendering are handled by the frontend.'
+        'Rrule expansion and calendar rendering are handled by the frontend. '
+        'New-format ALLOW rows carry meeting_duration_minutes; (dtstart, dtend) '
+        'is then the block bounds and the frontend divides locally. Legacy rows '
+        'leave that field NULL and still encode division in a FREQ=MINUTELY rrule.'
     ),
 )
 async def get_mentor_schedule_list(
