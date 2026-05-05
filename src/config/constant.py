@@ -6,10 +6,6 @@ class Language(Enum):
     ZH_TW = 'zh_TW'
 
 
-class ProfessionCategory(Enum):
-    INDUSTRY = 'INDUSTRY'
-
-
 class ExperienceCategory(Enum):
     WORK = 'WORK'
     EDUCATION = 'EDUCATION'
@@ -77,3 +73,8 @@ class TagKind(Enum):
     SKILL = 'skill'
     POSITION = 'position'
     TOPIC = 'topic'
+    # Flat-kind: every row has parent_subject_group=NULL (no leaf/group
+    # hierarchy). Stored on profiles.industry, not in want_tags/have_tags —
+    # industry is a self-attribute (mentor and mentee both have one),
+    # not a WANT/HAVE intent. Use hydrate_flat_tag / list_tags_by_kind.
+    INDUSTRY = 'industry'

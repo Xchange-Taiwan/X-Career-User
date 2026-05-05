@@ -8,9 +8,6 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'interest_category') THEN
         CREATE TYPE INTEREST_CATEGORY AS ENUM('INTERESTED_POSITION', 'SKILL', 'TOPIC');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'profession_category') THEN
-        CREATE TYPE PROFESSION_CATEGORY AS ENUM('EXPERTISE', 'INDUSTRY');
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'experience_category') THEN
         CREATE TYPE EXPERIENCE_CATEGORY AS ENUM('WORK', 'EDUCATION', 'LINK', 'WHAT_I_OFFER');
     END IF;
@@ -89,16 +86,6 @@ CREATE TABLE IF NOT EXISTS mentor_experiences (
 );
 
 
-CREATE TABLE IF NOT EXISTS professions (
-    "id" SERIAL PRIMARY KEY,
-    category PROFESSION_CATEGORY ,
-    subject_group VARCHAR(40),
-    "language" VARCHAR(10),
-    "subject" TEXT DEFAULT '',
-    profession_metadata JSONB
-);
-
-
 CREATE TABLE IF NOT EXISTS mentor_schedules (
     id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,    -- user ID, used to distinguish users
@@ -106,10 +93,14 @@ CREATE TABLE IF NOT EXISTS mentor_schedules (
     dt_year INT NOT NULL,       -- dt_year of the event
     dt_month INT NOT NULL,      -- dt_month of the event
     dtstart BIGINT NOT NULL,    -- start timestamp of the event
-    dtend BIGINT NOT NULL,      -- end timestamp of the event
+    dtend BIGINT NOT NULL,      -- end timestamp; new format: end of the block, legacy: end of one sub-slot
     timezone VARCHAR(50) NOT NULL DEFAULT 'UTC', -- timezone, for example: 'America/New_York'
-    rrule TEXT,                 -- rule for repeating events, for example: 'FREQ=WEEKLY;COUNT=4'
+    rrule TEXT,                 -- new format: weekly/daily rrule only; legacy: 'FREQ=MINUTELY;INTERVAL=...;COUNT=...' for sub-slot division
     exdate JSONB DEFAULT '[]'::jsonb,   -- list of excluded dates/timestamps (ISO format)
+    -- New-format column. When set, (dtstart, dtend) is a contiguous block
+    -- subdivided into N meetings of this length. NULL = legacy row whose
+    -- rrule encodes MINUTELY sub-slot iteration.
+    meeting_duration_minutes INT,
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
@@ -150,6 +141,15 @@ CREATE TABLE IF NOT EXISTS reservations (
 CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
     ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
     WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
+-- Race-safe overbooking guard: from the mentor's perspective only one
+-- non-REJECT reservation may exist per (schedule_id, dtstart, dtend).
+-- Without this, two mentees racing on the same slot both succeed because
+-- the index above is keyed on my_user_id (which differs per mentee). The
+-- app-level find_active_for_mentor_slot pre-check gives a friendlier error;
+-- this index is the authoritative race guard.
+CREATE UNIQUE INDEX uidx_reservation_active_mentor_slot
+    ON reservations(my_user_id, schedule_id, dtstart, dtend)
+    WHERE my_role = 'MENTOR' AND my_status <> 'REJECT' AND "status" <> 'REJECT';
 CREATE INDEX idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
 CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
@@ -188,11 +188,3 @@ VALUES (
     '{"difficulty": "beginner", "duration": "short"}'::jsonb -- desc (JSONB 格式)
 );
 
-INSERT INTO professions (category, "subject_group", "language", "subject", profession_metadata)
-VALUES (
-    'EXPERTISE',                            -- category
-    'Software Development',                 -- subject_group
-    'en_US',                                -- language
-    'Introduction to Software Engineering', -- subject
-    '{"skills": ["programming", "problem-solving"], "experience_required": 3}'::jsonb -- profession_metadata (JSONB 格式)
-);

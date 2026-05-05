@@ -14,7 +14,6 @@ from src.domain.user.model.tag_model import (
     TagCatalogLeafVO,
     TagCatalogVO,
     TagCatalogsVO,
-    TagVO,
 )
 
 log = logging.getLogger(__name__)
@@ -120,6 +119,49 @@ class TagService:
         return TagCatalogsVO(language=language, catalogs=catalogs)
 
     # ------------------------------------------------------------------
+    # Flat-kind reads (industry-style — no leaf/group hierarchy)
+    # ------------------------------------------------------------------
+    async def hydrate_flat_tag(
+        self,
+        db: AsyncSession,
+        kind: TagKind,
+        subject_group: Optional[str],
+        language: str,
+    ) -> Optional[TagVO]:
+        # For attributes stored as a single subject_group on profiles
+        # (e.g. profiles.industry). Returns None on missing/empty input
+        # or stale catalog match — callers decide whether that's an error.
+        if not subject_group:
+            return None
+        try:
+            row = await self.__tag_repository.find_tag(
+                db, kind.value, subject_group, language,
+            )
+            if row is None:
+                return None
+            return TagVO.model_validate(row)
+        except Exception as e:
+            log.error("hydrate_flat_tag error: %s", str(e))
+            raise_http_exception(e, msg="Internal Server Error")
+
+    async def list_tags_by_kind(
+        self,
+        db: AsyncSession,
+        kind: TagKind,
+        language: str,
+    ) -> List[TagVO]:
+        # Catalog listing for flat-kinds (industry). Hierarchical kinds
+        # should use get_catalog so leaves nest under groups.
+        try:
+            rows = await self.__tag_repository.get_tags_by_kind(
+                db, kind, language,
+            )
+            return [TagVO.model_validate(r) for r in rows]
+        except Exception as e:
+            log.error("list_tags_by_kind error: %s", str(e))
+            raise_http_exception(e, msg="Internal Server Error")
+
+    # ------------------------------------------------------------------
     # Bucket merge (write path) and hydrate (read path)
     # ------------------------------------------------------------------
     async def merge_buckets_to_arrays(
@@ -189,11 +231,12 @@ class TagService:
         want_tags: List[str],
         have_tags: List[str],
         language: str,
-    ) -> Dict[str, List[TagVO]]:
+    ) -> Dict[str, List[str]]:
         # Single bulk JOIN of all tagged subject_groups, then bucketed by
         # (which-array, kind=catalog row). Items not found in the catalog
-        # drop out — they don't belong to any bucket.
-        result: Dict[str, List[TagVO]] = {
+        # drop out — they don't belong to any bucket. Returns subject_group
+        # keys only; frontend resolves display metadata on its side.
+        result: Dict[str, List[str]] = {
             'want_position': [], 'want_skill': [], 'want_topic': [],
             'have_skill': [], 'have_topic': [],
         }
@@ -220,7 +263,7 @@ class TagService:
                         # e.g. position written into have_tags somehow —
                         # not a valid combination; skip rather than crash.
                         continue
-                    result[bucket].append(TagVO.model_validate(tag))
+                    result[bucket].append(sg)
             return result
         except Exception as e:
             log.error("hydrate_buckets error: %s", str(e))
