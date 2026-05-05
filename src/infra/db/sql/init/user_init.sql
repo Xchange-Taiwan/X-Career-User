@@ -106,10 +106,14 @@ CREATE TABLE IF NOT EXISTS mentor_schedules (
     dt_year INT NOT NULL,       -- dt_year of the event
     dt_month INT NOT NULL,      -- dt_month of the event
     dtstart BIGINT NOT NULL,    -- start timestamp of the event
-    dtend BIGINT NOT NULL,      -- end timestamp of the event
+    dtend BIGINT NOT NULL,      -- end timestamp; new format: end of the block, legacy: end of one sub-slot
     timezone VARCHAR(50) NOT NULL DEFAULT 'UTC', -- timezone, for example: 'America/New_York'
-    rrule TEXT,                 -- rule for repeating events, for example: 'FREQ=WEEKLY;COUNT=4'
+    rrule TEXT,                 -- new format: weekly/daily rrule only; legacy: 'FREQ=MINUTELY;INTERVAL=...;COUNT=...' for sub-slot division
     exdate JSONB DEFAULT '[]'::jsonb,   -- list of excluded dates/timestamps (ISO format)
+    -- New-format column. When set, (dtstart, dtend) is a contiguous block
+    -- subdivided into N meetings of this length. NULL = legacy row whose
+    -- rrule encodes MINUTELY sub-slot iteration.
+    meeting_duration_minutes INT,
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
