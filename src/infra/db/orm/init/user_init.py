@@ -56,14 +56,10 @@ class MentorSchedule(Base):
     dt_year = Column(Integer, nullable=False, index=True)       # Year
     dt_month = Column(Integer, nullable=False, index=True)      # Month
     dtstart = Column(BigInteger, nullable=False, index=True)    # Start time
-    dtend = Column(BigInteger, nullable=False, index=True)      # End time (block end when meeting_duration_minutes is set)
+    dtend = Column(BigInteger, nullable=False, index=True)      # End time
     timezone = Column(String(50), nullable=False)   # Timezone
-    rrule = Column(Text, nullable=True)             # Repeat event rules (weekly/daily only — sub-slot division uses meeting_duration_minutes)
+    rrule = Column(Text, nullable=True)             # Repeat event rules
     exdate = Column(JSONB, default=[])               # Use JSONB to store exclusion dates
-    # New-format flag: when set, (dtstart, dtend) is a contiguous block
-    # divided into N sub-slots of this length. NULL = legacy MINUTELY-rrule
-    # row that still encodes division inside `rrule`.
-    meeting_duration_minutes = Column(Integer, nullable=True)
     created_at = Column(BigInteger, default=current_seconds())
     updated_at = Column(BigInteger, default=current_seconds(), onupdate=current_seconds())
 

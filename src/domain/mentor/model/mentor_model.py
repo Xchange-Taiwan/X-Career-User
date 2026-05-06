@@ -127,11 +127,7 @@ class TimeSlotDTO(BaseModel):
     rrule: Optional[str] = Field(
         default=None,
         example='FREQ=WEEKLY;COUNT=4',
-        description=(
-            'Recurrence rule interpreted in UTC (GMT+0). '
-            'New format: weekly/daily only. '
-            'Legacy: FREQ=MINUTELY for sub-slot division — kept for backwards compat.'
-        ),
+        description='Recurrence rule interpreted in UTC (GMT+0)',
     )
     timezone: str = Field(
         default='UTC',
@@ -142,15 +138,6 @@ class TimeSlotDTO(BaseModel):
         default=[],
         example=[1718413200, 1719622800],
         description='Excluded occurrence starts in Unix timestamp seconds UTC (GMT+0)',
-    )
-    meeting_duration_minutes: Optional[int] = Field(
-        default=None,
-        example=30,
-        description=(
-            'New format marker. When set, (dtstart, dtend) is a contiguous '
-            'block divided into sub-slots of this length; rrule must NOT be '
-            'FREQ=MINUTELY. NULL = legacy row whose rrule encodes sub-slot iteration.'
-        ),
     )
 
     class Config:
@@ -209,58 +196,50 @@ class MentorScheduleDTO(BaseModel):
     @classmethod
     def opverlapping_interval_check(cls, timeslots: List[TimeSlotDTO], UNTIL_TIMESTAMP: int):
         UNTIL_END_DATE = datetime.fromtimestamp(UNTIL_TIMESTAMP)
-        expanded = cls.sort_with_rrule(timeslots, UNTIL_END_DATE)
+        timeslots = cls.sort_with_rrule(timeslots, UNTIL_END_DATE)
 
-        # rrule 展開失敗的早期偵測:輸入有 rrule 但展開後是空的
-        if len(expanded) == 0:
-            had_rrule = any(getattr(ts, 'rrule', None) for ts in timeslots)
-            if had_rrule:
+        # 如果展開後少於2個時間段，無需進行重疊檢查
+        if len(timeslots) < 2:
+            # 檢查是否是 rrule 展開失敗導致的問題
+            has_rrule = any(timeslot.rrule for timeslot in timeslots if hasattr(timeslot, 'rrule') and timeslot.rrule)
+            if has_rrule and len(timeslots) == 0:
+                # 原本有 rrule 但展開後沒有任何時間段，可能是解析錯誤
                 raise UnprocessableClientException(msg='Failed to expand recurring events from rrule')
+            # 否則，少於2個時間段是正常情況，無需檢查重疊，直接返回
             return
 
-        # ALLOW 與 FORBIDDEN 是不同的「層」:FORBIDDEN 的用途就是要蓋在
-        # ALLOW 區間內挖洞,所以兩者之間的重疊不算 conflict。各自 type 內
-        # 部仍維持「同 type 不可重疊」的限制。
-        allow_slots = [ts for ts in expanded if ts.dt_type == ScheduleType.ALLOW.value]
-        forbidden_slots = [ts for ts in expanded if ts.dt_type == ScheduleType.FORBIDDEN.value]
+        first_timeslot = timeslots[0]
+        last_timeslot = timeslots[len(timeslots) - 1]
 
         conflicts = 0
+        prev_timeslot = timeslots[0]
         conflict_records: Dict = {}
-        for group in (allow_slots, forbidden_slots):
-            conflicts, conflict_records = cls._scan_group_conflicts(
-                group, conflicts, conflict_records,
-            )
+
+        # 跳過第 0 個，從第 1 個開始算起
+        for timeslot in timeslots[1:]:
+            if timeslot.dtstart < prev_timeslot.dtend:
+                conflicts += 1
+                conflict_records.update({
+                    conflicts: [
+                        prev_timeslot.to_json(),
+                        timeslot.to_json(),
+                    ]
+                })
+            else:
+                prev_timeslot = timeslot
 
         if conflicts > 0:
-            first_timeslot = expanded[0]
-            last_timeslot = expanded[-1]
             be = 'is' if conflicts == 1 else 'are'
             noun = 'conflict' if conflicts == 1 else 'conflicts'
             first_yearmonth = f'{first_timeslot.dt_year}/{first_timeslot.dt_month}'
             last_yearmonth = f'{last_timeslot.dt_year}/{last_timeslot.dt_month}'
+            # conflict_records = [record for record in conflict_records.values()]
             if first_yearmonth == last_yearmonth:
                 raise ClientException(msg=f'There {be} {conflicts} {noun} in {first_yearmonth}',
                                       data={'conflicts': conflict_records})
 
             raise ClientException(msg=f'There {be} {conflicts} {noun} between {first_yearmonth} and {last_yearmonth}',
                                   data={'conflicts': conflict_records})
-
-    @staticmethod
-    def _scan_group_conflicts(
-        group: List['TimeSlotDTO'],
-        conflicts: int,
-        conflict_records: Dict,
-    ) -> Tuple[int, Dict]:
-        if len(group) < 2:
-            return conflicts, conflict_records
-        prev = group[0]
-        for ts in group[1:]:
-            if ts.dtstart < prev.dtend:
-                conflicts += 1
-                conflict_records[conflicts] = [prev.to_json(), ts.to_json()]
-            else:
-                prev = ts
-        return conflicts, conflict_records
 
     @classmethod
     def sort_with_rrule(cls, timeslots: List[TimeSlotDTO], UNTIL_END_DATE: datetime):
@@ -344,7 +323,6 @@ class MentorScheduleSegmentVO(BaseModel):
     rrule: Optional[str] = Field(default=None, example='FREQ=WEEKLY;COUNT=4')
     timezone: str = Field(default='UTC', example='UTC')
     exdate: List[Optional[int]] = Field(default=[], example=[1718413200, 1719622800])
-    meeting_duration_minutes: Optional[int] = Field(default=None, example=30)
     source: str = Field(..., example='schedule')
     source_id: Optional[int] = Field(default=None, example=100)
 
@@ -361,11 +339,10 @@ class MentorScheduleSegmentVO(BaseModel):
             rrule=src.rrule,
             timezone=src.timezone,
             exdate=src.exdate,
-            meeting_duration_minutes=src.meeting_duration_minutes,
             source='schedule',
             source_id=src.id,
         )
-
+    
     @staticmethod
     def reservation_to_segment(
         src: Any,
