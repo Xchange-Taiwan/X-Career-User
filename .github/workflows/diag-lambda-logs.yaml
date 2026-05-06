@@ -1,0 +1,60 @@
+name: Diag — User Lambda recent errors
+
+# Diagnostic-only. Runs on PR with this file present so it auto-triggers
+# when the PR is opened. Close the PR when done.
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - .github/workflows/diag-lambda-logs.yaml
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Trigger a fresh catalog 500 (so logs are guaranteed recent)
+        run: |
+          set +e
+          for kind in industry skill topic position; do
+            echo "--- $kind ---"
+            curl -s -o /dev/null -w "%{http_code}\n" \
+              "https://gvjbxpuqmh.execute-api.ap-northeast-1.amazonaws.com/dev/user-service/api/v1/users/zh_TW/tags/catalog?kind=$kind"
+          done
+          # Give CloudWatch ~10s to flush
+          sleep 10
+
+      - name: List recent Lambda log streams
+        run: |
+          aws logs describe-log-streams \
+            --log-group-name /aws/lambda/x-career-user-dev-app \
+            --order-by LastEventTime --descending \
+            --max-items 3 \
+            --query 'logStreams[].logStreamName' --output text
+
+      - name: Tail last 15 min of Lambda logs (full)
+        run: |
+          aws logs tail /aws/lambda/x-career-user-dev-app \
+            --since 15m --format short || true
+
+      - name: Filter for ERROR / Exception / Traceback (last 30 min)
+        run: |
+          aws logs filter-log-events \
+            --log-group-name /aws/lambda/x-career-user-dev-app \
+            --start-time "$(($(date +%s) * 1000 - 1800000))" \
+            --filter-pattern '?ERROR ?Exception ?Traceback ?get_catalog' \
+            --query 'events[].message' \
+            --output text || true
+
+      - name: List Lambda env-var keys (values redacted, no secrets printed)
+        run: |
+          aws lambda get-function-configuration \
+            --function-name x-career-user-dev-app \
+            --query 'Environment.Variables' --output json \
+          | jq 'to_entries | map(.key) | sort'
