@@ -5,9 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config.conf import DEFAULT_LANGUAGE
 from src.config.exception import NotFoundException, raise_http_exception
 from src.domain.mentor.dao.mentor_repository import MentorRepository
-from src.domain.mentor.model.experience_model import ExperienceVO
 from src.domain.mentor.model.mentor_model import MentorProfileDTO, MentorProfileVO
-from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.service.profile_service import ProfileService
 from src.domain.user.service.tag_service import TagService
@@ -35,14 +33,8 @@ class MentorService:
             )
             if existing is None:
                 existing_want, existing_have = [], []
-                existing_experiences: List[dict] = []
             else:
-                existing_dto, existing_want, existing_have = existing
-                # mode='json' so the ExperienceCategory enum becomes its
-                # string value — asyncpg's JSONB encoder can't handle Enum.
-                existing_experiences = [
-                    e.model_dump(mode='json') for e in (existing_dto.experiences or [])
-                ]
+                _, existing_want, existing_have = existing
 
             new_want, new_have = await self.__tag_service.merge_buckets_to_arrays(
                 db,
@@ -56,34 +48,25 @@ class MentorService:
                 have_topic=profile_dto.have_topic,
             )
 
-            # Resolve experiences three-state into the actual list to persist.
-            # None means "don't touch the column"; we still need the resolved
-            # list to recompute is_mentor below, so fall back to existing.
+            # Resolve experiences three-state into a column payload. None means
+            # "don't touch the column"; [] / [...] both ride through to the repo.
+            # mode='json' so the ExperienceCategory enum becomes its string
+            # value — asyncpg's JSONB encoder can't handle Enum.
             if profile_dto.experiences is None:
-                resolved_experiences = existing_experiences
                 column_payload: Optional[List[dict]] = None
             else:
-                # mode='json' for the same JSONB-encoder reason as above.
-                resolved_experiences = [
+                column_payload = [
                     e.model_dump(mode='json') for e in profile_dto.experiences
                 ]
-                column_payload = resolved_experiences
-
-            # is_mentor is derived from experiences, so recompute it here
-            # rather than trusting whatever the dto carries — this is the only
-            # write path that can flip the flag.
-            resolved_vo_list = [
-                ExperienceVO.model_validate(e) for e in resolved_experiences
-            ]
-            new_is_mentor = ExperienceService.is_mentor(resolved_vo_list)
 
             # Storage arrays travel as kwargs — they're state, not API.
+            # is_mentor is *not* recomputed here; the dto carries whatever the
+            # client sent, and the column is written from there.
             res_dto, res_want, res_have = await self.__mentor_repository.upsert_mentor(
                 db, profile_dto,
                 want_tags=new_want,
                 have_tags=new_have,
                 experiences=column_payload,
-                is_mentor=new_is_mentor,
             )
 
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(

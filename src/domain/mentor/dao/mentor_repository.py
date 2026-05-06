@@ -53,7 +53,6 @@ class MentorRepository:
         want_tags: List[str],
         have_tags: List[str],
         experiences: Optional[List[dict]],
-        is_mentor: bool,
     ) -> ProfileWithTags:
         # Load-or-create rather than db.merge: the input bucket fields aren't
         # Profile columns, and merge would clobber want_tags/have_tags/
@@ -62,7 +61,6 @@ class MentorRepository:
         payload = mentor_profile_dto.model_dump(exclude=_INPUT_BUCKET_FIELDS)
         payload['want_tags'] = want_tags
         payload['have_tags'] = have_tags
-        payload['is_mentor'] = is_mentor
         if experiences is not None:
             payload['experiences'] = experiences
 
