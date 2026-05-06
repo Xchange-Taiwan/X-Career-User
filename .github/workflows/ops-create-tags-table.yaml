@@ -1,0 +1,70 @@
+name: Ops — create tags table on dev RDS
+
+# One-shot. Triggered by opening this PR. CREATE TABLE IF NOT EXISTS,
+# so safe to re-run; never drops or modifies existing rows. Close the
+# PR without merging once the run is verified.
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - .github/workflows/ops-create-tags-table.yaml
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Show current tags state (BEFORE)
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD_DEV }}
+          PGHOST: ${{ secrets.DB_HOST_DEV }}
+          PGPORT: ${{ secrets.DB_PORT_DEV }}
+          PGUSER: ${{ secrets.DB_USER_DEV }}
+          PGDATABASE: ${{ secrets.DB_NAME_DEV }}
+        run: |
+          echo "--- does tags table exist? ---"
+          psql -At -c "SELECT to_regclass('public.tags');"
+          echo "--- row count if it exists ---"
+          psql -At -c "SELECT count(*) FROM tags" 2>&1 || echo "(table missing — will create below)"
+          echo "--- list of tables in public ---"
+          psql -At -c "\\dt public.*" || true
+
+      - name: Apply tags_init.sql
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD_DEV }}
+          PGHOST: ${{ secrets.DB_HOST_DEV }}
+          PGPORT: ${{ secrets.DB_PORT_DEV }}
+          PGUSER: ${{ secrets.DB_USER_DEV }}
+          PGDATABASE: ${{ secrets.DB_NAME_DEV }}
+        run: |
+          psql -v ON_ERROR_STOP=1 -f src/infra/db/sql/init/tags_init.sql
+
+      - name: Show current tags state (AFTER)
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD_DEV }}
+          PGHOST: ${{ secrets.DB_HOST_DEV }}
+          PGPORT: ${{ secrets.DB_PORT_DEV }}
+          PGUSER: ${{ secrets.DB_USER_DEV }}
+          PGDATABASE: ${{ secrets.DB_NAME_DEV }}
+        run: |
+          echo "--- table structure ---"
+          psql -c "\\d+ tags"
+          echo "--- row count by kind, language ---"
+          psql -c "SELECT kind, language, count(*) FROM tags GROUP BY kind, language ORDER BY kind, language;"
+
+      - name: Probe BFF endpoint to verify catalog now responds
+        run: |
+          echo "--- catalog kind=industry ---"
+          curl -s -o /tmp/r1.json -w "HTTP %{http_code}\n" \
+            "https://gvjbxpuqmh.execute-api.ap-northeast-1.amazonaws.com/dev/user-service/api/v1/users/zh_TW/tags/catalog?kind=industry"
+          head -c 600 /tmp/r1.json; echo
+          echo "--- catalog kind=skill ---"
+          curl -s -o /tmp/r2.json -w "HTTP %{http_code}\n" \
+            "https://gvjbxpuqmh.execute-api.ap-northeast-1.amazonaws.com/dev/user-service/api/v1/users/zh_TW/tags/catalog?kind=skill"
+          head -c 600 /tmp/r2.json; echo
