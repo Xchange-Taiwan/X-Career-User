@@ -18,7 +18,7 @@ DB_PORT = os.getenv('DB_PORT', '5432')
 DB_USER = os.getenv('DB_USER', 'user')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'pass')
 DB_NAME = os.getenv('DB_NAME', 'db')
-DB_SCHEMA = os.getenv('DB_SCHEMA', 'public')
+DB_SCHEMA = os.getenv('DB_SCHEMA', 'public').strip()
 RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE')
 
 # db connection pool config params
