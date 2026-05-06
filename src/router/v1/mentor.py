@@ -18,17 +18,12 @@ from src.domain.mentor.service.schedule_service import ScheduleService
 from ..res.response import *
 from ..req.mentor_validation import *
 from ...config.constant import *
-from ...domain.mentor.model import (
-    mentor_model as mentor,
-    experience_model as experience,
-)
+from ...domain.mentor.model import mentor_model as mentor
 from ...domain.mentor.model.mentor_model import MentorProfileVO
-from ...domain.mentor.service.experience_service import ExperienceService
 from ...infra.databse import get_db, db_session
 from ...app.mentor_profile.upsert import MentorProfile
 from ...app._di.injection import (
     get_mentor_service,
-    get_experience_service,
     get_schedule_service,
     get_mentor_profile_app,
 )
@@ -70,58 +65,6 @@ async def get_mentor_profile(
     mentor_profile: MentorProfileVO = \
         await mentor_service.get_mentor_profile_by_id(db, user_id, language.value)
     return res_success(data=jsonable_encoder(mentor_profile))
-
-
-@router.get('/{user_id}/experiences',
-            responses=idempotent_response('get_exp_by_user_id', experience.ExperienceListVO))
-async def get_exp_by_user_id(
-        db: AsyncSession = Depends(get_db),
-        user_id: int = Path(...),
-        exp_service: ExperienceService = Depends(get_experience_service)
-):
-    res: experience.ExperienceListVO = await exp_service.get_exp_by_user_id(db, user_id)
-    return res_success(data=jsonable_encoder(res))
-
-
-@router.put('/{user_id}/experiences/{experience_type}',
-            responses=idempotent_response('upsert_exp', experience.ExperienceVO))
-async def upsert_experience(
-        background_tasks: BackgroundTasks,
-        db: AsyncSession = Depends(get_db),
-        is_mentor: bool = Header(None),
-        user_id: int = Path(...),
-        experience_type: ExperienceCategory = Path(...),
-        body: experience.ExperienceDTO = Body(...),
-        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
-):
-    # TODO-EVENT: implement event
-    body.category = experience_type
-    res: experience.ExperienceVO = \
-        await mentor_profile_app.upsert_exp(db=db,
-                                            user_id=user_id,
-                                            experience_dto=body,
-                                            background_tasks=background_tasks,
-                                            is_mentor=is_mentor,)
-    return res_success(data=jsonable_encoder(res))
-
-
-@router.delete('/{user_id}/experiences/{experience_type}/{experience_id}',
-               responses=idempotent_response('delete_experience', bool))
-async def delete_experience(
-        background_tasks: BackgroundTasks,
-        db: AsyncSession = Depends(get_db),
-        is_mentor: bool = Header(None),
-        user_id: int = Path(...),
-        data: experience.ExperienceDTO = Depends(delete_experience_check),
-        mentor_profile_app: MentorProfile = Depends(get_mentor_profile_app),
-):
-    # TODO-EVENT: implement event
-    res: bool = await mentor_profile_app.delete_experience(db,
-                                                           user_id=user_id,
-                                                           experience_dto=data,
-                                                           background_tasks=background_tasks,
-                                                           is_mentor=is_mentor,)
-    return res_success(data=res)
 
 
 @router.get(

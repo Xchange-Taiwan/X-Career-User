@@ -1,17 +1,19 @@
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from pydantic import BaseModel
 
 from ....config.constant import *
-from ....infra.db.orm.init.user_init import MentorExperience
 import logging
 
 log = logging.getLogger(__name__)
 
 
+# Experiences ride inline on the profile row (profiles.experiences JSONB[]).
+# No autoincrement id — the JSON array index is the only ordering signal we
+# need; the explicit `order` field still survives for now because the
+# frontend reads it for display ordering.
 class ExperienceDTO(BaseModel):
-    id: Optional[int] = None
     category: ExperienceCategory = None
     mentor_experiences_metadata: Dict = {}
     order: int = 0
@@ -21,7 +23,6 @@ class ExperienceDTO(BaseModel):
 
 
 class ExperienceVO(BaseModel):
-    id: int
     category: ExperienceCategory = None
     mentor_experiences_metadata: Dict = {}
     order: int = 0

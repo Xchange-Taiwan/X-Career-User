@@ -72,17 +72,11 @@ CREATE TABLE IF NOT EXISTS profiles (
     -- Mentor tag selections, flat subject_group arrays. Kind comes from the
     -- tags catalog (JOIN at read time buckets these into the 5 API fields).
     want_tags TEXT[] NOT NULL DEFAULT '{}',
-    have_tags TEXT[] NOT NULL DEFAULT '{}'
-);
-
-
-CREATE TABLE IF NOT EXISTS mentor_experiences (
-    "id" SERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    category EXPERIENCE_CATEGORY NOT NULL,
-    "order" INT NOT NULL,
-    mentor_experiences_metadata JSONB
-    --,CONSTRAINT fk_profile_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
+    have_tags TEXT[] NOT NULL DEFAULT '{}',
+    -- Inline experiences batch — replaces the standalone mentor_experiences
+    -- table. Each element is {category, order, mentor_experiences_metadata};
+    -- every PUT /mentors/mentor_profile overwrites the column wholesale.
+    experiences JSONB NOT NULL DEFAULT '[]'::jsonb
 );
 
 
