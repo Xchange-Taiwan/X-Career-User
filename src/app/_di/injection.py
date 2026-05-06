@@ -132,13 +132,8 @@ def get_activity_service(
 def get_reservation_service(
     reservation_repository: ReservationRepository = Depends(get_reservation_dao),
     activity_service: ActivityService = Depends(get_activity_service),
-    schedule_repository: ScheduleRepository = Depends(get_schedule_dao),
 ):
-    return ReservationService(
-        reservation_repository,
-        activity_service,
-        schedule_repository,
-    )
+    return ReservationService(reservation_repository, activity_service)
 
 
 def get_booking_service(
