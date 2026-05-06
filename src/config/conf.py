@@ -1,25 +1,25 @@
 import os
 
 
-XC_BUCKET = os.getenv('XC_BUCKET', 'xc-bucket')
-XC_USER_BUCKET = os.getenv('XC_USER_BUCKET', 'xc-user-bucket')
+XC_BUCKET = os.getenv('XC_BUCKET', 'xc-bucket').strip()
+XC_USER_BUCKET = os.getenv('XC_USER_BUCKET', 'xc-user-bucket').strip()
 BATCH = int(os.getenv('BATCH', 20))
 MAX_PERIOD_SECS = int(os.getenv('MAX_PERIOD_SECS', 86400 * 31))
-DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y%m%dT%H%M%S%z')
-DEFAULT_LANGUAGE = os.getenv('DEFAULT_LANGUAGE', 'zh_TW')
+DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y%m%dT%H%M%S%z').strip()
+DEFAULT_LANGUAGE = os.getenv('DEFAULT_LANGUAGE', 'zh_TW').strip()
 # resource probe cycle secs
 PROBE_CYCLE_SECS = int(os.getenv("PROBE_CYCLE_SECS", 3))
 
 # default cache ttl: 5 minutes
 CACHE_TTL = int(os.getenv('CACHE_TTL', 300))
 # db config params
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '5432')
-DB_USER = os.getenv('DB_USER', 'user')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'pass')
-DB_NAME = os.getenv('DB_NAME', 'db')
+DB_HOST = os.getenv('DB_HOST', 'localhost').strip()
+DB_PORT = os.getenv('DB_PORT', '5432').strip()
+DB_USER = os.getenv('DB_USER', 'user').strip()
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'pass').strip()
+DB_NAME = os.getenv('DB_NAME', 'db').strip()
 DB_SCHEMA = os.getenv('DB_SCHEMA', 'public').strip()
-RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE')
+RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE').strip()
 
 # db connection pool config params
 # 資料庫連接池配置 - 可通過環境變量覆蓋默認值
@@ -34,8 +34,8 @@ DB_COMMAND_TIMEOUT = int(os.getenv('DB_COMMAND_TIMEOUT', 60))   # 命令超時�
 DB_JIT_OFF = int(os.getenv('DB_JIT_OFF', 1))    # 是否關閉 PostgreSQL JIT (提高穩定性)
 DB_JIT_OFF = True if DB_JIT_OFF >= 1 else False
 
-SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api')
-AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://127.0.0.1:8008/auth-service/api')
+SEARCH_SERVICE_URL = os.getenv('SEARCH_SERVICE_URL', 'http://127.0.0.1:8012/search-service/api').strip()
+AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://127.0.0.1:8008/auth-service/api').strip()
     
 
 # sqs/event bus conf
@@ -45,4 +45,4 @@ MQ_MAX_ATTEMPTS = int(os.getenv("MQ_MAX_ATTEMPTS", 3))
 
 # sqs
 # for retry failed pub events
-SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL', 'https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/{QUEUE_NAME}')
+SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL', 'https://sqs.{REGION}.amazonaws.com/{ACCOUNT_ID}/{QUEUE_NAME}').strip()
