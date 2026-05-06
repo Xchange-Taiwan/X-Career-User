@@ -6,7 +6,6 @@ from src.domain.file.dao.file_repository import FileRepository
 from src.domain.mentor.dao.canned_message_repository import CannedMessageRepository
 from src.domain.mentor.dao.schedule_repository import ScheduleRepository
 from src.domain.mentor.service.notify_service import NotifyService
-from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.dao.reservation_repository import ReservationRepository
 from src.domain.user.service.delete_account_service import DeleteAccountService
@@ -18,7 +17,6 @@ class DeleteAccount:
     def __init__(
         self,
         delete_account_service: DeleteAccountService,
-        experience_repository: MentorExperienceRepository,
         schedule_repository: ScheduleRepository,
         canned_message_repository: CannedMessageRepository,
         reservation_repository: ReservationRepository,
@@ -27,7 +25,6 @@ class DeleteAccount:
         notify_service: NotifyService,
     ):
         self.__delete_account_service = delete_account_service
-        self.__experience_repo = experience_repository
         self.__schedule_repo = schedule_repository
         self.__canned_message_repo = canned_message_repository
         self.__reservation_repo = reservation_repository
@@ -42,8 +39,9 @@ class DeleteAccount:
 
         is_mentor = profile.is_mentor
 
+        # Experiences live on profiles.experiences (JSONB[]); deleting the
+        # profile row implicitly drops them, so there's no separate cleanup.
         await self.__schedule_repo.delete_all_by_user_id(db, user_id)
-        await self.__experience_repo.delete_all_by_user_id(db, user_id)
         await self.__canned_message_repo.delete_all_by_user_id(db, user_id)
         await self.__reservation_repo.anonymize_by_my_user_id(db, user_id)
         await self.__reservation_repo.anonymize_by_user_id(db, user_id)

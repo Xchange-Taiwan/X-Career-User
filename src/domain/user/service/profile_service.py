@@ -23,11 +23,9 @@ class ProfileService:
     def __init__(
         self,
         tag_service: TagService,
-        experience_service: ExperienceService,
         profile_repository: ProfileRepository,
     ):
         self.__tag_service: TagService = tag_service
-        self.__exp_service: ExperienceService = experience_service
         self.__profile_repository: ProfileRepository = profile_repository
 
     async def get_by_user_id(
@@ -99,10 +97,9 @@ class ProfileService:
             language = dto.language
 
         try:
-            user_id = dto.user_id
-            experiences: List[ExperienceVO] = (
-                await self.__exp_service.get_exp_list_by_user_id(db, user_id)
-            )
+            # Experiences ride on the dto (sourced from profiles.experiences
+            # JSONB[]) — no separate fetch.
+            experiences: List[ExperienceVO] = list(dto.experiences or [])
 
             res: MentorProfileVO = MentorProfileVO.of(dto)
             res.industry = await self.__resolve_industry(db, dto.industry, language)

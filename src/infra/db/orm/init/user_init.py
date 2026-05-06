@@ -34,17 +34,11 @@ class Profile(Base):
     # want_position / want_skill / want_topic / have_skill / have_topic).
     want_tags = Column(ARRAY(String), nullable=False, server_default='{}')
     have_tags = Column(ARRAY(String), nullable=False, server_default='{}')
-
-
-class MentorExperience(Base):
-    __tablename__ = 'mentor_experiences'
-    id = Column(Integer, primary_key=True)
-    user_id = Column(BigInteger)
-    category = Column(
-        ENUM(ExperienceCategory, name='experience_category', create_type=False),
-        nullable=False)
-    order = Column(Integer, nullable=False)
-    mentor_experiences_metadata = Column(JSONB)
+    # Mentor experiences live inline as JSONB[]. Each element is an
+    # ExperienceVO dict (category / order / mentor_experiences_metadata).
+    # Replaces the former mentor_experiences table — every PUT overwrites
+    # the column wholesale, so there is no per-row diff to manage.
+    experiences = Column(JSONB, nullable=False, server_default='[]')
 
 
 class MentorSchedule(Base):

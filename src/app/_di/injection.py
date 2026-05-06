@@ -6,12 +6,10 @@ from src.domain.file.dao.file_repository import FileRepository
 from src.domain.file.service.file_service import FileService
 from src.domain.mentor.dao.canned_message_repository import CannedMessageRepository
 from src.domain.mentor.dao.mentor_repository import MentorRepository
-from src.domain.mentor.service.experience_service import ExperienceService
 from src.domain.mentor.service.mentor_service import MentorService
 from src.domain.mentor.service.schedule_service import ScheduleService
 from src.domain.mentor.dao.schedule_repository import ScheduleRepository
 from src.domain.mentor.service.notify_service import NotifyService
-from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
 from src.domain.user.dao.profile_repository import ProfileRepository
 from src.domain.user.dao.reservation_repository import ReservationRepository
 from src.domain.user.dao.tag_repository import TagRepository
@@ -29,10 +27,6 @@ from src.infra.resource.manager import resource_manager
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.infra.template.service_api import IServiceApi
 from src.infra.client.async_service_api_adapter import AsyncServiceApiAdapter
-
-
-def get_experience_dao() -> MentorExperienceRepository:
-    return MentorExperienceRepository()
 
 
 def get_mentor_dao() -> MentorRepository:
@@ -77,23 +71,15 @@ def get_sqs_mq_adapter() -> SqsMqAdapter:
     return SqsMqAdapter(sqs_rsc=sqs_rsc)
 
 
-def get_experience_service(
-    experience_repository: MentorExperienceRepository = Depends(get_experience_dao),
-) -> ExperienceService:
-    return ExperienceService(experience_repository)
-
-
 # Dependency function to create Service instance with DAO dependency injected
 
 
 def get_profile_service(
     tag_service: TagService = Depends(get_tag_service),
-    experience_service: ExperienceService = Depends(get_experience_service),
     profile_repository: ProfileRepository = Depends(get_profile_dao),
 ) -> ProfileService:
     return ProfileService(
         tag_service=tag_service,
-        experience_service=experience_service,
         profile_repository=profile_repository,
     )
 
@@ -144,21 +130,17 @@ def get_booking_service(
 
 def get_notify_service(
     mentor_service: MentorService = Depends(get_mentor_service),
-    experience_service: ExperienceService = Depends(get_experience_service),
     mq_adapter: SqsMqAdapter = Depends(get_sqs_mq_adapter),
 ):
-    return NotifyService(mentor_service, experience_service, mq_adapter)
+    return NotifyService(mentor_service, mq_adapter)
 
 
 def get_mentor_profile_app(
     profile_service: ProfileService = Depends(get_profile_service),
     mentor_service: MentorService = Depends(get_mentor_service),
-    experience_service: ExperienceService = Depends(get_experience_service),
     notify_service: NotifyService = Depends(get_notify_service),
 ):
-    return MentorProfile(
-        profile_service, mentor_service, experience_service, notify_service
-    )
+    return MentorProfile(profile_service, mentor_service, notify_service)
 
 
 def get_canned_message_dao() -> CannedMessageRepository:
@@ -173,7 +155,6 @@ def get_delete_account_service(
 
 def get_delete_account_app(
     delete_account_service: DeleteAccountService = Depends(get_delete_account_service),
-    experience_repository: MentorExperienceRepository = Depends(get_experience_dao),
     schedule_repository: ScheduleRepository = Depends(get_schedule_dao),
     canned_message_repository: CannedMessageRepository = Depends(get_canned_message_dao),
     reservation_repository: ReservationRepository = Depends(get_reservation_dao),
@@ -183,7 +164,6 @@ def get_delete_account_app(
 ) -> DeleteAccount:
     return DeleteAccount(
         delete_account_service,
-        experience_repository,
         schedule_repository,
         canned_message_repository,
         reservation_repository,

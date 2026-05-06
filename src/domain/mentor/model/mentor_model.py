@@ -33,6 +33,12 @@ class MentorProfileDTO(ProfileDTO):
     have_skill: Optional[List[str]] = None
     have_topic: Optional[List[str]] = None
 
+    # Experiences as inline batch — same three-state semantics as the tag
+    # buckets: None = leave alone, [] = clear, [...] = replace as the new
+    # full set. Stored as JSONB[] on profiles.experiences, so every PUT is
+    # a single column overwrite.
+    experiences: Optional[List[ExperienceVO]] = None
+
     class Config:
         from_attributes = True # orm_mode = True
 
