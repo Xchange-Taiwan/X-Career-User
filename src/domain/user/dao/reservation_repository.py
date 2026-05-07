@@ -112,6 +112,27 @@ class ReservationRepository:
         return [ReservationVO.model_validate(reservation) for reservation in reservations]
 
 
+    async def find_accepted_overlapping(self, db: AsyncSession,
+                                        my_user_id: int,
+                                        dtstart: int,
+                                        dtend: int) -> List[ReservationVO]:
+        # When the counterparty cancels, only their `my_status` flips to REJECT;
+        # this user's row keeps `my_status=ACCEPT` (status=REJECT mirrors the
+        # counterparty). Filtering on my_status=ACCEPT alone treats those dead
+        # rows as live conflicts and blocks re-booking the same slot.
+        stmt: Select = select(Reservation).where(
+            and_(
+                Reservation.my_user_id == my_user_id,
+                Reservation.my_status == BookingStatus.ACCEPT,
+                Reservation.status != BookingStatus.REJECT,
+                Reservation.dtstart >= dtstart,
+                Reservation.dtend <= dtend,
+            )
+        )
+        reservations = await get_all_template(db, stmt)
+        return [ReservationVO.model_validate(reservation) for reservation in reservations]
+
+
     async def save_all(self, db: AsyncSession, reservations: List[Reservation]):
         log.info(f"=== save_all 开始执行 ===")
         log.info(f"Reservations 数量: {len(reservations)}")
