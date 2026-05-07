@@ -256,16 +256,16 @@ class ReservationService:
     '''
 
     async def check_my_accepted_bookings(self, db: AsyncSession, reservation_dto: ReservationDTO):
-        dtstart = reservation_dto.dtstart
-        dtend = reservation_dto.dtend
-        query: Dict = {
-            'my_user_id': reservation_dto.my_user_id,
-            'my_status': BookingStatus.ACCEPT,
-        }
-
-        # check sender's reservations
-        sender_reserve_list: Optional[List[ReservationDTO]] = \
-            await self.reservation_repo.find_all(db, query, dtstart, dtend)
+        # Skip rows where the counterparty has already cancelled (status=REJECT)
+        # — those reservations are dead and must not block a fresh booking on
+        # the same slot. find_accepted_overlapping enforces this at the DB level.
+        sender_reserve_list: List[ReservationVO] = \
+            await self.reservation_repo.find_accepted_overlapping(
+                db,
+                my_user_id=reservation_dto.my_user_id,
+                dtstart=reservation_dto.dtstart,
+                dtend=reservation_dto.dtend,
+            )
 
         if len(sender_reserve_list) > 0:
             sender_reserve_dict = {idx+1: jsonable_encoder(r) for idx, r in enumerate(sender_reserve_list)}
