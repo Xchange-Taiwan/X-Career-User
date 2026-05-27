@@ -256,16 +256,16 @@ class ReservationService:
     '''
 
     async def check_my_accepted_bookings(self, db: AsyncSession, reservation_dto: ReservationDTO):
-        dtstart = reservation_dto.dtstart
-        dtend = reservation_dto.dtend
-        query: Dict = {
-            'my_user_id': reservation_dto.my_user_id,
-            'my_status': BookingStatus.ACCEPT,
-        }
-
-        # check sender's reservations
-        sender_reserve_list: Optional[List[ReservationDTO]] = \
-            await self.reservation_repo.find_all(db, query, dtstart, dtend)
+        # Skip rows where the counterparty has already cancelled (status=REJECT)
+        # — those reservations are dead and must not block a fresh booking on
+        # the same slot. find_accepted_overlapping enforces this at the DB level.
+        sender_reserve_list: List[ReservationVO] = \
+            await self.reservation_repo.find_accepted_overlapping(
+                db,
+                my_user_id=reservation_dto.my_user_id,
+                dtstart=reservation_dto.dtstart,
+                dtend=reservation_dto.dtend,
+            )
 
         if len(sender_reserve_list) > 0:
             sender_reserve_dict = {idx+1: jsonable_encoder(r) for idx, r in enumerate(sender_reserve_list)}
@@ -312,8 +312,11 @@ class ReservationService:
     async def get_participant_vo(self, db: AsyncSession,
                                  update_dto: UpdateReservationDTO) -> Optional[ReservationVO]:
         p_query = update_dto.participant_query()
+        # Must exclude REJECT rows: a cancelled-then-rebooked slot has both
+        # a dead row and a live row sharing the same partner-query key, and
+        # updating the dead row trips the partial unique index.
         participant_vo: ReservationVO = \
-            await self.reservation_repo.find_one(db, p_query)
+            await self.reservation_repo.find_active_one(db, p_query)
         if not participant_vo:
             log.error('participant reservation not found, query: %s', p_query)
             raise ClientException(msg='participant reservation not found')
@@ -337,8 +340,11 @@ class ReservationService:
     async def get_prev_participant_vo(self, db: AsyncSession,
                                       prev_sender_vo: ReservationVO) -> Optional[ReservationVO]:
         p_query = prev_sender_vo.participant_query()
+        # Same active-row filter as get_participant_vo: the partner of the
+        # row we're about to REJECT must itself still be live, otherwise we
+        # could pick up an older dead pair from a prior cancel cycle.
         prev_participant_vo: ReservationVO = \
-            await self.reservation_repo.find_one(db, p_query)
+            await self.reservation_repo.find_active_one(db, p_query)
 
         if not prev_participant_vo:
             log.error('previous participant reservation not found, \

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,9 +25,9 @@ class MentorService:
         try:
             language = profile_dto.language or DEFAULT_LANGUAGE
 
-            # Pull existing arrays first so untouched buckets survive the
-            # per-bucket replace semantics (None = leave alone, [] = clear).
-            # First-time mentors won't have a row yet — fall back to empty.
+            # Pull the existing row so untouched buckets / experiences survive
+            # the three-state replace semantics (None = leave alone, [] = clear,
+            # [...] = replace). First-time mentors won't have a row yet.
             existing = await self.__mentor_repository.find_profile_by_user_id(
                 db, profile_dto.user_id,
             )
@@ -48,9 +48,25 @@ class MentorService:
                 have_topic=profile_dto.have_topic,
             )
 
+            # Resolve experiences three-state into a column payload. None means
+            # "don't touch the column"; [] / [...] both ride through to the repo.
+            # mode='json' so the ExperienceCategory enum becomes its string
+            # value — asyncpg's JSONB encoder can't handle Enum.
+            if profile_dto.experiences is None:
+                column_payload: Optional[List[dict]] = None
+            else:
+                column_payload = [
+                    e.model_dump(mode='json') for e in profile_dto.experiences
+                ]
+
             # Storage arrays travel as kwargs — they're state, not API.
+            # is_mentor is *not* recomputed here; the dto carries whatever the
+            # client sent, and the column is written from there.
             res_dto, res_want, res_have = await self.__mentor_repository.upsert_mentor(
-                db, profile_dto, want_tags=new_want, have_tags=new_have,
+                db, profile_dto,
+                want_tags=new_want,
+                have_tags=new_have,
+                experiences=column_payload,
             )
 
             res_vo: MentorProfileVO = await self.__profile_service.convert_to_mentor_profile_vo(

@@ -1,72 +1,15 @@
 from typing import List, Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.config.exception import NotFoundException, ServerException
-from src.domain.mentor.model.experience_model import ExperienceVO, ExperienceDTO, ExperienceListVO
-from src.domain.user.dao.mentor_experience_repository import MentorExperienceRepository
-from src.infra.db.orm.init.user_init import MentorExperience
-import logging
-
-log = logging.getLogger(__name__)
+from src.domain.mentor.model.experience_model import ExperienceVO
 
 
+# Experiences live inline on profiles.experiences (JSONB[]) — there is no
+# separate experiences DAO. The only logic that survived the cutover is the
+# pair of derived-flag helpers, which the profile upsert path calls before
+# writing the row. Keeping them here (as opposed to inlining or moving) lets
+# `ExperienceService.is_mentor(...)` keep working as a stable import path
+# for callers that already reference it.
 class ExperienceService:
-    def __init__(self, exp_dao: MentorExperienceRepository):
-        self.__exp_dao = exp_dao
-
-    async def get_exp_list_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[List[ExperienceVO]]:
-        try:
-            mentor_exp: List[MentorExperience] = await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
-            if not mentor_exp:
-                return []
-            return [ExperienceVO.model_validate(exp) for exp in mentor_exp]
-        except Exception as e:
-            log.error(f'get_exp_list_by_user_id error: %s', str(e))
-            raise ServerException(msg='get experience list response failed')
-
-    # FIXME: 育志，為什麼透過u ser_id 去取得的經驗只會有一種？應該包含 學歷/經歷/LINK ... 多種經驗
-    # 我用 get_exp_list_by_user_id 實現的函數你可以參考一下
-    async def get_exp_by_user_id(self, db: AsyncSession, user_id: int) -> Optional[ExperienceVO]:
-        try:
-            mentor_exp_list: List[MentorExperience] = \
-                await self.__exp_dao.get_mentor_exp_list_by_user_id(db, user_id)
-            if not mentor_exp_list:
-                return []
-
-            experiences = [ExperienceVO.model_validate(exp) for exp in mentor_exp_list]
-            return ExperienceListVO(experiences=experiences)
-        except Exception as e:
-            log.error(f'get_exp_by_user_id error: %s', str(e))
-            raise ServerException(msg='get experience response failed')
-
-    async def upsert_exp(self, db: AsyncSession,
-                         user_id: int,
-                         experience_dto: ExperienceDTO) -> ExperienceVO:
-        try:
-            mentor_exp: MentorExperience = await self.__exp_dao.upsert_mentor_exp_by_user_id(db=db,
-                                                                                            user_id=user_id,
-                                                                                            mentor_exp_dto=experience_dto)
-            res: ExperienceVO = ExperienceVO.model_validate(mentor_exp)
-
-            return res
-        except Exception as e:
-            log.error(f'upsert_exp error: %s', str(e))
-            raise ServerException(msg='upsert experience response failed')
-
-    async def delete_exp_by_user_and_exp_id(self, db: AsyncSession,
-                                            user_id: int,
-                                            experience_dto: ExperienceDTO) -> bool:
-        try:
-            res: bool = await self.__exp_dao.delete_mentor_exp_by_id(db, user_id, experience_dto)
-            if not res:
-                exp_id = experience_dto.id
-                log.info('user_id: %s No such experience with id: %s', user_id, exp_id)
-            return res
-        except Exception as e:
-            log.error(f'delete_exp_by_user_and_exp_id error: %s', str(e))
-            raise ServerException(msg=f'delete experience response failed: user_id: {user_id}, exp_id: {exp_id}')
-
 
     # Onboarding completion gate. Mentee onboarding writes profiles.want_tags;
     # have_tags is mentor-only and stays empty for plain mentees, so checking

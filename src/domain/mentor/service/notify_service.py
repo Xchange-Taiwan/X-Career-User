@@ -1,12 +1,7 @@
-from typing import List, Optional
 from src.infra.mq.sqs_mq_adapter import SqsMqAdapter
 from src.infra.databse import SessionLocal
 from src.domain.mentor.service.mentor_service import MentorService
-from src.domain.mentor.service.experience_service import ExperienceService
-from src.domain.mentor.model import (
-    experience_model as exp,
-    mentor_model as mentor,
-)
+from src.domain.mentor.model import mentor_model as mentor
 from src.config.conf import (
     SEARCH_SERVICE_URL,
     DEFAULT_LANGUAGE,
@@ -23,11 +18,9 @@ class NotifyService:
     def __init__(
         self,
         mentor_service: MentorService,
-        experience_service: ExperienceService,
         mq_adapter: SqsMqAdapter,
     ):
         self.mentor_service = mentor_service
-        self.exp_service: ExperienceService = experience_service
         self.mq_adapter = mq_adapter
 
     async def updated_user_profile(self, user_id: int):
@@ -53,7 +46,8 @@ class NotifyService:
             log.error(f"[NotifyService] failed to publish user profile update, user_id={user_id}: {e}")
 
     async def updated_mentor_profile(self, mentor_profile: mentor.MentorProfileVO):
-        """Triggered by PUT /mentors/mentor_profile — updates mentor-specific fields."""
+        """Triggered by PUT /mentors/mentor_profile — updates mentor-specific fields,
+        including experiences (which now ride inline on the profile row)."""
         try:
             user_id = mentor_profile.user_id
             payload = {
@@ -64,34 +58,6 @@ class NotifyService:
             log.info(f"[NotifyService] published PUT_MENTOR_PROFILE, user_id={user_id}")
         except Exception as e:
             log.error(f"[NotifyService] failed to publish mentor profile update, user_id={user_id}: {e}")
-
-    async def notify_updated_user_experiences(
-        self, user_id: int, is_mentor: Optional[bool] = None
-    ):
-        """Triggered by PUT/DELETE /mentors/{id}/experiences — patches the experiences array."""
-        try:
-            if is_mentor is False:
-                experiences = []
-            else:
-                async with SessionLocal() as db:
-                    experiences: List[exp.ExperienceVO] = (
-                        await self.exp_service.get_exp_list_by_user_id(db, user_id)
-                    )
-
-            # 若為 is_mentor 狀態且 experiences 有至少兩筆資料，則需通知 Search Service
-            if is_mentor is True and ExperienceService.is_mentor(experiences):
-                mentor_profile: mentor.MentorProfileVO = mentor.MentorProfileVO(
-                    user_id=user_id, experiences=experiences
-                )
-                payload = {
-                    **mentor_profile.to_dto_json(),
-                    "action": "PATCH_MENTOR_PROFILE",
-                }
-                await self.mq_adapter.publish_message(payload, group_id=str(user_id))
-                log.info(f"[NotifyService] published PATCH_MENTOR_PROFILE, user_id={user_id}")
-
-        except Exception as e:
-            log.error(f"[NotifyService] failed to publish experience update, user_id={user_id}: {e}")
 
     async def notify_delete_mentor_profile(self, user_id: int) -> None:
         try:

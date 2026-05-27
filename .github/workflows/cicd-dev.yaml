@@ -49,6 +49,14 @@ jobs:
           THE_REGION: ${{ secrets.AWS_REGION }}
           ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
+      # Block until Lambda's CloudFormation rollout has fully settled.
+      # Without this, `update-function-configuration` below can race the
+      # in-progress deploy and get its env vars (DB_*, SEARCH_SERVICE_URL,
+      # etc.) overwritten when the rollout finishes with serverless.yml's
+      # smaller environment block.
+      - name: Wait for Lambda update to settle
+        run: aws lambda wait function-updated --function-name x-career-user-dev-app
+
       - name: Update Lambda environment variables
         env:
           XC_BUCKET: ${{ secrets.XC_BUCKET_DEV }}
@@ -95,6 +103,7 @@ jobs:
                   DB_PASSWORD: $DB_PASSWORD,
                   DB_NAME: $DB_NAME,
                   DB_SCHEMA: $DB_SCHEMA,
+                  DB_SSL: "require",
                   RESERVATION_ISOLAION_LEVEL: "SERIALIZABLE",
                   DB_POOL_SIZE: "20",
                   DB_MAX_OVERFLOW: "4",

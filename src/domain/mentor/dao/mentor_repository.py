@@ -4,14 +4,17 @@ from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.mentor.model.mentor_model import MentorProfileDTO
-from src.infra.db.orm.init.user_init import Profile, MentorExperience
+from src.infra.db.orm.init.user_init import Profile
 from src.infra.util.convert_util import get_first_template
 
 
-# Per-bucket replace inputs on MentorProfileDTO — they're not Profile columns,
-# so they're stripped from the dump before the dto is mapped onto the ORM.
+# Per-bucket replace inputs and the inline experiences batch on
+# MentorProfileDTO — they need explicit handling (merge into storage arrays
+# / write the experiences column) so they're stripped from the model_dump
+# before the rest of the dto is copied onto the ORM row.
 _INPUT_BUCKET_FIELDS = {
     'want_position', 'want_skill', 'want_topic', 'have_skill', 'have_topic',
+    'experiences',
 }
 
 
@@ -49,17 +52,23 @@ class MentorRepository:
         *,
         want_tags: List[str],
         have_tags: List[str],
+        experiences: Optional[List[dict]],
     ) -> ProfileWithTags:
         # Load-or-create rather than db.merge: the input bucket fields aren't
-        # Profile columns, and merge would clobber want_tags/have_tags
-        # columns the dto doesn't carry. The merged storage arrays come in
-        # as kwargs because they're storage state, not API surface.
+        # Profile columns, and merge would clobber want_tags/have_tags/
+        # experiences columns the dto doesn't carry. Storage state comes in
+        # as kwargs because the API-facing dto stays small.
         payload = mentor_profile_dto.model_dump(exclude=_INPUT_BUCKET_FIELDS)
         payload['want_tags'] = want_tags
         payload['have_tags'] = have_tags
+        if experiences is not None:
+            payload['experiences'] = experiences
 
         existing: Optional[Profile] = await db.get(Profile, mentor_profile_dto.user_id)
         if existing is None:
+            # First-time mentor: a missing experiences kwarg means "no
+            # experiences yet", which is the column default.
+            payload.setdefault('experiences', [])
             model = Profile(**payload)
             db.add(model)
             await db.commit()
@@ -71,15 +80,6 @@ class MentorRepository:
         await db.commit()
         await db.refresh(existing)
         return self._split(existing)
-
-    async def delete_mentor_profile_by_id_and_language(self, db: AsyncSession, user_id: int, language: str) -> None:
-        stmt: Select = select(Profile).join(MentorExperience, MentorExperience.user_id == Profile.user_id)
-        stmt: Select = stmt.filter(Profile.user_id == user_id and Profile.language == language)
-        mentor: Profile = await get_first_template(db, stmt)
-
-        if mentor:
-            await db.delete(mentor)
-            await db.commit()
 
     @staticmethod
     def _split(profile: Profile) -> ProfileWithTags:
