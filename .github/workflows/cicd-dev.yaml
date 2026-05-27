@@ -103,6 +103,7 @@ jobs:
                   DB_PASSWORD: $DB_PASSWORD,
                   DB_NAME: $DB_NAME,
                   DB_SCHEMA: $DB_SCHEMA,
+                  DB_SSL: "require",
                   RESERVATION_ISOLAION_LEVEL: "SERIALIZABLE",
                   DB_POOL_SIZE: "20",
                   DB_MAX_OVERFLOW: "4",

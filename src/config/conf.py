@@ -19,6 +19,9 @@ DB_USER = os.getenv('DB_USER', 'user').strip()
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'pass').strip()
 DB_NAME = os.getenv('DB_NAME', 'db').strip()
 DB_SCHEMA = os.getenv('DB_SCHEMA', 'public').strip()
+# asyncpg ssl 模式: disable / allow / prefer / require / verify-ca / verify-full
+# RDS 預設要求加密 (rds.force_ssl)，明文連線會被 pg_hba 以 "no encryption" 拒絕
+DB_SSL = os.getenv('DB_SSL', '').strip()  # AWS 上設 'require'，空字串為本機不加密
 RESERVATION_ISOLAION_LEVEL = os.getenv('RESERVATION_ISOLAION_LEVEL', 'SERIALIZABLE').strip()
 
 # db connection pool config params
