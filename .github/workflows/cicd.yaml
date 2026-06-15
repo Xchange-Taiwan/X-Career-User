@@ -1,17 +1,16 @@
-# dev 分支推送時部署至 AWS Lambda（Serverless Framework）
+# main 分支推送時部署至 AWS Lambda（Serverless Framework）
 # 部署後的 Lambda 環境變數對齊 dev-env-deploy.sh
 name: X-Career-User Pipeline
 
 on:
   push:
     branches:
-      - dev
+      - main
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: dev
 
     steps:
       - name: Checkout repository
@@ -43,9 +42,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy to AWS Lambda
-        run: npx sls deploy --stage dev --region ${{ secrets.AWS_REGION }}
+        run: npx sls deploy --stage prod --region ${{ secrets.AWS_REGION }}
         env:
-          STAGE: dev
+          STAGE: prod
           THE_REGION: ${{ secrets.AWS_REGION }}
           ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
@@ -55,7 +54,7 @@ jobs:
       # etc.) overwritten when the rollout finishes with serverless.yml's
       # smaller environment block.
       - name: Wait for Lambda update to settle
-        run: aws lambda wait function-updated --function-name x-career-user-dev-app
+        run: aws lambda wait function-updated --function-name x-career-user-prod-app
 
       - name: Update Lambda environment variables
         env:
@@ -82,11 +81,11 @@ jobs:
             --arg AUTH_SERVICE_URL "$AUTH_SERVICE_URL" \
             --arg SQS_QUEUE_URL "$SQS_QUEUE_URL" \
             '{
-              FunctionName: "x-career-user-dev-app",
+              FunctionName: "x-career-user-prod-app",
               Environment: {
                 Variables: {
-                  STAGE: "dev",
-                  TESTING: "dev",
+                  STAGE: "prod",
+                  TESTING: "false",
                   XC_USER_BUCKET: $XC_USER_BUCKET,
                   BATCH: "20",
                   MAX_PERIOD_SECS: "2678400",

@@ -1,8 +1,7 @@
 import os
 
 
-XC_BUCKET = os.getenv('XC_BUCKET', 'xc-bucket').strip()
-XC_USER_BUCKET = os.getenv('XC_USER_BUCKET', 'xc-user-bucket').strip()
+XC_USER_BUCKET = os.getenv('XC_USER_BUCKET', 'xxxx').strip()
 BATCH = int(os.getenv('BATCH', 20))
 MAX_PERIOD_SECS = int(os.getenv('MAX_PERIOD_SECS', 86400 * 31))
 DATETIME_FORMAT = os.getenv('DATETIME_FORMAT', '%Y%m%dT%H%M%S%z').strip()
