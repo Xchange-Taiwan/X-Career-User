@@ -23,9 +23,6 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'industry_category') THEN
         CREATE TYPE INDUSTRY_CATEGORY AS ENUM('SOFTWARE', 'HARDWARE', 'SERVICE', 'FINANCE', 'OTHER');
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_type') THEN
-        CREATE TYPE ACCOUNT_TYPE AS ENUM('XC', 'GOOGLE', 'LINKEDIN');
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_service') THEN
         CREATE TYPE ACTIVITY_SERVICE AS ENUM('GOOGLE');
     END IF;
@@ -34,22 +31,6 @@ BEGIN
     END IF;
 END $$;
 
-
-CREATE TABLE IF NOT EXISTS accounts (
-    aid BIGSERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL, -- Email addresses are typically VARCHAR with a length constraint
-    email2 VARCHAR(255),                -- Same for the secondary email address
-    pass_hash VARCHAR(60),              -- Password hashes often have a fixed length (e.g., bcrypt is 60 characters)
-    pass_salt VARCHAR(60),              -- Assuming the salt is a fixed-length string (e.g., bcrypt salts are often 29 characters)
-    oauth_id VARCHAR(255),              -- OAuth IDs are usually strings but can have a variable length
-    refresh_token VARCHAR(255),         -- Refresh tokens are usually strings but can have a variable length
-    user_id BIGINT UNIQUE DEFAULT nextval('user_id_seq'),       -- Integer is fine for user IDs, keeping the UNIQUE constraint
-    account_type ACCOUNT_TYPE,          -- Assuming 'account_type' is an ENUM or a custom type
-    is_active BOOLEAN DEFAULT TRUE,     -- BOOLEAN is a more appropriate type for true/false values
-    "region" VARCHAR(50),                 -- Regions are typically short strings, so VARCHAR(50) should suffice
-    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
-);
 
 CREATE TABLE IF NOT EXISTS profiles (
     user_id BIGSERIAL PRIMARY KEY,
@@ -168,4 +149,3 @@ VALUES (
     'Photography basics and tips',  -- subject
     '{"difficulty": "beginner", "duration": "short"}'::jsonb -- desc (JSONB 格式)
 );
-
