@@ -71,7 +71,7 @@ provider:
           - "sqs:ReceiveMessage"
           - "sqs:DeleteMessage"
         Resource: 
-          - "arn:aws:sqs:${env:THE_REGION}:${env:ACCOUNT_ID}:X_CAREER_USER_DUPLICATE_QUEUE.fifo"
+          - ${env:SQS_QUEUE_ARN}
 
 # you can define service wide environment variables here
 #  environment:
@@ -116,6 +116,7 @@ functions:
     handler: main.handler
     environment:
       STAGE: ${self:provider.stage}
+      SQS_QUEUE_URL: ${env:SQS_QUEUE_URL}
     layers:
     - {Ref: PythonRequirementsLambdaLayer}
     events:
