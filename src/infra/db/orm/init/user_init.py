@@ -1,8 +1,15 @@
-from profile import Profile
-
-import sqlalchemy.dialects.postgresql
-from sqlalchemy import Integer, BigInteger, Column, String, Text, DateTime, Boolean, func
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, ENUM
+from sqlalchemy import (
+    Integer,
+    BigInteger,
+    Column,
+    String,
+    Text,
+    DateTime,
+    Boolean,
+    CheckConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from typing_extensions import Optional
 
@@ -14,19 +21,27 @@ Base = declarative_base()
 
 class Profile(Base):
     __tablename__ = 'profiles'
+    __table_args__ = (
+        CheckConstraint(
+            "seniority_level IN "
+            "('NO REVEAL', 'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'STAFF', 'MANAGER')",
+            name='ck_profiles_seniority_level',
+        ),
+    )
+
     user_id = Column(BigInteger, primary_key=True)
-    name = Column(String(255), nullable=False)
-    avatar = Column(String(255), default='')
-    location = Column(String(100), default='')
-    job_title = Column(String(255), default='')
+    name = Column(Text, nullable=False)
+    avatar = Column(Text, default='')
+    location = Column(Text, default='')
+    job_title = Column(Text, default='')
+    linkedin_profile = Column(Text, default='')
     personal_statement = Column(String, default='')
     about = Column(String, default='')
-    company = Column(String(255), default='')
-    seniority_level = Column(
-        ENUM(SeniorityLevel, name='seniority_level', create_type=False), nullable=False)
+    company = Column(Text, default='')
+    seniority_level = Column(String(20))
 
-    years_of_experience = Column(String(100), default='0')
-    industry = Column(String(255))
+    years_of_experience = Column(String, default='0')
+    industry = Column(Text)
     language = Column(String(10), default='')
     is_mentor = Column(Boolean, default=False)
     # Mentor-side tag selections, stored as flat subject_group arrays. Kind
@@ -43,6 +58,12 @@ class Profile(Base):
 
 class MentorSchedule(Base):
     __tablename__ = 'mentor_schedules'
+    __table_args__ = (
+        CheckConstraint(
+            "dt_type IN ('ALLOW', 'FORBIDDEN')",
+            name='ck_mentor_schedules_dt_type',
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(BigInteger, nullable=False)    # User ID
@@ -72,40 +93,68 @@ class MentorSchedule(Base):
 
 class CannedMessage(Base):
     __tablename__ = 'canned_messages'
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('MENTOR', 'MENTEE')",
+            name='ck_canned_messages_role',
+        ),
+    )
+
     id = Column(Integer, primary_key=True)
     user_id = Column(BigInteger, nullable=False)
-    role = Column(
-        ENUM(RoleType, name="role_type", create_type=False),
-        nullable=False)
+    role = Column(String(20), nullable=False)
     message = Column(String)
     # profile = relationship("Profile", backref="canned_messages")
 
 
 class Reservation(Base):
     __tablename__ = 'reservations'
+    __table_args__ = (
+        CheckConstraint(
+            "my_status IN ('ACCEPT', 'PENDING', 'REJECT')",
+            name='ck_reservations_my_status',
+        ),
+        CheckConstraint(
+            "my_role IS NULL OR my_role IN ('MENTOR', 'MENTEE')",
+            name='ck_reservations_my_role',
+        ),
+        CheckConstraint(
+            "status IN ('ACCEPT', 'PENDING', 'REJECT')",
+            name='ck_reservations_status',
+        ),
+    )
+
     id = Column(Integer, primary_key=True)
     schedule_id = Column(Integer, nullable=False)
     dtstart = Column(Integer, nullable=False)
     dtend = Column(Integer, nullable=False)
     my_user_id = Column(BigInteger, nullable=True)  # nullable while updating
-    my_status = Column(
-        ENUM(BookingStatus, name='booking_status', create_type=False))
-    my_role = Column( 
-        ENUM(RoleType, name='role_type', create_type=False))
+    my_status = Column(String(20), nullable=False)
+    my_role = Column(String(20))
     user_id = Column(BigInteger, nullable=True)     # nullable while updating
-    status = Column(
-        ENUM(BookingStatus, name='booking_status', create_type=False))
+    status = Column(String(20), nullable=False)
     messages = Column(JSONB, default=[])
     previous_reserve = Column(JSONB, nullable=True) # nullable while updating
 
 
 class Activity(Base):
     __tablename__ = 'activities'
+    __table_args__ = (
+        CheckConstraint(
+            "service IN ('GOOGLE')",
+            name='ck_activities_service',
+        ),
+        CheckConstraint(
+            "status IN ('SCHEDULED', 'CANCELLED')",
+            name='ck_activities_status',
+        ),
+    )
+
     id = Column(String(255), primary_key=True, nullable=False)
     mentor_reservation_id = Column(Integer, nullable=False, index=True)
     mentee_reservation_id = Column(Integer, nullable=False, index=True)
-    service = Column(ENUM(ActivityService, name="activity_service"),  nullable=False)
-    status = Column(ENUM(ActivityStatus, name="activity_status"), nullable=False)
+    service = Column(String(20), nullable=False)
+    status = Column(String(20), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 

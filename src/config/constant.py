@@ -1,18 +1,19 @@
 from enum import Enum
 
 
-class Language(Enum):
+class Language(str, Enum):
     EN_US = 'en_US'
     ZH_TW = 'zh_TW'
 
 
-class ExperienceCategory(Enum):
+class ExperienceCategory(str, Enum):
     WORK = 'WORK'
     EDUCATION = 'EDUCATION'
     LINK = 'LINK'
+    WHAT_I_OFFER = 'WHAT_I_OFFER'
 
 
-class SeniorityLevel(Enum):
+class SeniorityLevel(str, Enum):
     NO_REVEAL = 'NO REVEAL'
     JUNIOR = 'JUNIOR'
     INTERMEDIATE = 'INTERMEDIATE'
@@ -21,25 +22,25 @@ class SeniorityLevel(Enum):
     MANAGER = 'MANAGER'
 
 
-class ScheduleType(Enum):
+class ScheduleType(str, Enum):
     ALLOW = 'ALLOW'
     FORBIDDEN = 'FORBIDDEN'
     BOOKED = 'BOOKED'
     PENDING = 'PENDING'
 
 
-class RoleType(Enum):
+class RoleType(str, Enum):
     MENTOR = 'MENTOR'
     MENTEE = 'MENTEE'
 
 
-class BookingStatus(Enum):
+class BookingStatus(str, Enum):
     PENDING = 'PENDING'
     ACCEPT = 'ACCEPT'
     REJECT = 'REJECT'
 
 
-class ReservationListState(Enum):
+class ReservationListState(str, Enum):
     MENTOR_UPCOMING = 'MENTOR_UPCOMING'
     MENTEE_UPCOMING = 'MENTEE_UPCOMING'
     MENTOR_PENDING = 'MENTOR_PENDING'
@@ -47,15 +48,15 @@ class ReservationListState(Enum):
     MENTOR_HISTORY = 'MENTOR_HISTORY'
     MENTEE_HISTORY = 'MENTEE_HISTORY'
 
-class ActivityService(Enum):
+class ActivityService(str, Enum):
     GOOGLE = 'GOOGLE'
 
 
-class ActivityStatus(Enum):
+class ActivityStatus(str, Enum):
     SCHEDULED = 'SCHEDULED'
     CANCELLED = 'CANCELLED'
 
-class SortingBy(Enum):
+class SortingBy(str, Enum):
     UPDATED_TIME = 'UPDATED_TIME'
     # VIEW = 'VIEW'
 
@@ -65,7 +66,7 @@ class Sorting(Enum):
     DESC = -1
 
 
-class TagKind(Enum):
+class TagKind(str, Enum):
     # The 5 mentor profile buckets are (kind × array): want_tags carries
     # position/skill/topic; have_tags carries skill/topic. Intent is
     # implicit in *which* array a subject_group lives in — no separate

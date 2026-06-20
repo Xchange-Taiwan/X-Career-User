@@ -1,49 +1,16 @@
-DO $$ 
-BEGIN
-    -- 如果 'SENIORITY_LEVEL' 類型不存在，則創建它
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'seniority_level') THEN
-        CREATE TYPE SENIORITY_LEVEL AS ENUM('NO_REVEAL', 'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'STAFF', 'MANAGER');
-    END IF;
-    -- 重複此操作來處理其他類型
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'interest_category') THEN
-        CREATE TYPE INTEREST_CATEGORY AS ENUM('INTERESTED_POSITION', 'SKILL', 'TOPIC');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'experience_category') THEN
-        CREATE TYPE EXPERIENCE_CATEGORY AS ENUM('WORK', 'EDUCATION', 'LINK', 'WHAT_I_OFFER');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'schedule_type') THEN
-        CREATE TYPE SCHEDULE_TYPE AS ENUM('ALLOW', 'FORBIDDEN');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'booking_status') THEN
-        CREATE TYPE BOOKING_STATUS AS ENUM('ACCEPT', 'PENDING', 'REJECT');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role_type') THEN
-        CREATE TYPE ROLE_TYPE AS ENUM('MENTOR', 'MENTEE');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'industry_category') THEN
-        CREATE TYPE INDUSTRY_CATEGORY AS ENUM('SOFTWARE', 'HARDWARE', 'SERVICE', 'FINANCE', 'OTHER');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_service') THEN
-        CREATE TYPE ACTIVITY_SERVICE AS ENUM('GOOGLE');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_status') THEN
-        CREATE TYPE ACTIVITY_STATUS AS ENUM('SCHEDULED', 'CANCELLED');
-    END IF;
-END $$;
-
-
 CREATE TABLE IF NOT EXISTS profiles (
     user_id BIGSERIAL PRIMARY KEY,
-    "name" VARCHAR(255) NOT NULL,
-    avatar VARCHAR(255) DEFAULT '',
-    "location" VARCHAR(100) DEFAULT '',
-    "job_title" VARCHAR(255) DEFAULT '',
+    "name" TEXT NOT NULL,
+    avatar TEXT DEFAULT '',
+    "location" TEXT DEFAULT '',
+    "job_title" TEXT DEFAULT '',
+    linkedin_profile TEXT DEFAULT '',
     personal_statement TEXT DEFAULT '',
     about TEXT DEFAULT '',
-    company VARCHAR(255) DEFAULT '',
-    seniority_level SENIORITY_LEVEL,
-    years_of_experience VARCHAR(100) DEFAULT 0,
-	industry VARCHAR(255),
+    company TEXT DEFAULT '',
+    seniority_level VARCHAR(20),
+    years_of_experience VARCHAR DEFAULT 0,
+    industry TEXT,
     interested_positions JSONB,
     skills JSONB,
     topics JSONB,
@@ -57,14 +24,19 @@ CREATE TABLE IF NOT EXISTS profiles (
     -- Inline experiences batch — replaces the standalone mentor_experiences
     -- table. Each element is {category, order, mentor_experiences_metadata};
     -- every PUT /mentors/mentor_profile overwrites the column wholesale.
-    experiences JSONB NOT NULL DEFAULT '[]'::jsonb
+    experiences JSONB NOT NULL DEFAULT '[]'::jsonb,
+    CONSTRAINT ck_profiles_seniority_level CHECK (
+        seniority_level IN (
+            'NO REVEAL', 'JUNIOR', 'INTERMEDIATE', 'SENIOR', 'STAFF', 'MANAGER'
+        )
+    )
 );
 
 
 CREATE TABLE IF NOT EXISTS mentor_schedules (
     id SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,    -- user ID, used to distinguish users
-    dt_type VARCHAR(20) NOT NULL CHECK (dt_type IN ('ALLOW', 'FORBIDDEN')), -- event type
+    dt_type VARCHAR(20) NOT NULL,
     dt_year INT NOT NULL,       -- dt_year of the event
     dt_month INT NOT NULL,      -- dt_month of the event
     dtstart BIGINT NOT NULL,    -- start timestamp of the event
@@ -73,19 +45,28 @@ CREATE TABLE IF NOT EXISTS mentor_schedules (
     rrule TEXT,                 -- rule for repeating events, for example: 'FREQ=WEEKLY;COUNT=4'
     exdate JSONB DEFAULT '[]'::jsonb,   -- list of excluded dates/timestamps (ISO format)
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
+    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
+    CONSTRAINT ck_mentor_schedules_dt_type CHECK (
+        dt_type IN ('ALLOW', 'FORBIDDEN')
+    )
 );
 
-CREATE INDEX idx_mentor_schedules_user_id ON mentor_schedules(user_id);
-CREATE INDEX idx_mentor_schedules_user_event_time ON mentor_schedules(user_id, dtstart, dtend);
-CREATE INDEX idx_montor_schedules_user_year_month ON mentor_schedules(user_id, dt_year, dt_month);
+CREATE INDEX IF NOT EXISTS idx_mentor_schedules_user_id
+    ON mentor_schedules(user_id);
+CREATE INDEX IF NOT EXISTS idx_mentor_schedules_user_event_time
+    ON mentor_schedules(user_id, dtstart, dtend);
+CREATE INDEX IF NOT EXISTS idx_montor_schedules_user_year_month
+    ON mentor_schedules(user_id, dt_year, dt_month);
 
 
 CREATE TABLE IF NOT EXISTS canned_messages (
     "id" SERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    "role" ROLE_TYPE NOT NULL,
-    MESSAGE TEXT
+    "role" VARCHAR(20) NOT NULL,
+    MESSAGE TEXT,
+    CONSTRAINT ck_canned_messages_role CHECK (
+        "role" IN ('MENTOR', 'MENTEE')
+    )
     --,CONSTRAINT fk_profiles_user_id FOREIGN KEY (user_id) REFERENCES profiles(user_id)
 );
 
@@ -95,57 +76,67 @@ CREATE TABLE IF NOT EXISTS reservations (
     dtstart BIGINT NOT NULL,
     dtend BIGINT NOT NULL,
     my_user_id BIGINT NOT NULL,    -- sharding key: my_user_id
-    my_status BOOKING_STATUS NOT NULL,
-    my_role ROLE_TYPE NULL,
+    my_status VARCHAR(20) NOT NULL,
+    my_role VARCHAR(20) NULL,
     user_id BIGINT NOT NULL,
-    "status" BOOKING_STATUS NOT NULL,
+    "status" VARCHAR(20) NOT NULL,
     "messages" JSONB DEFAULT '[]'::jsonb,
     previous_reserve JSONB,  -- previous [schedule_id + dtstart],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_reservations_my_status CHECK (
+        my_status IN ('ACCEPT', 'PENDING', 'REJECT')
+    ),
+    CONSTRAINT ck_reservations_my_role CHECK (
+        my_role IS NULL OR my_role IN ('MENTOR', 'MENTEE')
+    ),
+    CONSTRAINT ck_reservations_status CHECK (
+        "status" IN ('ACCEPT', 'PENDING', 'REJECT')
+    )
 );
 
 -- Partial unique: only enforce uniqueness for non-cancelled reservations.
 -- Cancellations leave a REJECT row behind; without WHERE, re-booking the
 -- same slot fails the unique constraint even though find_active_duplicate
 -- (reservation_repository.py) already excludes REJECT at the app layer.
-CREATE UNIQUE INDEX uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
+CREATE UNIQUE INDEX IF NOT EXISTS uidx_reservation_active_user_dtstart_dtend_schedule_id_user_id
     ON reservations(my_user_id, dtstart, dtend, schedule_id, user_id)
     WHERE my_status <> 'REJECT' AND "status" <> 'REJECT';
-CREATE INDEX idx_reservation_user_my_status_status_dtend
+CREATE INDEX IF NOT EXISTS idx_reservation_user_my_status_status_dtend
     ON reservations(my_user_id, my_status, "status", dtend);
-CREATE INDEX idx_reservation_user_my_status_dtstart_dtend
+CREATE INDEX IF NOT EXISTS idx_reservation_user_my_status_dtstart_dtend
     ON reservations(my_user_id, my_status, dtstart, dtend);
 
 
 CREATE TABLE IF NOT EXISTS interests (
     "id" SERIAL PRIMARY KEY,
-    category INTEREST_CATEGORY,
+    category VARCHAR(40),
     subject_group VARCHAR(40),
     "language" VARCHAR(10),
     "subject" TEXT DEFAULT '',
-    "desc" JSONB
+    "desc" JSONB,
+    CONSTRAINT ck_interests_category CHECK (
+        category IS NULL OR category IN ('INTERESTED_POSITION', 'SKILL', 'TOPIC')
+    )
 );
 
 CREATE TABLE IF NOT EXISTS activities (
     "id" VARCHAR(255) PRIMARY KEY,
     mentor_reservation_id INT NOT NULL,
     mentee_reservation_id INT NOT NULL,
-    "service" ACTIVITY_SERVICE NOT NULL DEFAULT 'GOOGLE',
-    "status" ACTIVITY_STATUS NOT NULL DEFAULT 'SCHEDULED',
+    "service" VARCHAR(20) NOT NULL DEFAULT 'GOOGLE',
+    "status" VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_activities_service CHECK (
+        "service" IN ('GOOGLE')
+    ),
+    CONSTRAINT ck_activities_status CHECK (
+        "status" IN ('SCHEDULED', 'CANCELLED')
+    )
 );
 
-CREATE INDEX idx_activities_mentor_reservation_id ON activities(mentor_reservation_id);
-CREATE INDEX idx_activities_mentee_reservation_id ON activities(mentee_reservation_id);
-
---以下測試用插入資料
-INSERT INTO interests (category, "subject_group", "language", "subject", "desc")
-VALUES (
-    'INTERESTED_POSITION',          -- category
-    'Photography',                  -- subject_group
-    'en_US',                        -- language
-    'Photography basics and tips',  -- subject
-    '{"difficulty": "beginner", "duration": "short"}'::jsonb -- desc (JSONB 格式)
-);
+CREATE INDEX IF NOT EXISTS idx_activities_mentor_reservation_id
+    ON activities(mentor_reservation_id);
+CREATE INDEX IF NOT EXISTS idx_activities_mentee_reservation_id
+    ON activities(mentee_reservation_id);

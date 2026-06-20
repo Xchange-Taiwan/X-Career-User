@@ -236,12 +236,13 @@ class ReservationInfoVO(BaseModel):
     def from_sender_model(reservation: Reservation):
         sender_role = reservation.my_role
         participant_role = RoleType.MENTOR if sender_role == RoleType.MENTEE else RoleType.MENTEE
+        sender_role_value = getattr(sender_role, 'value', sender_role)
 
         return ReservationInfoVO(
             id=reservation.id,
             sender=RUserInfoVO(
                 user_id=reservation.my_user_id,
-                role=sender_role.value if sender_role else None,
+                role=sender_role_value if sender_role else None,
                 status=reservation.my_status,
             ),
             participant=RUserInfoVO(

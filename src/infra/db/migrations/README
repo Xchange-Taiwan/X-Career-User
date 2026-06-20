@@ -1,0 +1,19 @@
+X-Career-User database migrations.
+
+Migration files live under `src/infra/db/migrations`; `alembic.ini` resolves
+this path from the repository root, so Alembic commands can be run from any
+working directory when `-c` points to the repository config.
+
+Load all database connection settings, including the target schema, from an
+untracked environment file or an approved secret manager. Do not place real
+environment names or credentials in this repository.
+
+Run migrations from the repository root:
+
+    alembic upgrade head
+
+For automation, inject the same settings through the CI/CD secret store before
+running the command.
+
+The Alembic version table is stored in the target schema as
+`alembic_version_user`.
