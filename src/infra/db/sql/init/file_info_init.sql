@@ -1,4 +1,4 @@
-CREATE TABLE file_info (
+CREATE TABLE IF NOT EXISTS file_info (
     file_id UUID PRIMARY KEY,
     file_name VARCHAR(255) NOT NULL,
     file_size INTEGER NOT NULL,
